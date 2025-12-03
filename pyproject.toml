@@ -1,7 +1,7 @@
 [project]
-name = "oz-externship-04"
+name = "oz-externship-05"
 version = "0.1.0"
-description = "오즈 코딩 스쿨 초격차 익스턴십 4기 백엔드"
+description = "오즈 코딩 스쿨 초격차 익스턴십 5기 백엔드"
 authors = [
     {name = "Meoyong",email = "dylim426@nextrunners.co.kr"}
 ]
