@@ -4,9 +4,9 @@ from datetime import timedelta
 
 def generate_code(length=6):
 	"""
-	6자리 랜덤 숫자 코드 생성함
+	6자리 랜덤 숫자 str로 생성함
 	
-	:param length: 코드 길이
+	:param length: 숫자 길이
 	"""
 	return "".join(str(random.randint(0, 9)) for _ in range(length))
 
@@ -25,5 +25,5 @@ def send_sms(phone_number):
 	:param phone_number: 수신자 번호
 	:param code: 인증 코드
 	"""
+	code = generate_code()
 	print(f"{phone_number} - {code}")
-	pass

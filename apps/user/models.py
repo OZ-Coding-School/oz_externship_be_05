@@ -1,22 +1,33 @@
 from django.db import models
+from django.db.models import CharField, DateField, DateTimeField, BooleanField, AutoField, EmailField
 
-# Create your models here.
 class User(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=30, null=False)
-    nickname = models.CharField(max_length=10, null=False, unique=True)
-    phone_number = models.CharField(max_length=15, unique=True, null=False)
-    gender = models.CharField(max_length=6, null=False)
     
-    profile_image_url = models.CharField(max_length=255, null=True, blank=True)
-    email = models.EmailField(unique=True, null=False)
-    hashed_password = models.CharField(max_length=130, null=False)
+    class Gender(models.TextChoices):
+        MALE = 'M', 'Male'
+        FEMALE = 'F', 'Female'
+        POLCLAIN = 'P', 'Polclain'
     
-    birthday = models.DateField(null=False)
-    is_active = models.BooleanField(default=False)
+    class Role(models.TextChoices):
+        ADMIN = 'ADMIN'
+        STAFF = 'STAFF'
+        USER = 'USER'
+    
+    id : AutoField = AutoField(primary_key=True)
+    name : CharField = CharField(max_length=30, null=False)
+    nickname : CharField = CharField(max_length=10, null=False, unique=True)
+    phone_number : CharField = CharField(max_length=20, unique=True, null=False)
+    gender : CharField = CharField(max_length=6, choices = Gender.choices, null=False)
+    role = CharField(max_length=10, choices=Role.choices, default=Role.USER)
+    profile_image_url : CharField = CharField(max_length=255, null=True, blank=True)
+    email : EmailField = EmailField(unique=True, null=False)
+    hashed_password = CharField(max_length=130, null=False)
+    
+    birthday : DateField = DateField(null=False)
+    is_active : BooleanField = BooleanField(default=False)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at : DateTimeField = DateTimeField(auto_now_add=True)
+    updated_at : DateTimeField = DateTimeField(auto_now=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
