@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.courses.models import Course
+from .courses_models import Course
 
 
 class SubjectChoices(models.TextChoices):
