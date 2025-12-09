@@ -36,6 +36,7 @@ THIRD_PARTY_APPS = [
 # 추가한 도메인별 앱을 줄바꿈, 쉼표를 사용하여 나열.
 CUSTOM_APPS: list[str] = [
     "apps.user",
+    "apps.courses",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + CUSTOM_APPS
