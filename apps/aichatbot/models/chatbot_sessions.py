@@ -8,8 +8,8 @@ class ChatModel(models.TextChoices):
 
 
 class ChatbotSession(models.Model):
-    user = models.ForeignKey("users.User", on_delete=models.CASCADE)
-    question = models.ForeignKey("questions.Question", on_delete=models.CASCADE)
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE, db_index=True)
+    question = models.ForeignKey("questions.Question", on_delete=models.CASCADE, db_index=True)
     title = models.CharField(max_length=30)
     using_model = models.CharField(choices=ChatModel.choices, max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -17,3 +17,8 @@ class ChatbotSession(models.Model):
 
     class Meta:
         db_table = "chatbot_session"
+        # indexes = [
+        #     models.Index(fields=["user"], name="idx"),
+        #     models.Index(),
+        # ]
+        # 이 방식은 잘 모르겠어요
