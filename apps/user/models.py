@@ -87,3 +87,19 @@ class SocialUser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     provider = models.CharField(choices=SocialProvider.choices, max_length=5)
     provider_id = models.CharField(max_length=255, unique=True)
+
+class EnrollmentStatus(models.Choices):
+    PENDING = 'PENDING', '대기중'
+    IN_PROGRESS = 'IN_PROGRESS', '처리중'
+    COMPLETED = 'COMPLETED', '처리완료'
+
+class StudentEnrollmentRequest(models.Model):
+    # cohort_id = models.ForeignKey(Cohort, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    status = models.CharField(
+        choices=EnrollmentStatus.choices,
+        default=EnrollmentStatus.PENDING
+    )
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
