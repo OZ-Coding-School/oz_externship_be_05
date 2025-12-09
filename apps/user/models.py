@@ -34,7 +34,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=30)
     nickname = models.CharField(max_length=10, unique=True)
     phone_num = models.CharField(max_length=20)
-    gender = models.CharField(choices=GenderChoices.choices, max_length=6)
+    gender = models.CharField(choices=GenderChoices.choices, max_length=1)
     birthday = models.DateField()
     profile_image_url = models.URLField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
