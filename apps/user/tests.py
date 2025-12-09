@@ -1,8 +1,8 @@
 from datetime import date
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from unittest.mock import patch
 
 from apps.user import models
 
