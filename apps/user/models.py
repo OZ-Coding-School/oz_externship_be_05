@@ -1,9 +1,13 @@
+from __future__ import annotations
+
+from typing import Any
+
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
 
-def generate_nickname():
+def generate_nickname() -> str:
     import random
 
     adjectives = [
@@ -132,8 +136,8 @@ def generate_nickname():
     return f"{random.choice(adjectives)}{random.choice(objects)}{random.randint(1, 9999)}"
 
 
-class UserManager(BaseUserManager):
-    def create_user(self, email, password, name, **extra_fields):
+class UserManager(BaseUserManager["User"]):
+    def create_user(self, email: str, password: str, name: str, **extra_fields: Any) -> "User":
         if not email:
             raise ValueError("이메일은 필수입니다.")
         if not password:
@@ -141,9 +145,9 @@ class UserManager(BaseUserManager):
         if not name:
             raise ValueError("사용자명은 필수입니다.")
         if not extra_fields.get("nickname"):
-            nickname = generate_nickname()
-            ma = 100  # max attempts
-            a = 0  # attempts
+            nickname: str = generate_nickname()
+            ma: int = 100  # max attempts
+            a: int = 0  # attempts
             while User.objects.filter(nickname=nickname).exists():
                 nickname = generate_nickname()
                 a += 1
@@ -151,12 +155,12 @@ class UserManager(BaseUserManager):
                     raise ValueError("자동 닉네임 생성에 실패했습니다. 직접 닉네임을 입력해주세요.")
             extra_fields["nickname"] = nickname
         email = self.normalize_email(email)
-        user = self.model(email=email, name=name, **extra_fields)
+        user : "User" = self.model(email=email, name=name, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password, name, **extra_fields):
+    def create_superuser(self, email: str, password: str, name: str, **extra_fields: Any) -> "User":
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("role", RoleChoices.AD)

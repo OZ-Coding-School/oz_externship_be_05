@@ -1,4 +1,5 @@
 from datetime import date
+from typing import Any
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -8,7 +9,7 @@ from apps.user import models
 
 
 class UserManagerTests(TestCase):
-    def test_create_user_success_with_gen_nick(self):
+    def test_create_user_success_with_gen_nick(self) -> None:
         user = get_user_model().objects.create_user(
             email="miku@example.com",
             password="miku3939@!",
@@ -23,7 +24,7 @@ class UserManagerTests(TestCase):
         self.assertFalse(user.is_staff)
         self.assertEqual(user.role, models.RoleChoices.USER)
 
-    def test_create_user_requires_email_password_name(self):
+    def test_create_user_requires_email_password_name(self) -> None:
         with self.assertRaises(ValueError):
             get_user_model().objects.create_user(
                 email="",
@@ -52,7 +53,7 @@ class UserManagerTests(TestCase):
                 phone_num="010-1234-5678",
             )
 
-    def test_create_superuser_sets_flags(self):
+    def test_create_superuser_sets_flags(self) -> None:
         admin = get_user_model().objects.create_superuser(
             email="admin@example.com",
             password="superscret",
@@ -67,7 +68,7 @@ class UserManagerTests(TestCase):
 
     # 중복닉 테스트
     @patch("apps.user.models.generate_nickname", return_value="신창섭")
-    def test_create_user_fails_dupnick(self, generate_nickname_mock):
+    def test_create_user_fails_dupnick(self, generate_nickname_mock: Any) -> None:
         get_user_model().objects.create_user(
             email="maple@example.com",
             password="password123",
