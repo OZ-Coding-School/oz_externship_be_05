@@ -1,9 +1,10 @@
 from django.db import models
 
 
-class StatusChoices(models.TextChoices):
-    Activated = "active"
-    Deactivated = "deactivated"
+class CohortsChoices(models.TextChoices):
+    PENDING = "PENDING", "대기중"
+    IN_PROGRESS = "IN_PROGRESS", "처리중"
+    COMPLETED = "COMPLETED", "처리완료"
 
 
 class Cohorts(models.Model):
@@ -14,8 +15,8 @@ class Cohorts(models.Model):
     end_date = models.DateTimeField()
 
     status = models.CharField(
-        max_length=11,
-        choices=StatusChoices.choices,
+        choices=CohortsChoices.choices,
+        default=CohortsChoices.PENDING,
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
