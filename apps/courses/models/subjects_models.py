@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.core.models import TimestampModel
+from apps.core.models import TimeStampedModel
 from apps.courses.models.courses_models import Course
 
 
@@ -10,7 +10,7 @@ class SubjectChoices(models.TextChoices):
     COMPLETED = "COMPLETED", "처리완료"
 
 
-class Subject(TimestampModel):
+class Subject(TimeStampedModel):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     title = models.CharField(max_length=30, unique=True)
     number_of_days = models.SmallIntegerField()

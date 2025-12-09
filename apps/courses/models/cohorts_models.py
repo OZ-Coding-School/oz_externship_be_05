@@ -1,7 +1,7 @@
 from django.core.validators import MinValueValidator
 from django.db import models
 
-from apps.core.models import TimestampModel
+from apps.core.models import TimeStampedModel
 from apps.courses.models.courses_models import Course
 
 
@@ -11,7 +11,7 @@ class CohortStatusChoices(models.TextChoices):
     COMPLETED = "COMPLETED", "수료"
 
 
-class Cohort(TimestampModel):
+class Cohort(TimeStampedModel):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="cohorts")
     number = models.SmallIntegerField(
         validators=[MinValueValidator(1)],
