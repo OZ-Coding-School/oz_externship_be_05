@@ -22,7 +22,7 @@ class GenderChoices(models.TextChoices):
     FEMALE = 'F', 'FEMALE'
 
 class RoleChoices(models.TextChoices):
-    TA = 'TA', 'teaching Assistant'
+    TA = 'TA', 'Teaching Assistant'
     LC = 'LC', 'Learning Coach'
     OM = 'OM', 'Office Manager'
     ST = 'ST', 'Student'
@@ -41,7 +41,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    role = models.CharField(choices=RoleChoices.choices, max_length=2)
+    role = models.CharField(choices=RoleChoices.choices, max_length=2, default=RoleChoices.USER)
 
     objects = UserManager()
 
@@ -57,5 +57,5 @@ class SocialProvider(models.TextChoices):
 
 class SocialUser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    provider = models.CharField(choices=SocialProvider.choices, max_length=5, unique=True)
-    provider_id = models.CharField(max_length=255)
+    provider = models.CharField(choices=SocialProvider.choices, max_length=5)
+    provider_id = models.CharField(max_length=255, unique=True)
