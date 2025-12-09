@@ -1,30 +1,40 @@
+from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser
 from django.db import models
-from django.db.models import CharField, DateField, DateTimeField, BooleanField, AutoField, EmailField
 
-class User(models.Model):
+class GenderChoices(models.TextChoices):
+    MALE = 'M', 'MALE'
+    FEMALE = 'F', 'FEMALE'
 
-    class Gender(models.TextChoices):
-        MALE = 'M', 'Male'
-        FEMALE = 'F', 'Female'
-        POLCLAIN = 'P', 'Polclain'
-    
-    class Role(models.TextChoices):
-        ADMIN = 'ADMIN'
-        STAFF = 'STAFF'
-        USER = 'USER'
-    
-    id = AutoField(primary_key=True)
-    name = CharField(max_length=30, null=False)
-    nickname = CharField(max_length=10, null=False, unique=True)
-    phone_number = CharField(max_length=20, unique=True, null=False)
-    gender = CharField(max_length=6, choices = Gender.choices, null=False)
-    role = CharField(max_length=10, choices=Role.choices, default=Role.USER)
-    profile_image_url = CharField(max_length=255, null=True, blank=True)
-    email = EmailField(unique=True, null=False)
-    hashed_password = CharField(max_length=130, null=False)
-    
-    birthday = DateField(null=False)
-    is_active = BooleanField(default=False)
+class RoleChoices(models.TextChoices):
+    TA = 'TA', 'teaching Assistant'
+    LC = 'LC', 'Learning Coach'
+    OM = 'OM', 'Office Manager'
+    ST = 'ST', 'Student'
+    AD = 'AD', 'Administrator'
+    USER = 'U', 'User'
 
-    created_at = DateTimeField(auto_now_add=True)
-    updated_at = DateTimeField(auto_now=True)
+class User(AbstractBaseUser):
+    email = models.EmailField(unique=True)
+    name = models.CharField(max_length=30)
+    nickname = models.CharField(max_length=20, unique=True)
+    phone_num = models.CharField(max_length=11)
+    gender = models.CharField(choices=GenderChoices.choices, max_length=1)
+    birthday = models.DateField()
+    profile_image_url = models.URLField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "users"
+
+class SocialProvider(models.TextChoices):
+    NAVER = 'N', 'naver'
+    KAKAO = 'K', 'kakao'
+
+class SocialUser(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    provider = models.CharField(choices=SocialProvider.choices, max_length=5)
+    provider_id = models.CharField(max_length=255)
