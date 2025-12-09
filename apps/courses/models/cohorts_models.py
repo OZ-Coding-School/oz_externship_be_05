@@ -1,8 +1,10 @@
 from django.db import models
 
+
 class StatusChoices(models.TextChoices):
     Activated = "active"
     Deactivated = "deactivated"
+
 
 class Cohorts(models.Model):
     course_id = models.BigIntegerField()
@@ -19,6 +21,5 @@ class Cohorts(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-
     class Meta:
-        db_table = 'cohorts'
+        db_table = "cohorts"
