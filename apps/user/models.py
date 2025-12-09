@@ -155,7 +155,7 @@ class UserManager(BaseUserManager["User"]):
                     raise ValueError("자동 닉네임 생성에 실패했습니다. 직접 닉네임을 입력해주세요.")
             extra_fields["nickname"] = nickname
         email = self.normalize_email(email)
-        user : "User" = self.model(email=email, name=name, **extra_fields)
+        user: "User" = self.model(email=email, name=name, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
