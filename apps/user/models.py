@@ -11,6 +11,7 @@ class UserManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
         return user
+    
     def create_superuser(self, email, password=None, **extra_fields):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
@@ -28,7 +29,7 @@ class RoleChoices(models.TextChoices):
     AD = 'AD', 'Administrator'
     USER = 'U', 'User'
 
-class User(AbstractBaseUser):
+class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=30)
     nickname = models.CharField(max_length=10, unique=True)
