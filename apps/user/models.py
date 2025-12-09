@@ -6,7 +6,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
-from .utils.nickname import generate_nickname
+from apps.user.utils.nickname import generate_nickname
 
 
 class UserManager(BaseUserManager["User"]):
@@ -34,6 +34,7 @@ class UserManager(BaseUserManager["User"]):
         return user
 
     def create_superuser(self, email: str, password: str, name: str, **extra_fields: Any) -> "User":
+
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("role", RoleChoices.AD)
@@ -57,7 +58,7 @@ class RoleChoices(models.TextChoices):
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=30)
-    nickname = models.CharField(max_length=25, unique=True)
+    nickname = models.CharField(max_length=15, unique=True)
     phone_num = models.CharField(max_length=20)
     gender = models.CharField(choices=GenderChoices.choices, max_length=1)
     birthday = models.DateField()

@@ -4,7 +4,7 @@ import random
 import string
 from typing import Optional
 
-from django_redis import get_redis_connection
+from django_redis import get_redis_connection  # type: ignore[import-untyped]
 
 DEFAULT_TTL_SECONDS = 600
 CODE_LENGTH = 6
@@ -46,7 +46,7 @@ def verify_code(identifier: str, submitted_code: str, consume: bool = True) -> b
         return False
 
     stored_str = stored.decode()
-    matched = stored_str == submitted_code
+    matched: bool = stored_str == submitted_code
 
     if matched and consume:
         conn.delete(_build_key(identifier))
