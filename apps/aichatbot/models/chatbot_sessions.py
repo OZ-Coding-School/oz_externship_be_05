@@ -1,5 +1,6 @@
 from django.db import models
 
+
 # enum용 클래스 - 사용모델
 class ChatModel(models.TextChoices):
     GEMINI = "gemini", "GEMINI 2.7"
@@ -7,7 +8,7 @@ class ChatModel(models.TextChoices):
 
 
 class ChatbotSession(models.Model):
-    user = models.IntegerField(db_index=True, help_text="User ID") # SPEC API용. question 앱 받은 후 변경 예정
+    user = models.IntegerField(db_index=True, help_text="User ID")  # SPEC API용. question 앱 받은 후 변경 예정
     # user = models.ForeignKey("users.User", on_delete=models.CASCADE, db_index=True)
     question = models.IntegerField(db_index=True, help_text="Question PK")  # SPEC API용. question 앱 받은 후 변경 예정
     # question = models.ForeignKey("questions.Question", on_delete=models.CASCADE, db_index=True)
