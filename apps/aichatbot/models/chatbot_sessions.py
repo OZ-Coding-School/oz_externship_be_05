@@ -8,10 +8,8 @@ class ChatModel(models.TextChoices):
 
 
 class ChatbotSession(models.Model):
-    user = models.IntegerField(db_index=True, help_text="User ID")  # SPEC API용. question 앱 받은 후 변경 예정
-    # user = models.ForeignKey("users.User", on_delete=models.CASCADE, db_index=True)
-    question = models.IntegerField(db_index=True, help_text="Question PK")  # SPEC API용. question 앱 받은 후 변경 예정
-    # question = models.ForeignKey("questions.Question", on_delete=models.CASCADE, db_index=True)
+    user = models.ForeignKey("user.User", on_delete=models.CASCADE, db_index=True)
+    question = models.ForeignKey("questions.Question", on_delete=models.CASCADE, db_index=True)
     title = models.CharField(max_length=30)
     using_model = models.CharField(choices=ChatModel.choices, max_length=20)
     created_at = models.DateTimeField(auto_now_add=True)
