@@ -8,7 +8,7 @@ class UserRole(models.TextChoices):
 
 
 class ChatbotCompletion(models.Model):
-    session = models.ForeignKey("chatbot_sessions.ChatbotSession", on_delete=models.CASCADE)
+    session = models.ForeignKey("ChatbotSession", on_delete=models.CASCADE)
     message = models.TextField()
     role = models.CharField(choices=UserRole.choices, max_length=14)
     created_at = models.DateTimeField(auto_now_add=True)

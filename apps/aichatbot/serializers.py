@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from apps.aichatbot.models.chatbot_completions import ChatbotCompletion, UserRole
-from apps.aichatbot.models.chatbot_sessions import ChatbotSession, ChatModel
+from apps.aichatbot.models.chatbot_completions import ChatbotCompletion
+from apps.aichatbot.models.chatbot_sessions import ChatbotSession
 
 """
 이 파일의 목적 (SPEC API 단계)
