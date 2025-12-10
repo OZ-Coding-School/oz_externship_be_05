@@ -16,7 +16,7 @@ class UserManagerTests(TestCase):
             name="하츠네미쿠",
             birthday=date(2007, 8, 31),
             gender=models.GenderChoices.FEMALE,
-            phone_num="010-3939-3939",
+            phone_number="010-3939-3939",
         )
         self.assertEqual(user.email, "miku@example.com")
         self.assertEqual(user.name, "하츠네미쿠")
@@ -32,7 +32,7 @@ class UserManagerTests(TestCase):
                 name="이메일이없는노인",
                 birthday=date(1930, 1, 1),
                 gender=models.GenderChoices.MALE,
-                phone_num="010-1234-1234",
+                phone_number="010-1234-1234",
             )
         with self.assertRaises(ValueError):
             get_user_model().objects.create_user(
@@ -41,7 +41,7 @@ class UserManagerTests(TestCase):
                 name="비밀이없는남자",
                 birthday=date(2000, 1, 1),
                 gender=models.GenderChoices.MALE,
-                phone_num="010-1234-1234",
+                phone_number="010-1234-1234",
             )
         with self.assertRaises(ValueError):
             get_user_model().objects.create_user(
@@ -50,7 +50,7 @@ class UserManagerTests(TestCase):
                 name="",
                 birthday=date(2008, 1, 1),
                 gender=models.GenderChoices.FEMALE,
-                phone_num="010-1234-5678",
+                phone_number="010-1234-5678",
             )
 
     def test_create_superuser_sets_flags(self) -> None:
@@ -60,7 +60,7 @@ class UserManagerTests(TestCase):
             name="관리자임",
             birthday=date(2000, 1, 1),
             gender=models.GenderChoices.MALE,
-            phone_num="010-0000-0000",
+            phone_number="010-0000-0000",
         )
         self.assertTrue(admin.is_staff)
         self.assertTrue(admin.is_superuser)
@@ -76,7 +76,7 @@ class UserManagerTests(TestCase):
             nickname="신창섭",
             birthday=date(2000, 1, 1),
             gender=models.GenderChoices.MALE,
-            phone_num="010-1111-1111",
+            phone_number="010-1111-1111",
         )
         with self.assertRaises(ValueError):
             get_user_model().objects.create_user(
@@ -85,5 +85,5 @@ class UserManagerTests(TestCase):
                 name="신규유저",
                 birthday=date(2000, 1, 1),
                 gender=models.GenderChoices.MALE,
-                phone_num="010-2222-2222",
+                phone_number="010-2222-2222",
             )
