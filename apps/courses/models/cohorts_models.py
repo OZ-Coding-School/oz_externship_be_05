@@ -3,8 +3,8 @@ from django.db import models
 
 class CohortsChoices(models.TextChoices):
     PENDING = "PENDING", "대기중"
-    IN_PROGRESS = "IN_PROGRESS", "처리중"
-    COMPLETED = "COMPLETED", "처리완료"
+    IN_PROGRESS = "IN_PROGRESS", "과정 진행중"
+    COMPLETED = "COMPLETED", "수강완료(수료)"
 
 
 class Cohorts(models.Model):
