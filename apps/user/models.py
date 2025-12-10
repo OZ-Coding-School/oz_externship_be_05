@@ -97,7 +97,7 @@ class EnrollmentStatus(models.Choices):
 
 class StudentEnrollmentRequest(models.Model):
     # cohort_id = models.ForeignKey(Cohort, on_delete=models.CASCADE)
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(choices=EnrollmentStatus.choices, default=EnrollmentStatus.PENDING)
     accepted_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
