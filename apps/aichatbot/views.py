@@ -1,14 +1,12 @@
 from datetime import datetime
 
 from drf_spectacular.utils import extend_schema
-from moto.dynamodb.models.dynamo_type import serializer
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.aichatbot.models.chatbot_sessions import ChatbotSession
 from apps.aichatbot.serializers import (
     CompletionCreateSerializer,
     CompletionSerializer,
