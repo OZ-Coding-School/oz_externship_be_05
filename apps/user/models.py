@@ -6,7 +6,8 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
-from .utils.nickname import generate_nickname
+from apps.courses.models.cohorts_models import Cohort
+from apps.user.utils.nickname import generate_nickname
 
 
 class UserManager(BaseUserManager["User"]):
@@ -19,7 +20,7 @@ class UserManager(BaseUserManager["User"]):
             raise ValueError("사용자명은 필수입니다.")
         if not extra_fields.get("nickname"):
             nickname: str = generate_nickname()
-            ma: int = 100  # max attempts
+            ma: int = 5  # max attempts
             a: int = 0  # attempts
             while User.objects.filter(nickname=nickname).exists():
                 nickname = generate_nickname()
@@ -57,8 +58,8 @@ class RoleChoices(models.TextChoices):
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=30)
-    nickname = models.CharField(max_length=25, unique=True)
-    phone_num = models.CharField(max_length=20)
+    nickname = models.CharField(max_length=15, unique=True)
+    phone_number = models.CharField(max_length=20)
     gender = models.CharField(choices=GenderChoices.choices, max_length=1)
     birthday = models.DateField()
     profile_image_url = models.URLField(null=True, blank=True)
@@ -86,3 +87,24 @@ class SocialUser(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     provider = models.CharField(choices=SocialProvider.choices, max_length=5)
     provider_id = models.CharField(max_length=255, unique=True)
+
+    class Meta:
+        db_table = "social_users"
+
+
+class EnrollmentStatus(models.TextChoices):
+    PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+
+
+class StudentEnrollmentRequest(models.Model):
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    status = models.CharField(choices=EnrollmentStatus.choices, default=EnrollmentStatus.PENDING)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "student_enrollment_requests"
