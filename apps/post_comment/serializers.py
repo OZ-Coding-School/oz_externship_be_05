@@ -21,7 +21,7 @@ class PostCommentTagsSerializer(serializers.ModelSerializer):
     class Meta:
         model = PostCommentTags
         fields = [
-            "tagged_users_id",
+            "tagged_user_id",
             "comment_id",
         ]
         read_only_fields = [
