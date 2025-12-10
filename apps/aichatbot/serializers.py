@@ -3,8 +3,6 @@ from rest_framework import serializers
 from apps.aichatbot.models.chatbot_completions import ChatbotCompletion, UserRole
 from apps.aichatbot.models.chatbot_sessions import ChatbotSession, ChatModel
 
-# from apps.question.models import Question
-
 """
 이 파일의 목적 (SPEC API 단계)
 - "JSON 받아오기": request.data를 어떤 필드/타입으로 받을지 정의 + 기본 검증(필수/길이/형식)
@@ -37,8 +35,9 @@ class SessionSerializer(serializers.ModelSerializer[ChatbotSession]):
 
 
 # 세션 생성 요청(question_id 받기), 지금은 Serializer로 하겠음 필요하면 ModelSerializer로 수정
-class SessionCreateSerializer(serializers.Serializer):
+class SessionCreateSerializer(serializers.Serializer[ChatbotSession]):
     question = serializers.IntegerField(help_text="Question ID(FK)")
+
     # spec API에서만 이렇게
     # title = serializers.CharField(required=False, allow_blank=True, max_length=30)
     # using_model = serializers.CharField(choices = ChatModel.choices)
@@ -57,8 +56,8 @@ class CompletionSerializer(serializers.ModelSerializer[ChatbotCompletion]):
 
 
 # completion 생성 (요청 - Request)
-# 동일하게, 지금은 serializer
-class CompletionCreateSerializer(serializers.Serializer):
+# 동일하게, 지금은 serializer이지만 ModelSerializer가 될수도
+class CompletionCreateSerializer(serializers.Serializer[ChatbotCompletion]):
     message = serializers.CharField(required=False, allow_blank=True)
     # class Meta:
     #     model = ChatbotCompletion
