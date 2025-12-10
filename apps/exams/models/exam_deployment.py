@@ -66,4 +66,4 @@ class ExamDeployment(TimeStampedModel):
         verbose_name_plural = "Exam Deployments"
 
     def __str__(self) -> str:
-        return f"Deployment {self.pk} - exam={self.exam.pk}, gen={self.generation.pk}"
+        return f"Deployment {self.pk} - exam={self.exam.pk}, gen={self.cohort.pk}"
