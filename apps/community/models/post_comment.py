@@ -1,6 +1,8 @@
 from django.db import models
+
+from apps.community.models.post import Post
 from apps.user.models import User
-from apps.community.models import Post
+
 
 class PostComment(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -11,4 +13,3 @@ class PostComment(models.Model):
 
     class Meta:
         db_table = "post_comments"
-

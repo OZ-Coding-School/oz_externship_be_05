@@ -1,7 +1,7 @@
 from django.db import models
 
-from apps.core.models import TimeStampedModel
 from apps.community.models.post import Post
+from apps.core.models import TimeStampedModel
 
 
 class PostImage(TimeStampedModel):

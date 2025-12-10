@@ -1,6 +1,8 @@
 from django.db import models
+
+from apps.community.models.post_comment import PostComment
 from apps.user.models import User
-from apps.community.models import PostComment
+
 
 class PostCommentTag(models.Model):
     tagged_user = models.ForeignKey(User, on_delete=models.CASCADE)

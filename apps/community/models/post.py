@@ -7,7 +7,7 @@ from apps.user.models import User
 
 class Post(TimeStampedModel):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
-    category = models.ForeignKey(PostCategory, on_delete=models.CASCADE, related_name='post')
+    category = models.ForeignKey(PostCategory, on_delete=models.CASCADE, related_name="post")
     title = models.CharField(max_length=50)
     content = models.TextField()
     view_count = models.IntegerField(default=0)
