@@ -37,6 +37,7 @@ THIRD_PARTY_APPS = [
 CUSTOM_APPS: list[str] = [
     "apps.user",
     "apps.courses",
+    "apps.aichatbot",
     "apps.exams",
     "apps.questions",
 ]
