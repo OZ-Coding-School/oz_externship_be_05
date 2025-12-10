@@ -1,7 +1,9 @@
+from datetime import datetime
+
 from rest_framework import serializers
 
-from apps.aichatbot.models.chatbot_completions import ChatbotCompletion
-from apps.aichatbot.models.chatbot_sessions import ChatbotSession
+from apps.aichatbot.models.chatbot_completions import ChatbotCompletion, UserRole
+from apps.aichatbot.models.chatbot_sessions import ChatbotSession, ChatModel
 
 """
 이 파일의 목적 (SPEC API 단계)
@@ -26,6 +28,7 @@ from apps.aichatbot.models.chatbot_sessions import ChatbotSession
 """
 
 
+# apps/aichatbot/serializers.py
 # Session의 응답포멧
 class SessionSerializer(serializers.ModelSerializer[ChatbotSession]):
     class Meta:
@@ -37,10 +40,12 @@ class SessionSerializer(serializers.ModelSerializer[ChatbotSession]):
 # 세션 생성 요청(question_id 받기), 지금은 Serializer로 하겠음 필요하면 ModelSerializer로 수정
 class SessionCreateSerializer(serializers.Serializer[ChatbotSession]):
     question = serializers.IntegerField(help_text="Question ID(FK)")
-
     # spec API에서만 이렇게
-    # title = serializers.CharField(required=False, allow_blank=True, max_length=30)
-    # using_model = serializers.CharField(choices = ChatModel.choices)
+    title = serializers.CharField(required=False, allow_blank=True, max_length=30)
+    using_model = serializers.CharField()
+    created_at = serializers.DateTimeField()
+    updated_at = serializers.DateTimeField()
+
     class Meta:
         model = ChatbotSession
         fields = ["id", "user", "question", "title", "using_model", "created_at", "updated_at"]

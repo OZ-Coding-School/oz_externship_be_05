@@ -1,4 +1,5 @@
 from datetime import datetime
+from random import randint
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -46,23 +47,28 @@ class SessionGenerator(APIView):
     def post(self, request: Request) -> Response:
 
         serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        validated = serializer.validated_data
 
-        mock_response = {
-            "id": 1,
-            "user": validated["user"],
-            "question": validated["question"],
-            "title": validated["title"],
-            "using_model": validated["using_model"],
-            "created_at": datetime.now().isoformat(),
-        }
+        if serializer.is_valid():
+            validated = serializer.validated_data
 
-        response_serializer = self.serializer_class(data=mock_response)
+            mock_response = {
+                "id": randint(0, 1000),
+                "user": randint(1, 100),
+                "question": validated["question"],
+                "title": validated["title"],
+                "using_model": validated["using_model"],
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
+            }
 
-        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+            response_serializer = self.serializer_class(data=mock_response)
+            response_serializer.is_valid(raise_exception=True)
+            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# apps/aichatbot/views.py
 class SessionListView(APIView):
     permission_classes = [AllowAny]  # IsAuthenticated
     serializer_class = SessionSerializer
@@ -79,22 +85,24 @@ class SessionListView(APIView):
     def get(self, request: Request) -> Response:
         # qs = ChatbotSession.objects.filter(user=request.user).order_by("-created_at")
         # data = SessionSerializer(qs, many=True).data
+        mock_list: list[dict[str, str | int]] = [
+            {
+                "id": i,
+                "user": randint(50, 55) + i,
+                "question": randint(1, 100),
+                "title": f"dummy title {i}",
+                "using_model": "openai",
+                "created_at": datetime.now().isoformat(),
+                "updated_at": datetime.now().isoformat(),
+            }
+            for i in range(5)
+        ]
 
-        serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        validated = serializer.validated_data
-
-        mock_response = {
-            "id": 1,
-            "user": validated["user"],
-            "question": validated["question"],
-            "title": validated["title"],
-            "using_model": request.data["using_model"],
-            "created_at": datetime.now().isoformat(),
-        }
-
-        response_serializer = self.serializer_class(data=mock_response)
-        return Response(response_serializer.data, status=status.HTTP_200_OK)
+        input_serializer = self.serializer_class(data=mock_list, many=True)
+        if input_serializer.is_valid(raise_exception=True):
+            return Response(mock_list, status=status.HTTP_200_OK)
+        else:
+            return Response(input_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # 세션 상세.
