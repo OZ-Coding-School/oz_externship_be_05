@@ -8,7 +8,11 @@ from drf_spectacular.views import (
 )
 
 urlpatterns: list[URLPattern | URLResolver] = [
+<<<<<<< HEAD
     path("api/v1/qna/", include("apps.questions.urls")),
+=======
+    path("api/v1/post-comments", include("apps.post_comment.urls")),
+>>>>>>> 5939a3a (urls 작성)
 ]
 
 if settings.DEBUG:

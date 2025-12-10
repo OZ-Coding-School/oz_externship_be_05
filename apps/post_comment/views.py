@@ -11,15 +11,17 @@ from apps.users.models import User, GenderChoices, SocialUser, SocialProvider
 from apps.users.serializers import SignUpSerializer, UserInfoSerializer
 
 
-class PostCommentAPIView(APIView):
-
-    def post(self, request: Request, *args, **kwargs):
-
-
-        pass
+class PostCommentRetrieveAPIView(APIView):
 
     def get(self, request: Request, *args, **kwargs):
         pass
+
+class PostCommentCreateAPIView(APIView):
+
+    def post(self, request: Request, *args, **kwargs):
+        pass
+
+class PostCommentUpdateDeleteAPIView(APIView):
 
     def put(self, request: Request, *args, **kwargs):
         pass
