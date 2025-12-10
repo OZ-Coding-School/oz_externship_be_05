@@ -1,7 +1,9 @@
 from django.db import models
 
+from apps.core.models import TimestampModel
 
-class Course(models.Model):
+
+class Course(TimestampModel):
     name = models.CharField(max_length=30)
     tag = models.CharField(max_length=3)
     description = models.CharField(max_length=255)

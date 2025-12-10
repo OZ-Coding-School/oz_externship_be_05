@@ -1,25 +1,34 @@
+from django.core.validators import MinValueValidator
 from django.db import models
 
-
-class StatusChoices(models.TextChoices):
-    Activated = "active"
-    Deactivated = "deactivated"
+from apps.core.models import TimestampModel
+from apps.courses.models.courses_models import Course
 
 
-class Cohorts(models.Model):
-    course_id = models.BigIntegerField()
-    number = models.PositiveIntegerField()
-    max_student = models.PositiveIntegerField()
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
+class CohortStatusChoices(models.TextChoices):
+    PENDING = "PENDING", "대기중"
+    IN_PROGRESS = "IN_PROGRESS", "수강중"
+    COMPLETED = "COMPLETED", "수료"
 
-    status = models.CharField(
-        max_length=11,
-        choices=StatusChoices.choices,
+
+class Cohort(TimestampModel):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="cohorts")
+    number = models.SmallIntegerField(
+        validators=[MinValueValidator(1)],
     )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    max_student = models.SmallIntegerField(
+        validators=[MinValueValidator(1)],
+    )
+    end_date = models.DateTimeField()
+    start_date = models.DateTimeField()
+    status = models.CharField(
+        choices=CohortStatusChoices.choices,
+        default=CohortStatusChoices.PENDING,
+    )
 
     class Meta:
         db_table = "cohorts"
+        constraints = [
+            models.CheckConstraint(check=models.Q(number__gte=1), name="number_non_negative"),
+            models.CheckConstraint(check=models.Q(max_student__gte=1), name="max_student_non_negative"),
+        ]
