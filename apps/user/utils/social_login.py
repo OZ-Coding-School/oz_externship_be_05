@@ -23,10 +23,6 @@ def parse_kakao_birthday(kakao_account: dict) -> date | None:
         return None
 
 
-def _generate_random_password(length: int = 20) -> str:
-    return get_random_string(length)
-
-
 class KakaoOAuthService:
     AUTHORIZE_URL = "https://kauth.kakao.com/oauth/authorize"
     TOKEN_URL = "https://kauth.kakao.com/oauth/token"
@@ -109,7 +105,7 @@ def get_or_create_kakao_user(kakao_profile: dict) -> User:
 
     user = User.objects.create_user(
         email=email or f"kakao_{kakao_id}@example.com",
-        password=_generate_random_password(),
+        password=get_random_string(20),
         name=name,
         gender="M" if gender == "male" else ("F" if gender == "female" else ""),
         birthday=birthday_date,
@@ -145,7 +141,7 @@ def get_or_create_naver_user(naver_profile: dict) -> User:
 
     user = User.objects.create_user(
         email=email or f"naver_{naver_id}@example.com",
-        password=_generate_random_password(),
+        password=get_random_string(20),
         name=name,
         birthday=default_birthday
     )
