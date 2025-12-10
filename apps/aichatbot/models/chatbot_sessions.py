@@ -17,6 +17,7 @@ class ChatbotSession(models.Model):
 
     class Meta:
         db_table = "chatbot_session"
+        ordering = ("created_at", "-id")
         # indexes = [
         #     models.Index(fields=["user"], name="idx"),
         #     models.Index(),
