@@ -14,6 +14,7 @@ from apps.user.utils.social_login import (
 
 
 class KakaoLoginStartAPIView(APIView):
+
     permission_classes = [AllowAny]
 
     def get(self, request):
@@ -39,6 +40,7 @@ class KakaoLoginStartAPIView(APIView):
 
 
 class NaverLoginStartAPIView(APIView):
+
     permission_classes = [AllowAny]
 
     def get(self, request):
@@ -56,6 +58,7 @@ class NaverLoginStartAPIView(APIView):
 
 
 class KakaoCallbackAPIView(APIView):
+
     permission_classes = [AllowAny]
 
     def get(self, request):
@@ -80,6 +83,7 @@ class KakaoCallbackAPIView(APIView):
 
 
 class NaverCallbackAPIView(APIView):
+    
     permission_classes = [AllowAny]
 
     def get(self, request):

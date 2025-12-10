@@ -25,7 +25,7 @@ def make_it_korean(phone_number: str) -> str:
     return f"+82{digits}"
 
 
-def send_verification_code(phone_number: str, locale: str = "ko") -> Optional[str]:
+def send_verification_code(phone_number: str ,locale: str = "ko") -> Optional[str]:
     """
     twilio verify API로 인증코드를 전송합니다.
     """

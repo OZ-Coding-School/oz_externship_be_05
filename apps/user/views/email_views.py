@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 
 from apps.user.serializers.verification_serializers import (
     EmailSerializer,
@@ -22,6 +23,9 @@ User = get_user_model()
 
 
 class SignupSendEmailAPIView(APIView):
+
+    permission_classes = [AllowAny]
+
     def post(self, request):
         serializer = EmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -35,6 +39,9 @@ class SignupSendEmailAPIView(APIView):
 
 
 class SignupVerifyEmailAPIView(APIView):
+
+    permission_classes = [AllowAny]
+
     def post(self, request):
         serialzier = EmailCodeVerifySerializer(data=request.data)
         serialzier.is_valid(raise_exception=True)
@@ -58,6 +65,9 @@ class SignupVerifyEmailAPIView(APIView):
 
 
 class FindPasswordSendEmailAPIView(APIView):
+
+    permission_classes = [AllowAny]
+
     def post(self, request):
         serializer = EmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -73,12 +83,14 @@ class FindPasswordSendEmailAPIView(APIView):
 
 
 class FindPasswordAPIView(APIView):
+
+    permission_classes = [AllowAny]
+
     def post(self, reqeust):
         serializer = FindPasswordSerialzier(data=reqeust.data)
         serializer.is_valid(raise_exception=True)
 
         email = serializer.validated_data["email"]
-        old_pw = serializer.validated_data["old_password"]
         new_pw = serializer.validated_data["new_password"]
         code = serializer.validated_data["code"]
 
@@ -90,9 +102,6 @@ class FindPasswordAPIView(APIView):
         except User.DoesNotExist:
             return Response({"detail": "존재하지 않는 계정입니다."}, status=404)
 
-        if not user.check_password(old_pw):
-            return Response({"detail": "기존 비밀번호가 일치하지 않습니다."}, status=400)
-
         user.set_password(new_pw)
         user.save()
 
@@ -100,6 +109,9 @@ class FindPasswordAPIView(APIView):
 
 
 class RestoreSendEmailAPIView(APIView):
+
+    permission_classes = [AllowAny]
+
     def post(self, request):
         serializer = EmailSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -116,6 +128,9 @@ class RestoreSendEmailAPIView(APIView):
 
 
 class RestoreAPIView(APIView):
+
+    permission_classes = [AllowAny]
+    
     def post(self, request):
         serializer = EmailCodeVerifySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
