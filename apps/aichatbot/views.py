@@ -1,7 +1,7 @@
-from datetime import datetime
 from random import randint
 
 from drf_spectacular.utils import extend_schema
+from requests import session
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
@@ -14,6 +14,8 @@ from apps.aichatbot.serializers import (
     SessionCreateSerializer,
     SessionSerializer,
 )
+
+from .mock import MockData
 
 """
 세션
@@ -44,31 +46,27 @@ class SessionGenerator(APIView):
             "400": {"object": "object", "example": {"error": "Bad Request"}},
         },
     )
+    # 공부용 주석
+    # Serializers는 여기서 request.data(JSON Body)를 받아서 정의된 필드 타입으로 파싱 →
+    # is_valid()로 필수존재 여부,타입,길이 검증 → validated_data에서 검증된 값 추출
     def post(self, request: Request) -> Response:
-
         serializer = self.serializer_class(data=request.data)
+        print("test: serializer 통과")
 
         if serializer.is_valid():
-            validated = serializer.validated_data
+            question = serializer.validated_data.get("question", "")
+            title = serializer.validated_data.get("title", "")
+            using_model = serializer.validated_data.get("using_model", "")
+            print("테스트: question, title 입력 성공")
 
-            mock_response = {
-                "id": randint(0, 1000),
-                "user": randint(1, 100),
-                "question": validated["question"],
-                "title": validated["title"],
-                "using_model": validated["using_model"],
-                "created_at": datetime.now().isoformat(),
-                "updated_at": datetime.now().isoformat(),
-            }
+            new_session = MockData.mock_session_post(question=question, title=title, using_model=using_model)
+            print("테스트: new_session에 입력 완료")
 
-            response_serializer = self.serializer_class(data=mock_response)
-            response_serializer.is_valid(raise_exception=True)
-            return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+            return Response(new_session, status=status.HTTP_201_CREATED)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# apps/aichatbot/views.py
 class SessionListView(APIView):
     permission_classes = [AllowAny]  # IsAuthenticated
     serializer_class = SessionSerializer
@@ -82,63 +80,82 @@ class SessionListView(APIView):
             "400": {"object": "object", "example": {"error": "Bad Request"}},
         },
     )
+
+    # 공부용 주석
+    # 이 API에선 입력 데이터 없음 → serializer 필요없...나?
+    # extend_schema의 responses에서 응답 스키마 문서화 용도로만 사용.
+    # 차후 수정: Serializer(queryset, many=True).data로 직렬화하기
     def get(self, request: Request) -> Response:
-        # qs = ChatbotSession.objects.filter(user=request.user).order_by("-created_at")
-        # data = SessionSerializer(qs, many=True).data
+        sessions = MockData.mock_session()
+        print("test: MockData 조회 성공, 길이: ", len(sessions))
+
         mock_list: list[dict[str, str | int]] = [
             {
-                "id": i,
-                "user": randint(50, 55) + i,
-                "question": randint(1, 100),
-                "title": f"dummy title {i}",
-                "using_model": "openai",
-                "created_at": datetime.now().isoformat(),
-                "updated_at": datetime.now().isoformat(),
+                "id": session["id"],
+                "question": session["question"],
+                "title": session["title"],
             }
-            for i in range(5)
+            for session in sessions  # 이거 무슨 문법인지 확인
         ]
-
-        input_serializer = self.serializer_class(data=mock_list, many=True)
-        if input_serializer.is_valid(raise_exception=True):
-            return Response(mock_list, status=status.HTTP_200_OK)
-        else:
-            return Response(input_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        print("테스트: mock list 데이터 넣었나요: ", mock_list[0])
+        return Response(mock_list, status=status.HTTP_200_OK)
 
 
 # 세션 상세.
-# class SessionDetailView(APIView):
-#     permission_classes = [AllowAny]  # IsAuthenticated
-#     serializer_class = SessionSerializer
-#
-#     @extend_schema(
-#         tags=["Session Detail"],
-#         summary="",
-#         request = SessionSerializer,
-#         responses={
-#             "200": SessionSerializer,
-#             "400": {"object": "object", "example": {"error": "Bad Request"}},
-#         },
-#     )
-#
-#     def get(self, request: Request) -> Response:
-#         serializer = self.serializer_class(data=request.data)
-#         serializer.is_valid(raise_exception=True)
-#         validated = serializer.validated_data
-#
-#         mock_response = {
-#             "id": 1,
-#             "user": validated["user"],
-#             "question": validated["question"],
-#             "title": validated["title"],
-#             "using_model": request.data["using_model"],
-#             "created_at": datetime.now().isoformat(),
-#         }
-#
-#
-#         return Response()
+class SessionDetailView(APIView):
+    permission_classes = [AllowAny]  # IsAuthenticated
+    serializer_class = SessionSerializer
 
-# def delete(self, request, session_id: int, *args, **kwargs):
-#     pass
+    @extend_schema(
+        tags=["Session Detail"],
+        summary="",
+        request=SessionSerializer,
+        responses={
+            "200": SessionSerializer,
+            "400": {"object": "object", "example": {"error": "Bad Request"}},
+        },
+    )
+
+    # 공부용 주석
+    # GET상세조회
+    # serializers: URL 파라미터로 조회해서 body검증 필요x
+    # 실제 구현은 Serializer(instance).data로 직렬화할것
+    # 주석 처리 사유: session detail 왜 필요하지? user 입장에선 바로 completions 들어가지 않나?
+
+    # def get(self, request: Request, session_id: int) -> Response:
+    #
+    #     sessions = MockData.mock_session()
+    #     print("test: MockData에서 하나 받아오기 테스트 with len", len(sessions))
+    #
+    #     session_detail =
+    #
+    #     session_id = serializer.validated_data.get("session", "")
+    #     session_detail = MockData.mock_session(session=session_id)
+    #     return Response(session_detail, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        tags=["Session Detail"],
+        summary="",
+        request=SessionSerializer,
+        responses={
+            "204": None,
+            "400": {"object": "object", "example": {"error": "Bad Request"}},
+            "404": {"object": "object", "example": {"error": "Not Found"}},
+        },
+    )
+    # 나중에 세션 제거기능 구현
+    # 실제 구현은 객체 조회 후 .delete() 호출.
+    # session = get_object_or_404(ChatbotSession, id=session_id)
+    # session.delete()
+    def delete(self, request: Request, session_id: int) -> Response:
+
+        # 더미용 데이터. 터미널에서만 출력 예정
+        sessions = MockData.mock_session()
+        session = sessions[int(session_id)]
+        print("테스트: MockData 조회 성공, 인자 갯수(7 정상): ", len(session))
+        print(f"테스트: 제목: ", session)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 # # 세션에 메세지 추가
 # class MessageCreateView(APIView):
