@@ -11,7 +11,7 @@ class QuestionCategory(models.Model):
     class Meta:
         db_table = "question_categories"
 
-    def __str__(self) -> str :
+    def __str__(self) -> str:
         return self.name
 
 
@@ -31,7 +31,7 @@ class Question(models.Model):
     class Meta:
         db_table = "questions"
 
-    def __str__(self) -> str :
+    def __str__(self) -> str:
         return self.title
 
 
@@ -46,7 +46,7 @@ class QuestionImage(models.Model):
     class Meta:
         db_table = "question_images"
 
-    def __str__(self) -> str :
+    def __str__(self) -> str:
         return f"Image for Question {self.question_id}"
 
 
@@ -68,5 +68,5 @@ class QuestionAIAnswer(models.Model):
     class Meta:
         db_table = "question_ai_answers"
 
-    def __str__(self) -> str :
+    def __str__(self) -> str:
         return f"AI Answer for Question {self.question_id}"

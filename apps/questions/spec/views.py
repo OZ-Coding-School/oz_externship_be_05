@@ -40,7 +40,6 @@ class QuestionCreateSpecAPIView(APIView):
             "created_at": datetime.now().isoformat(),
         }
 
-        response_serializer = self.serializer_class(mock_response) # type: ignore[arg-type]
-
+        response_serializer = self.serializer_class(mock_response)  # type: ignore[arg-type]
 
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
