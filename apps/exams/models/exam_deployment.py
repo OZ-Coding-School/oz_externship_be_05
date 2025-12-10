@@ -14,16 +14,16 @@ class ExamDeployment(TimeStampedModel):
     ERD: exam_deployments
     """
 
-    # ERD: generation_id bigint [not null]
-    generation = models.ForeignKey(
-        "apps.Student_enrollment_requests",  # 실제 앱/모델 이름에 맞게 수정
+    # ERD: cohort_id bigint [not null]
+    cohort = models.ForeignKey(
+        "courses.Cohort",
         on_delete=models.PROTECT,
         related_name="exam_deployments",
     )
 
     # ERD: exam_id bigint [not null]
     exam = models.ForeignKey(
-        "apps.Exam",
+        "exams.Exam",
         on_delete=models.PROTECT,
         related_name="deployments",
     )

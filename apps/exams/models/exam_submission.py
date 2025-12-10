@@ -12,14 +12,14 @@ class ExamSubmission(TimeStampedModel):
 
     # ERD: submitter_id bigint [not null]
     submitter = models.ForeignKey(
-        "apps.Cohort_students",
+        "user.User",
         on_delete=models.CASCADE,
         related_name="exam_submissions",
     )
 
     # ERD: deployment_id bigint [not null]
     deployment = models.ForeignKey(
-        "apps.ExamDeployment",
+        "exams.ExamDeployment",
         on_delete=models.CASCADE,
         related_name="submissions",
     )

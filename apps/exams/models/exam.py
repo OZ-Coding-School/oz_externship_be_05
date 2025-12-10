@@ -11,7 +11,7 @@ class Exam(TimeStampedModel):
 
     # ERD: subject_id bigint [not null]
     subject = models.ForeignKey(
-        "apps.Subjects",
+        "courses.Subject",
         on_delete=models.PROTECT,
         related_name="exams",
     )

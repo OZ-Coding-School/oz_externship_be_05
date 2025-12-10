@@ -20,7 +20,7 @@ class ExamQuestion(TimeStampedModel):
 
     # ERD: exam_id bigint [not null]
     exam = models.ForeignKey(
-        "apps.Exam",
+        "exams.Exam",
         on_delete=models.CASCADE,
         related_name="questions",
     )
