@@ -68,7 +68,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    disabled_at = models.DateTimeField(null=True)
     role = models.CharField(choices=RoleChoices.choices, max_length=2, default=RoleChoices.USER)
 
     objects = UserManager()
@@ -94,10 +93,10 @@ class SocialUser(models.Model):
         db_table = "social_users"
 
 
-class EnrollmentStatus(models.Choices):
-    PENDING = "PENDING", "대기중"
-    IN_PROGRESS = "IN_PROGRESS", "처리중"
-    COMPLETED = "COMPLETED", "처리완료"
+class EnrollmentStatus(models.TextChoices):
+    PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
 
 
 class StudentEnrollmentRequest(models.Model):
