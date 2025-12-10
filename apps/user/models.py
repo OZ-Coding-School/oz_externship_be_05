@@ -6,7 +6,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
-from apps.courses.models.cohorts_models import Cohorts
+from apps.courses.models.cohorts_models import Cohort
 from apps.user.utils.nickname import generate_nickname
 
 
@@ -100,7 +100,7 @@ class EnrollmentStatus(models.TextChoices):
 
 
 class StudentEnrollmentRequest(models.Model):
-    cohort = models.ForeignKey(Cohorts, on_delete=models.CASCADE)
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(choices=EnrollmentStatus.choices, default=EnrollmentStatus.PENDING)
     accepted_at = models.DateTimeField(null=True, blank=True)
