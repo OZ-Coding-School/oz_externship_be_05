@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models.post_comment import PostComment
-from .models.post_comment_tags import PostCommentTags
+from .models.post_comment_tags import PostCommentTag
 
 class PostCommentSerializer(serializers.ModelSerializer):
 
@@ -19,7 +19,7 @@ class PostCommentSerializer(serializers.ModelSerializer):
 
 class PostCommentTagsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PostCommentTags
+        model = PostCommentTag
         fields = [
             "tagged_user_id",
             "comment_id",

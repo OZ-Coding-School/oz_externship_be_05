@@ -1,16 +1,15 @@
 
 
-class PostCommentRetrieveAPIView(APIView):
+class PostCommentListCreateAPIView(APIView):
 
     def get(self, request: Request, *args, **kwargs):
 
         pass
 
-class PostCommentCreateAPIView(APIView):
-
     def post(self, request: Request, *args, **kwargs):
 
         pass
+
 
 class PostCommentUpdateDeleteAPIView(APIView):
 

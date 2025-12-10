@@ -9,10 +9,14 @@ from drf_spectacular.views import (
 
 urlpatterns: list[URLPattern | URLResolver] = [
 <<<<<<< HEAD
+<<<<<<< HEAD
     path("api/v1/qna/", include("apps.questions.urls")),
 =======
     path("api/v1/post-comments", include("apps.post_comment.urls")),
 >>>>>>> 5939a3a (urls 작성)
+=======
+    path("api/v1/posts/", include("apps.community.urls")),
+>>>>>>> 7c45b14 (:sparkles: community models 추가 및 기능 수정)
 ]
 
 if settings.DEBUG:
