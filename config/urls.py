@@ -9,7 +9,7 @@ from drf_spectacular.views import (
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path("api/v1/qna/", include("apps.questions.urls")),
-    path("api/v1/accounts/", include("apps.user.urls"))
+    path("api/v1/accounts/", include("apps.user.urls")),
 ]
 
 if settings.DEBUG:
