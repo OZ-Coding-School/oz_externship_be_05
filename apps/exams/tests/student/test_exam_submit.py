@@ -177,7 +177,18 @@ class SimpleExamSubmitTest(TestCase):
             "cheating_count": 0,
             "answers": {
                 "questions": [
+                    # 1) 단일 선택
+                    {"question_id": self.single_choice_question.id, "answer": "3"},
+                    # 2) 다중 선택
+                    {"question_id": self.multiple_choice_question.id, "answer": ["1", "4"]},
+                    # 3) OX
+                    {"question_id": self.ox_question.id, "answer": "X"},
+                    # 4) 단답형
                     {"question_id": self.question.id, "answer": "울지않기"},
+                    # 5) 순서 정렬
+                    {"question_id": self.ordering_question.id, "answer": ["A", "B", "C", "D"]},
+                    # 6) 빈칸 채우기
+                    {"question_id": self.fill_blank_question.id, "answer": ["용기", "친절"]},
                 ]
             },
         }
@@ -186,8 +197,8 @@ class SimpleExamSubmitTest(TestCase):
         self.assertEqual(response.status_code, 201)
 
         submission = ExamSubmission.objects.get()
-        self.assertEqual(submission.score, 5)
-        self.assertEqual(submission.correct_answer_count, 1)
+        self.assertEqual(submission.score, 38)
+        self.assertEqual(submission.correct_answer_count, 6)
 
     def make_payload(self) -> dict[str, Any]:
         return {
