@@ -1,8 +1,8 @@
 from django.conf import settings
 from django.db import models
+from apps.core.models import TimeStampedModel
 
-
-class Answer(models.Model):
+class Answer(TimeStampedModel):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,  # 작성자가 삭제되면 답변도 삭제
@@ -19,9 +19,7 @@ class Answer(models.Model):
 
     content = models.TextField(help_text="답변 내용 본문")
     is_adopted = models.BooleanField(default=False, help_text="채택 여부")
-    created_at = models.DateTimeField(auto_now_add=True, help_text="작성 시간")
-    updated_at = models.DateTimeField(auto_now=True, help_text="수정 시간")
-
+    
     class Meta:
         db_table = "answers"
         verbose_name = "답변"
