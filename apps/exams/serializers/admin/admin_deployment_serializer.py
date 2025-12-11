@@ -24,7 +24,21 @@ class AdminDeploymentSerializer(serializers.ModelSerializer[ExamDeployment]):
         ]
         read_only_fields = ("id",)
 
-    # 시간 검증 (open_at < close_at)
+    # 시간 검증
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
-        DeploymentValidator.validate_time(attrs["open_at"], attrs["close_at"])
+
+        # create / update 구분
+        instance = self.instance
+
+        open_at = attrs.get("open_at", getattr(instance, "open_at", None))
+        close_at = attrs.get("close_at", getattr(instance, "close_at", None))
+
+        # open_at < close_at
+        if open_at and close_at:
+            DeploymentValidator.validate_time(open_at, close_at)
+
+        # create 일 경우
+        if instance is None:
+            DeploymentValidator.validate_open(open_at)
+
         return attrs
