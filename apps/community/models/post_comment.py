@@ -2,9 +2,10 @@ from django.db import models
 
 from apps.community.models.post import Post
 from apps.user.models import User
+from apps.core.models import TimeStampedModel
 
 
-class PostComment(models.Model):
+class PostComment(TimeStampedModel):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
     content = models.CharField(max_length=300)
