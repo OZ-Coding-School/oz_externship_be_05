@@ -9,7 +9,7 @@ class PostSerializer(serializers.ModelSerializer):
         model = Post
         fields = [
             "id",
-            "author",
+            "author_id",
             "author_username",
             "category",
             "category_name",
@@ -21,7 +21,7 @@ class PostSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id","created_at","updated_at","author","view_count"]
+        read_only_fields = ["id","created_at","updated_at","author_id","view_count"]
 
     #전체 데이터 유효성 검사 코드
     def validate(self, attrs):
