@@ -7,11 +7,11 @@ from typing import Any, Optional
 from django.core.cache import caches
 from django.conf import settings
 
-CODE_LENGTH = settings.VERIFICATION_CODE_LENGTH
-TOKEN_BYTES = settings.VERIFICATION_TOKEN_BYTES
-CODE_CHARS = settings.VERIFICATION_CODE_CHARS
+CODE_LENGTH = settings.VERIFYCATION_CODE_LENGTH
+TOKEN_BYTES = settings.VERIFYCATION_TOKEN_BYTES
+CODE_CHARS = settings.VERIFYCATION_CODE_CHARS
 DEFAULT_TTL_SECONDS = settings.VERIFICATION_DEFAULT_TTL_SECONDS
-TOKEN_GENERATE_MAX_ATTEMPTS = settings.VERIFICATION_TOKEN_GENERATE_MAX_ATTEMPTS
+TOKEN_GENERATE_MAX_ATTEMPTS = settings.VERIFYCATION_TOKEN_GENERATE_MAX_ATTEMPTS
 
 def _normalize_identifier(identifier: str) -> str:
     return identifier.strip().lower()
@@ -37,7 +37,7 @@ class VerificationService:
     def _token_key(self, identifier: str) -> str:
         return f"{self.namespace}:token:{identifier}"
 
-    def _token_lookup_key(self, token: str) -> str:  # token을 키로 가지고 identifier를 찾기
+    def _token_lookup_key(self, token: str) -> str:  # token을 키로 가지고 identifier를 value로 가져 역참조 가능
         return f"{self.namespace}:token_lookup:{token}"
 
     def _cache(self) -> Any:
