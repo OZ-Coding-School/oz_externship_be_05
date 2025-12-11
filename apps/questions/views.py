@@ -15,12 +15,6 @@ class QuestionCreateAPIView(APIView):
     def post(self, request: Request) -> Response:
         assert isinstance(request.user, User)
 
-        if request.user.is_anonymous:
-            return Response(
-                {"error_detail": "로그인한 수강생만 질문을 등록할 수 있습니다."},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
-
         if request.user.role != RoleChoices.ST:
             return Response(
                 {"error_detail": "질문 등록 권한이 없습니다."},
