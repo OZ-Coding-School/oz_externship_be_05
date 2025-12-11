@@ -1,14 +1,13 @@
 from datetime import date
 from typing import Any
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-
-from apps.user import models
-
 from django.urls import reverse
 from rest_framework import status
+
+from apps.user import models
 
 
 class UserManagerTests(TestCase):
@@ -92,7 +91,6 @@ class UserManagerTests(TestCase):
             )
 
 
-
 class KakaoSocialLoginTests(TestCase):
     @patch("apps.user.views.social_login_views.KakaoOAuthService")
     def test_kakao_login_success(self, service_mock: Any) -> None:
@@ -100,7 +98,15 @@ class KakaoSocialLoginTests(TestCase):
         service_mock.return_value = service
 
         service.get_access_token.return_value = "dummy_access"
-        service.get_user_info.return_value = {"id": "kakao123", "kakao_account": {}}
+        service.get_user_info.return_value = {
+            "id": "test123",
+            "kakao_account": {
+                "profile": {"nickname": "건우의은밀한그것"},
+                "email": "gunwoo@test.com",
+                "gender": "male",
+                "birthday": "0612",
+            }
+        }
 
         user = get_user_model().objects.create_user(
             email="kakao@test.com",
@@ -119,7 +125,7 @@ class KakaoSocialLoginTests(TestCase):
 
     def test_kakao_login_requires_code(self) -> None:
         url = reverse("kakao-callback")
-        resp = self.client.get(url) 
+        resp = self.client.get(url)
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     @patch("apps.user.views.social_login_views.KakaoOAuthService")
@@ -128,7 +134,15 @@ class KakaoSocialLoginTests(TestCase):
         service_mock.return_value = service
 
         service.get_access_token.return_value = "dummy"
-        service.get_user_info.return_value = {"id": "123"}
+        service.get_user_info.return_value = {
+            "id": "test123",
+            "kakao_account": {
+                "profile": {"nickname": "건우의은밀한그것"},
+                "email": "gunwoo@test.com",
+                "gender": "male",
+                "birthday": "0612",
+            }
+        }
 
         user = get_user_model().objects.create_user(
             email="inactive@kakao.com",
@@ -158,7 +172,13 @@ class NaverSocialLoginTests(TestCase):
 
         service.get_access_token.return_value = "dummy_token"
         service.get_user_info.return_value = {
-            "response": {"id": "naver321", "email": "ram@test.com", "name": "람"}
+            "response": {
+                "id": "test1234",
+                "email": "test@test.com",
+                "name": "건우의은밀한네이버계정",
+                "birthyear": "1000",
+                "birthday": "0612"
+            }
         }
 
         user = get_user_model().objects.create_user(
@@ -179,7 +199,7 @@ class NaverSocialLoginTests(TestCase):
     def test_naver_requires_code_and_state(self) -> None:
         url = reverse("naver-callback")
 
-        resp = self.client.get(url, {"code": "abc"})  # state 없음
+        resp = self.client.get(url, {"code": "abc"}) 
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     @patch("apps.user.views.social_login_views.NaverOAuthService")
@@ -188,7 +208,15 @@ class NaverSocialLoginTests(TestCase):
         service_mock.return_value = service
 
         service.get_access_token.return_value = "dummy"
-        service.get_user_info.return_value = {"response": {"id": "inactive"}}
+        service.get_user_info.return_value = {
+            "response": {
+                "id": "test1234",
+                "email": "test@test.com",
+                "name": "건우의은밀한네이버계정",
+                "birthyear": "1000",
+                "birthday": "0612"
+            }
+        }
 
         user = get_user_model().objects.create_user(
             email="inactive@naver.com",
