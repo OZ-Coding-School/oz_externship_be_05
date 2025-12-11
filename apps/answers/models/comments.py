@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
+
 from apps.core.models import TimeStampedModel
+
 
 class AnswerComment(TimeStampedModel):
     author = models.ForeignKey(
