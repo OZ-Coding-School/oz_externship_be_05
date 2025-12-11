@@ -39,6 +39,7 @@ class AdminDeploymentSerializer(serializers.ModelSerializer[ExamDeployment]):
 
         # create 일 경우
         if instance is None:
-            DeploymentValidator.validate_open(open_at)
+            if open_at is not None:
+                DeploymentValidator.validate_open(open_at)
 
         return attrs
