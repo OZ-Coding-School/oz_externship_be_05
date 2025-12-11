@@ -13,6 +13,7 @@ CODE_CHARS = settings.VERIFYCATION_CODE_CHARS
 DEFAULT_TTL_SECONDS = settings.VERIFICATION_DEFAULT_TTL_SECONDS
 TOKEN_GENERATE_MAX_ATTEMPTS = settings.VERIFYCATION_TOKEN_GENERATE_MAX_ATTEMPTS
 
+
 def _normalize_identifier(identifier: str) -> str:
     return identifier.strip().lower()
 
