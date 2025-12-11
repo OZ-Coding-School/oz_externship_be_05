@@ -37,12 +37,13 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
         request = self.context["request"]
         deployment: ExamDeployment = self.context["deployment"]
 
-        # 이미 제출한 시험인지
-        if ExamSubmission.objects.filter(
+        # 시험은 두번까지만 제출 가능
+        existing_count = ExamSubmission.objects.filter(
             deployment=deployment,
             submitter=request.user,
-        ).exists():
-            raise serializers.ValidationError("이미 해당 쪽지시험을 제출했습니다.")
+        ).count()
+        if existing_count >= 2:
+            raise serializers.ValidationError("해당 쪽지시험은 최대 2회까지만 제출할 수 있습니다.")
 
         # started_at 필수 + None 허용 안 함
         started_at = attrs.get("started_at")

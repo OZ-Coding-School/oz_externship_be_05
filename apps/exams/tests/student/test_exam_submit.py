@@ -1,16 +1,17 @@
+from datetime import date, datetime, timedelta
+from typing import Any
+
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-from datetime import timedelta, date, datetime
-
 from rest_framework.test import APIClient
 
-from apps.user.models import User
-from apps.courses.models import Subject, Course, Cohort
+from apps.courses.models import Cohort, Course, Subject
 from apps.exams.models.exam import Exam
 from apps.exams.models.exam_deployment import ExamDeployment
 from apps.exams.models.exam_question import ExamQuestion, QuestionType
 from apps.exams.models.exam_submission import ExamSubmission
+from apps.user.models import User
 
 
 class SimpleExamSubmitTest(TestCase):
@@ -97,11 +98,7 @@ class SimpleExamSubmitTest(TestCase):
         payload = {
             "started_at": (timezone.now() - timedelta(seconds=10)).isoformat(),
             "cheating_count": 0,
-            "answers": {
-                "questions": [
-                    {"question_id": self.question.id, "answer": "파이썬"}
-                ]
-            },
+            "answers": {"questions": [{"question_id": self.question.id, "answer": "울지않기"}]},
         }
 
         response = self.client.post(self.url, payload, format="json")
@@ -111,22 +108,34 @@ class SimpleExamSubmitTest(TestCase):
         self.assertEqual(submission.score, 5)
         self.assertEqual(submission.correct_answer_count, 1)
 
-    def test_submit_twice_fail(self) -> None:
-        """같은 유저가 같은 시험을 2번 제출하면 실패해야 함"""
-        payload = {
+    def make_payload(self) -> dict[str, Any]:
+        return {
             "started_at": (timezone.now() - timedelta(seconds=10)).isoformat(),
             "cheating_count": 0,
-            "answers": {
-                "questions": [
-                    {"question_id": self.question.id, "answer": "파이썬"}
-                ]
-            },
+            "answers": {"questions": [{"question_id": self.question.id, "answer": "울지않기"}]},
         }
+
+    def test_submit_success_once(self) -> None:
+        payload = self.make_payload()
+        response = self.client.post(self.url, payload, format="json")
+        self.assertEqual(response.status_code, 201)
+
+        submission = ExamSubmission.objects.get()
+        self.assertEqual(submission.score, 5)
+        self.assertEqual(submission.correct_answer_count, 1)
+
+    def test_submit_fail_third(self) -> None:
+
+        payload = self.make_payload()
 
         # 첫 번째 제출 (성공)
         first = self.client.post(self.url, payload, format="json")
         self.assertEqual(first.status_code, 201)
 
-        # 두 번째 제출 (실패)
+        # 두 번째 제출 (성공)
         second = self.client.post(self.url, payload, format="json")
-        self.assertEqual(second.status_code, 400)
+        self.assertEqual(second.status_code, 201)
+
+        # 세 번째 제출 (실패)
+        third = self.client.post(self.url, payload, format="json")
+        self.assertEqual(third.status_code, 400)
