@@ -1,11 +1,14 @@
 from datetime import date
 from typing import Any
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from apps.user import models
+
+from django.urls import reverse
+from rest_framework import status
 
 
 class UserManagerTests(TestCase):
@@ -87,3 +90,121 @@ class UserManagerTests(TestCase):
                 gender=models.GenderChoices.MALE,
                 phone_number="010-2222-2222",
             )
+
+
+
+class KakaoSocialLoginTests(TestCase):
+    @patch("apps.user.views.social_login_views.KakaoOAuthService")
+    def test_kakao_login_success(self, service_mock: Any) -> None:
+        service = MagicMock()
+        service_mock.return_value = service
+
+        service.get_access_token.return_value = "dummy_access"
+        service.get_user_info.return_value = {"id": "kakao123", "kakao_account": {}}
+
+        user = get_user_model().objects.create_user(
+            email="kakao@test.com",
+            password="pw",
+            name="카카오유저",
+            birthday=date(2000, 1, 1),
+        )
+        service.get_or_create_user.return_value = user
+
+        url = reverse("kakao-callback")
+        resp = self.client.get(url, {"code": "abcd"})
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertIn("access", resp.data)
+        self.assertIn("refresh", resp.data)
+
+    def test_kakao_login_requires_code(self) -> None:
+        url = reverse("kakao-callback")
+        resp = self.client.get(url) 
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch("apps.user.views.social_login_views.KakaoOAuthService")
+    def test_kakao_login_inactive_user(self, service_mock: Any) -> None:
+        service = MagicMock()
+        service_mock.return_value = service
+
+        service.get_access_token.return_value = "dummy"
+        service.get_user_info.return_value = {"id": "123"}
+
+        user = get_user_model().objects.create_user(
+            email="inactive@kakao.com",
+            password="pw",
+            name="비활성",
+            birthday=date(2000, 1, 1),
+        )
+        user.is_active = False
+        user.expire_at = date(2030, 1, 1)
+        user.save()
+
+        service.get_or_create_user.return_value = user
+
+        url = reverse("kakao-callback")
+        resp = self.client.get(url, {"code": "zzz"})
+
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("error_detail", resp.data)
+        self.assertIn("detail", resp.data["error_detail"])
+
+
+class NaverSocialLoginTests(TestCase):
+    @patch("apps.user.views.social_login_views.NaverOAuthService")
+    def test_naver_login_success(self, service_mock: Any) -> None:
+        service = MagicMock()
+        service_mock.return_value = service
+
+        service.get_access_token.return_value = "dummy_token"
+        service.get_user_info.return_value = {
+            "response": {"id": "naver321", "email": "ram@test.com", "name": "람"}
+        }
+
+        user = get_user_model().objects.create_user(
+            email="naver@test.com",
+            password="pw",
+            name="네이버유저",
+            birthday=date(2001, 2, 2),
+        )
+        service.get_or_create_user.return_value = user
+
+        url = reverse("naver-callback")
+        resp = self.client.get(url, {"code": "11", "state": "22"})
+
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        self.assertIn("access", resp.data)
+        self.assertIn("refresh", resp.data)
+
+    def test_naver_requires_code_and_state(self) -> None:
+        url = reverse("naver-callback")
+
+        resp = self.client.get(url, {"code": "abc"})  # state 없음
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch("apps.user.views.social_login_views.NaverOAuthService")
+    def test_naver_login_inactive_user(self, service_mock: Any) -> None:
+        service = MagicMock()
+        service_mock.return_value = service
+
+        service.get_access_token.return_value = "dummy"
+        service.get_user_info.return_value = {"response": {"id": "inactive"}}
+
+        user = get_user_model().objects.create_user(
+            email="inactive@naver.com",
+            password="pw",
+            name="비활성유저",
+            birthday=date(2005, 5, 5),
+        )
+        user.is_active = False
+        user.expire_at = date(2029, 12, 31)
+        user.save()
+
+        service.get_or_create_user.return_value = user
+
+        url = reverse("naver-callback")
+        resp = self.client.get(url, {"code": "c", "state": "s"})
+
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("error_detail", resp.data)
+        self.assertIn("detail", resp.data["error_detail"])
