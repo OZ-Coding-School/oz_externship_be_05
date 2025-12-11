@@ -10,4 +10,3 @@ htmlcov/
 media/
 static/
 staticfiles/
-.mypy_cache
