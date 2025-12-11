@@ -4,8 +4,8 @@ import base64
 import secrets
 from typing import Any, Optional
 
-from django.core.cache import caches
 from django.conf import settings
+from django.core.cache import caches
 
 CODE_LENGTH = settings.VERIFYCATION_CODE_LENGTH
 TOKEN_BYTES = settings.VERIFYCATION_TOKEN_BYTES
