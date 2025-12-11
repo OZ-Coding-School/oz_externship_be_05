@@ -1,9 +1,11 @@
+from typing import Any
+
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.questions.models import QuestionCategory
 from apps.user.models import RoleChoices, User
-from typing import Any
+
 
 class QuestionCreateAPITests(APITestCase):
     def setUp(self) -> None:
