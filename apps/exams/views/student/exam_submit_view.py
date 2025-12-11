@@ -13,7 +13,7 @@ from apps.exams.serializers.student.exam_submit_serializer import ExamSubmission
 
 @extend_schema(
     tags=["Exams - Student"],
-    summary="쪽지시험 제출",
+    summary="쪽지시험 제출 API",
     description=(
         "수강생이 쪽지시험 문제 풀이를 제출하는 API.\n"
         "제출 시 각 문항별 답안, 부정행위 횟수, 시험 시작 시간이 함께 저장되며 "
