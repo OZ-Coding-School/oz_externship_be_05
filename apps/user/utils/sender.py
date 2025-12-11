@@ -73,9 +73,10 @@ class EmailSender(Sender):
             message = f"인증코드: {code}\n"
             send_mail(subject, message, settings.DEFAULT_FROM_EMAIL, [send_to])
             logger.info("인증 코드를 전송합니다.", extra={"to": send_to})
+            return
         except Exception as exc:
             logger.exception(f"이메일 인증코드 전송 실패 : {exc}")
-        raise APIException("이메일 전송에 실패했습니다.")
+            raise APIException("이메일 전송에 실패했습니다.")
 
     def verify_code(self, email: str, code: str) -> str:
         try:
@@ -83,9 +84,12 @@ class EmailSender(Sender):
                 return self.verification_service.generate_token(email)
             else:
                 raise ValidationError("유효하지 않은 번호 / 코드입니다.")
+        except ValidationError:
+            # ValidationError는 그대로 상위로 올려 클라이언트에 검증 실패를 알림
+            raise
         except Exception as exc:
             logger.exception(f"이메일 인증코드 검증 실패 : {exc}")
-        raise APIException("검증에 실패했습니다.")
+            raise APIException("검증에 실패했습니다.")
 
 
 class SMSSender(Sender):
@@ -127,14 +131,18 @@ class SMSSender(Sender):
                 to=self.make_it_korean(phone_number),
                 code=code,
             )
-            match getattr(result, "status", ""):
-                case TWILIO_STATUS.Approved:
+            status = getattr(result, "status", "")
+            match status:
+                case TWILIO_STATUS.Approved.value:
                     return self.verification_service.generate_token(phone_number)
-                case TWILIO_STATUS.MaxAttemptsReached:
+                case TWILIO_STATUS.MaxAttemptsReached.value:
                     raise ValidationError("인증 코드 발송 한도에 도달했습니다.")
                 case _:
                     raise ValidationError("인증 코드 발송에 실패했습니다.")
 
+        except ValidationError:
+            # 검증 실패 사유는 그대로 전달
+            raise
         except Exception as exc:
             logger.exception(f"SMS 검증 실패 : {exc}")
             raise ValidationError("유효하지 않은 번호 혹은 코드입니다.")
