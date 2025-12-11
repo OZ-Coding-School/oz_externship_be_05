@@ -3,7 +3,7 @@ from rest_framework.test import APITestCase
 
 from apps.questions.models import QuestionCategory
 from apps.user.models import RoleChoices, User
-
+from typing import Any
 
 class QuestionCreateAPITests(APITestCase):
     def setUp(self) -> None:
@@ -13,7 +13,7 @@ class QuestionCreateAPITests(APITestCase):
         # API URL
         self.url = "/api/v1/qna/questions"
 
-    def create_test_user(self, **kwargs) -> User:
+    def create_test_user(self, **kwargs: Any) -> User:
         default_data = {
             "phone_number": "010-0000-0000",
             "gender": "M",
@@ -86,5 +86,3 @@ class QuestionCreateAPITests(APITestCase):
         response = self.client.post(self.url, payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-
