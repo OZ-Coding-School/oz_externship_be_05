@@ -25,7 +25,7 @@ def parse_kakao_birthday(kakao_account: dict) -> date | None:
 
 def parse_naver_birthday(naver_account: dict) -> date | None:
     birthyear = naver_account.get("birthyear")
-    birthday = naver_account.get("birthday")  # MMDD 형태
+    birthday = naver_account.get("birthday") 
 
     if not (birthyear and birthday and len(birthday) == 4):
         return None
