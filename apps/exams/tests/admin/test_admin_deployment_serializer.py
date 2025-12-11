@@ -1,12 +1,14 @@
-from datetime import date, datetime, timedelta
-from django.utils import timezone
-from typing import Dict, Any
+from datetime import datetime, timedelta
+from typing import Any, Dict
 
 from django.test import TestCase
+from django.utils import timezone
 
-from apps.courses.models import Subject, Cohort, Course
+from apps.courses.models import Cohort, Course, Subject
 from apps.exams.models import Exam, ExamDeployment
-from apps.exams.serializers.admin.admin_deployment_serializer import AdminDeploymentSerializer
+from apps.exams.serializers.admin.admin_deployment_serializer import (
+    AdminDeploymentSerializer,
+)
 
 
 class AdminDeploymentSerializerTest(TestCase):
@@ -28,18 +30,15 @@ class AdminDeploymentSerializerTest(TestCase):
         )
 
         # exam
-        self.exam: Exam = Exam.objects.create(
-            subject=self.subject,
-            title="공주예절 시험"
-        )
+        self.exam: Exam = Exam.objects.create(subject=self.subject, title="공주예절 시험")
 
         # cohort
         self.cohort: Cohort = Cohort.objects.create(
             course=self.course,
             number=1,
             max_student=20,
-            start_date = timezone.make_aware(datetime(2025, 1, 1)),
-            end_date = timezone.make_aware(datetime(2025, 2, 1)),
+            start_date=timezone.make_aware(datetime(2025, 1, 1)),
+            end_date=timezone.make_aware(datetime(2025, 2, 1)),
         )
 
     def test_create_valid(self) -> None:
@@ -57,7 +56,6 @@ class AdminDeploymentSerializerTest(TestCase):
         serializer = AdminDeploymentSerializer(data=data)
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
-
     def test_create_invalid_open_in_past(self) -> None:
         # 생성 시 open_at 이 과거면 실패
 
@@ -66,7 +64,7 @@ class AdminDeploymentSerializerTest(TestCase):
             "exam": self.exam.id,
             "duration_time": 60,
             "access_code": "공주실패",
-            "open_at": timezone.now() - timedelta(hours=1), # 과거 = 오류
+            "open_at": timezone.now() - timedelta(hours=1),  # 과거 = 오류
             "close_at": timezone.now() + timedelta(hours=1),
             "status": "activated",
         }
@@ -75,7 +73,6 @@ class AdminDeploymentSerializerTest(TestCase):
         assert not serializer.is_valid()
         assert "non_field_errors" in serializer.errors
 
-
     def test_update_allow_past_open_at(self) -> None:
         # 수정 시 open_at 이 과거여도 허용
         deployment = ExamDeployment.objects.create(
@@ -83,8 +80,8 @@ class AdminDeploymentSerializerTest(TestCase):
             exam=self.exam,
             duration_time=60,
             access_code="공주변경",
-            open_at = timezone.make_aware(datetime(2025, 1, 1, 10, 0)),
-            close_at = timezone.make_aware(datetime(2025, 2, 1, 11, 0)),
+            open_at=timezone.make_aware(datetime(2025, 1, 1, 10, 0)),
+            close_at=timezone.make_aware(datetime(2025, 2, 1, 11, 0)),
             status="activated",
             questions_snapshot={},
         )
@@ -98,7 +95,6 @@ class AdminDeploymentSerializerTest(TestCase):
         )
 
         assert serializer.is_valid(), serializer.errors
-
 
     def test_serializer_invalid_time(self) -> None:
         # open_at >= close_at 일 경우 ValidationError
