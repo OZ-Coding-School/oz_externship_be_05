@@ -7,7 +7,9 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .serializers import QuestionCreateSpecSerializer
+from apps.questions.spec.spec_question_create.serializers import (
+    QuestionCreateSpecSerializer,
+)
 
 
 class QuestionCreateSpecAPIView(APIView):
