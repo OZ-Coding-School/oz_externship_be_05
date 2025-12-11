@@ -10,6 +10,7 @@ class CustomPageNumberPagination(pagination.PageNumberPagination):
     - 기본 페이지 크기: 10
     - 최대 페이지 크기: 100
     """
+
     page_size_query_param = "size"
     page_size = 10
     max_page_size = 100
