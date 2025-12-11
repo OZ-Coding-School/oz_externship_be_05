@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from .models.post_comment import PostComment
-from .models.post_comment_tags import PostCommentTag
+from apps.community.models.post_comment import PostComment
+from apps.community.models.post_comment_tags import PostCommentTag
 
 
 class PostCommentSerializer(serializers.ModelSerializer[PostComment]):
