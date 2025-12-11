@@ -13,9 +13,18 @@ class QuestionCreateAPITests(APITestCase):
         # API URL
         self.url = "/api/v1/qna/questions"
 
+    def create_test_user(self, **kwargs) -> User:
+        default_data = {
+            "phone_number": "010-0000-0000",
+            "gender": "M",
+            "birthday": "2000-01-01",
+        }
+        default_data.update(kwargs)
+        return User.objects.create_user(**default_data)
+
     # 성공 케이스
     def test_question_create_success(self) -> None:
-        student = User.objects.create_user(
+        student = self.create_test_user(
             email="student@test.com",
             password="test1234",
             name="학생A",
@@ -27,7 +36,7 @@ class QuestionCreateAPITests(APITestCase):
 
         payload = {
             "title": "정상 등록 테스트",
-            "content": "내용입니다.",
+            "content": "내용",
             "category": self.category.id,
             "image_urls": ["https://test.com/img.png"],
         }
@@ -40,7 +49,7 @@ class QuestionCreateAPITests(APITestCase):
 
     # 유효성 검사 실패 케이스
     def test_question_create_validation_fail(self) -> None:
-        student = User.objects.create_user(
+        student = self.create_test_user(
             email="student2@test.com",
             password="test1234",
             name="학생B",
@@ -49,7 +58,7 @@ class QuestionCreateAPITests(APITestCase):
         self.client.force_authenticate(user=student)
 
         payload = {
-            "title": "",  # 빈 값 → 유효성 실패
+            "title": "",  # 빈 값
             "content": "",
             "category": None,  # 존재하지 않는 카테고리
         }
@@ -58,9 +67,9 @@ class QuestionCreateAPITests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    # 권할 실패 케이스
+    # 권한 실패 케이스
     def test_question_create_permission_fail(self) -> None:
-        normal_user = User.objects.create_user(
+        normal_user = self.create_test_user(
             email="normal@test.com",
             password="test1234",
             name="일반유저",
@@ -77,3 +86,5 @@ class QuestionCreateAPITests(APITestCase):
         response = self.client.post(self.url, payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
