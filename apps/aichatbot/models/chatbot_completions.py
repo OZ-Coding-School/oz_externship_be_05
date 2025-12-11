@@ -10,7 +10,7 @@ class UserRole(models.TextChoices):
 class ChatbotCompletion(TimeStampedModel):
     session = models.ForeignKey("ChatbotSession", on_delete=models.CASCADE, related_name="messages")
     message = models.TextField()
-    role = models.TextField(choices=UserRole.choices)
+    role = models.CharField(choices=UserRole.choices, max_length=9)
     created_at = TimeStampedModel()
     updated_at = TimeStampedModel()
 
