@@ -23,6 +23,22 @@ def parse_kakao_birthday(kakao_account: dict) -> date | None:
         return None
 
 
+def parse_naver_birthday(naver_account: dict) -> date | None:
+    birthyear = naver_account.get("birthyear")
+    birthday = naver_account.get("birthday")  # MMDD 형태
+
+    if not (birthyear and birthday and len(birthday) == 4):
+        return None
+
+    try:
+        year = int(birthyear)
+        month = int(birthday[:2])
+        day = int(birthday[2:])
+        return date(year, month, day)
+    except ValueError:
+        return None
+
+
 class KakaoOAuthService:
     AUTHORIZE_URL = "https://kauth.kakao.com/oauth/authorize"
     TOKEN_URL = "https://kauth.kakao.com/oauth/token"
@@ -48,6 +64,47 @@ class KakaoOAuthService:
         resp = requests.get(self.USER_INFO_URL, headers=headers)
         resp.raise_for_status()
         return resp.json()
+
+    def get_or_create_user(self, kakao_profile: dict) -> User:
+        kakao_id = str(kakao_profile["id"])
+        kakao_account = kakao_profile.get("kakao_account", {}) or {}
+        profile = kakao_account.get("profile", {}) or {}
+
+        email = kakao_account.get("email")
+        name = profile.get("nickname", "카카오유저")
+        gender = kakao_account.get("gender")
+        birthday_date = parse_kakao_birthday(kakao_account)
+        profile_image_url = (
+            profile.get("profile_image_url")
+            or profile.get("thumbnail_image_url")
+            or None
+        )
+
+        try:
+            social_user = SocialUser.objects.get(
+                provider=SocialProvider.KAKAO,
+                provider_id=kakao_id,
+            )
+            return social_user.user
+        except SocialUser.DoesNotExist:
+            pass
+
+        user = User.objects.create_user(
+            email=email or f"kakao_{kakao_id}@example.com",
+            password=get_random_string(20),
+            name=name,
+            gender="M" if gender == "male" else ("F" if gender == "female" else ""),
+            birthday=birthday_date,
+            profile_image_url=profile_image_url,
+        )
+
+        SocialUser.objects.create(
+            user=user,
+            provider=SocialProvider.KAKAO,
+            provider_id=kakao_id,
+        )
+
+        return user
 
 
 class NaverOAuthService:
@@ -76,80 +133,41 @@ class NaverOAuthService:
         headers = {"Authorization": f"Bearer {access_token}"}
         resp = requests.get(self.USER_INFO_URL, headers=headers)
         resp.raise_for_status()
+        data = resp.json()
+        print("네이버 유저 데이터", data)
+
+
         return resp.json()
 
+    def get_or_create_user(self, naver_profile: dict) -> User:
+        resp = naver_profile.get("response", {}) or {}
 
-def get_or_create_kakao_user(kakao_profile: dict) -> User:
-    kakao_id = str(kakao_profile["id"])
-    kakao_account = kakao_profile.get("kakao_account", {}) or {}
-    profile = kakao_account.get("profile", {}) or {}
+        naver_id = str(resp.get("id"))
+        email = resp.get("email")
+        name = resp.get("name", "네이버유저")
 
-    email = kakao_account.get("email")
-    name = profile.get("nickname", "카카오유저")
-    gender = kakao_account.get("gender")
-    birthday_date = parse_kakao_birthday(kakao_account)
-    profile_image_url = (
-        profile.get("profile_image_url")
-        or profile.get("thumbnail_image_url")
-        or None
-    )
+        try:
+            social_user = SocialUser.objects.get(
+                provider=SocialProvider.NAVER,
+                provider_id=naver_id,
+            )
+            return social_user.user
+        except SocialUser.DoesNotExist:
+            pass
 
-    try:
-        social_user = SocialUser.objects.get(
-            provider=SocialProvider.KAKAO,
-            provider_id=kakao_id,
+        birthday_date = parse_naver_birthday(resp)
+
+        user = User.objects.create_user(
+            email=email or f"naver_{naver_id}@example.com",
+            password=get_random_string(20),
+            name=name,
+            birthday=birthday_date,
         )
-        return social_user.user
-    except SocialUser.DoesNotExist:
-        pass
 
-    user = User.objects.create_user(
-        email=email or f"kakao_{kakao_id}@example.com",
-        password=get_random_string(20),
-        name=name,
-        gender="M" if gender == "male" else ("F" if gender == "female" else ""),
-        birthday=birthday_date,
-        profile_image_url=profile_image_url,
-    )
-
-    SocialUser.objects.create(
-        user=user,
-        provider=SocialProvider.KAKAO,
-        provider_id=kakao_id,
-    )
-
-    return user
-
-
-def get_or_create_naver_user(naver_profile: dict) -> User:
-    resp = naver_profile.get("response", {}) or {}
-    naver_id = str(resp.get("id"))
-    email = resp.get("email")
-    name = resp.get("name", "네이버유저")
-
-    try:
-        social_user = SocialUser.objects.get(
+        SocialUser.objects.create(
+            user=user,
             provider=SocialProvider.NAVER,
             provider_id=naver_id,
         )
-        return social_user.user
-    except SocialUser.DoesNotExist:
-        pass
 
-    # 임시로 넣어용..ㅎㅎ
-    default_birthday = date(2000, 1, 1)
-
-    user = User.objects.create_user(
-        email=email or f"naver_{naver_id}@example.com",
-        password=get_random_string(20),
-        name=name,
-        birthday=default_birthday
-    )
-
-    SocialUser.objects.create(
-        user=user,
-        provider=SocialProvider.NAVER,
-        provider_id=naver_id,
-    )
-
-    return user
+        return user
