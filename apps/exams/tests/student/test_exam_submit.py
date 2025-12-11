@@ -58,16 +58,92 @@ class SimpleExamSubmitTest(TestCase):
             subject=self.subject,
         )
 
-        # 문제 1개 생성
+        # ---------- 공주의 규칙 문제 세트 ----------
+
+        # 1) 단일 선택(SINGLE_CHOICE)
+        self.single_choice_question = ExamQuestion.objects.create(
+            exam=self.exam,
+            question="공주가 아침에 가장 먼저 해야 하는 일은 무엇일까요?",
+            type=QuestionType.SINGLE_CHOICE,
+            options=[
+                "울기",
+                "세수하기",
+                "미소 짓기",
+                "왕자를 찾기",
+            ],
+            answer="3",  # '미소 짓기'
+            point=5,
+        )
+
+        # 2) 다중 선택(MULTIPLE_CHOICE)
+        self.multiple_choice_question = ExamQuestion.objects.create(
+            exam=self.exam,
+            question="공주가 하루 동안 반드시 해야 하는 두 가지 규칙은 무엇인가요? (두 개 고르시오)",
+            type=QuestionType.MULTIPLE_CHOICE,
+            options=[
+                "감사 인사하기",
+                "하루 종일 잠자기",
+                "화내지 않기",
+                "친구에게 칭찬하기",
+            ],
+            answer=["1", "4"],  # 감사 인사하기 + 친구에게 칭찬하기
+            point=10,
+        )
+
+        # 3) OX
+        self.ox_question = ExamQuestion.objects.create(
+            exam=self.exam,
+            question="공주가 배가 고프면 무조건 울어야 한다. (O/X)",
+            type=QuestionType.OX,
+            answer="X",
+            point=3,
+        )
+
+        # 4) 단답형(SHORT_ANSWER) — 기존 self.question 유지
         self.question = ExamQuestion.objects.create(
             exam=self.exam,
-            question="공주의 규칙 1번",
+            question="공주의 규칙 1번은 무엇인가요?",
             type=QuestionType.SHORT_ANSWER,
             answer="울지않기",
             point=5,
         )
 
-        # 시험 배포
+        # 5) 순서 정렬(ORDERING)
+        self.ordering_question = ExamQuestion.objects.create(
+            exam=self.exam,
+            question="공주의 아침 루틴을 순서대로 나열하세요. (A, B, C, D)",
+            type=QuestionType.ORDERING,
+            options=[
+                "A: 침대 정리",
+                "B: 창문 열기",
+                "C: 미소 지으며 인사",
+                "D: 따뜻한 차 마시기",
+            ],
+            answer=["A", "B", "C", "D"],
+            point=7,
+        )
+
+        # 6) 빈칸 채우기(FILL_BLANK)
+        self.fill_blank_question = ExamQuestion.objects.create(
+            exam=self.exam,
+            question='공주의 좌우명을 완성하세요: "_____, 그리고 _____."',
+            type=QuestionType.FILL_BLANK,
+            prompt='공주의 좌우명: "_____, 그리고 _____."',
+            blank_count=2,
+            answer=["용기", "친절"],
+            point=8,
+        )
+
+        # 시험 배포 (questions_snapshot 에도 넣어주기)
+        questions = [
+            self.single_choice_question,
+            self.multiple_choice_question,
+            self.ox_question,
+            self.question,  # 단답형
+            self.ordering_question,
+            self.fill_blank_question,
+        ]
+
         self.deployment = ExamDeployment.objects.create(
             exam=self.exam,
             cohort=self.cohort,
@@ -77,12 +153,13 @@ class SimpleExamSubmitTest(TestCase):
             questions_snapshot={
                 "questions": [
                     {
-                        "question_id": self.question.id,
-                        "question": self.question.question,
-                        "type": self.question.type,
-                        "answer": self.question.answer,
-                        "point": self.question.point,
+                        "question_id": q.id,
+                        "question": q.question,
+                        "type": q.type,
+                        "answer": q.answer,
+                        "point": q.point,
                     }
+                    for q in questions
                 ]
             },
         )
@@ -98,7 +175,11 @@ class SimpleExamSubmitTest(TestCase):
         payload = {
             "started_at": (timezone.now() - timedelta(seconds=10)).isoformat(),
             "cheating_count": 0,
-            "answers": {"questions": [{"question_id": self.question.id, "answer": "울지않기"}]},
+            "answers": {
+                "questions": [
+                    {"question_id": self.question.id, "answer": "울지않기"},
+                ]
+            },
         }
 
         response = self.client.post(self.url, payload, format="json")
@@ -112,7 +193,11 @@ class SimpleExamSubmitTest(TestCase):
         return {
             "started_at": (timezone.now() - timedelta(seconds=10)).isoformat(),
             "cheating_count": 0,
-            "answers": {"questions": [{"question_id": self.question.id, "answer": "울지않기"}]},
+            "answers": {
+                "questions": [
+                    {"question_id": self.question.id, "answer": "울지않기"},
+                ]
+            },
         }
 
     def test_submit_success_once(self) -> None:
@@ -125,7 +210,6 @@ class SimpleExamSubmitTest(TestCase):
         self.assertEqual(submission.correct_answer_count, 1)
 
     def test_submit_fail_third(self) -> None:
-
         payload = self.make_payload()
 
         # 첫 번째 제출 (성공)
