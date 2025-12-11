@@ -101,7 +101,7 @@ class KakaoSocialLoginTests(TestCase):
         service.get_user_info.return_value = {
             "id": "test123",
             "kakao_account": {
-                "profile": {"nickname": "건우의은밀한그것"},
+                "profile": {"nickname": "건우의이름"},
                 "email": "gunwoo@test.com",
                 "gender": "male",
                 "birthday": "0612",
@@ -137,7 +137,7 @@ class KakaoSocialLoginTests(TestCase):
         service.get_user_info.return_value = {
             "id": "test123",
             "kakao_account": {
-                "profile": {"nickname": "건우의은밀한그것"},
+                "profile": {"nickname": "건우의이름"},
                 "email": "gunwoo@test.com",
                 "gender": "male",
                 "birthday": "0612",
@@ -175,7 +175,7 @@ class NaverSocialLoginTests(TestCase):
             "response": {
                 "id": "test1234",
                 "email": "test@test.com",
-                "name": "건우의은밀한네이버계정",
+                "name": "건우의미쿠네이버계정",
                 "birthyear": "1000",
                 "birthday": "0612"
             }
@@ -236,3 +236,4 @@ class NaverSocialLoginTests(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
         self.assertIn("error_detail", resp.data)
         self.assertIn("detail", resp.data["error_detail"])
+        
