@@ -39,7 +39,7 @@ class VerificationService:
     def _token_key(self, identifier: str) -> str:
         return f"{self.namespace}:token:{identifier}"
 
-    def _token_lookup_key(self, token: str) -> str:  # ? í°?¼ë¡œ identifier ì°¾ê¸° (identiferë¥??¤ë¡œ ê°€ì§?
+    def _token_lookup_key(self, token: str) -> str:  # token을 키로 가지고 identifier를 찾기
         return f"{self.namespace}:token_lookup:{token}"
 
     def _cache(self) -> Any:
