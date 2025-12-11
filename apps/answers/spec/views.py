@@ -69,7 +69,7 @@ class AnswerRetrieveUpdateSpecAPIView(APIView):
         request=AnswerSpecSerializer,
         responses=AnswerSpecSerializer,
     )
-    def put(self, request: Request, pk: int) -> Response:
+    def patch(self, request: Request, pk: int) -> Response:
         ser = AnswerSpecSerializer(data=request.data, partial=True)
         ser.is_valid(raise_exception=True)
 
