@@ -4,7 +4,7 @@ import requests
 from django.conf import settings
 from django.utils.crypto import get_random_string
 
-from apps.user.models import User, SocialProvider, SocialUser
+from apps.user.models import SocialProvider, SocialUser, User
 
 
 def parse_kakao_birthday(kakao_account: dict) -> date | None:
@@ -74,11 +74,7 @@ class KakaoOAuthService:
         name = profile.get("nickname", "카카오유저")
         gender = kakao_account.get("gender")
         birthday_date = parse_kakao_birthday(kakao_account)
-        profile_image_url = (
-            profile.get("profile_image_url")
-            or profile.get("thumbnail_image_url")
-            or None
-        )
+        profile_image_url = profile.get("profile_image_url") or profile.get("thumbnail_image_url") or None
 
         try:
             social_user = SocialUser.objects.get(
@@ -135,7 +131,6 @@ class NaverOAuthService:
         resp.raise_for_status()
         data = resp.json()
         print("네이버 유저 데이터", data)
-
 
         return resp.json()
 

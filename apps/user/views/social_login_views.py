@@ -1,17 +1,17 @@
-from django.shortcuts import redirect
-from django.http import HttpResponseBadRequest, HttpResponseRedirect
-from rest_framework.permissions import AllowAny
-from rest_framework.views import APIView
-from rest_framework.request import Request
-from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
-from rest_framework.response import Response
+from django.http import HttpResponseBadRequest, HttpResponseRedirect
+from django.shortcuts import redirect
 from rest_framework import status
 from rest_framework.exceptions import APIException
+from rest_framework.permissions import AllowAny
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.user.serializers.social_profile import (
-    NaverProfileSerializer,
     KakaoProfileSerializer,
+    NaverProfileSerializer,
 )
 from apps.user.utils.social_login import (
     KakaoOAuthService,
@@ -80,7 +80,7 @@ class KakaoCallbackAPIView(APIView):
         user = service.get_or_create_user(profile)
 
         if not user.is_active:
-            raise APIException(
+            return Response(
                 {
                     "error_detail": {
                         "detail": "탈퇴 신청한 계정입니다.",
@@ -121,7 +121,7 @@ class NaverCallbackAPIView(APIView):
         user = service.get_or_create_user(serializer.validated_data)
 
         if not user.is_active:
-            raise APIException(
+            return Response(
                 {
                     "error_detail": {
                         "detail": "탈퇴 신청한 계정입니다.",
