@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
+
 from apps.core.models import TimeStampedModel
+
 
 class Answer(TimeStampedModel):
     author = models.ForeignKey(
@@ -19,7 +21,7 @@ class Answer(TimeStampedModel):
 
     content = models.TextField(help_text="답변 내용 본문")
     is_adopted = models.BooleanField(default=False, help_text="채택 여부")
-    
+
     class Meta:
         db_table = "answers"
         verbose_name = "답변"
