@@ -5,15 +5,13 @@ import secrets
 from typing import Any, Optional
 
 from django.core.cache import caches
+from django.conf import settings
 
-# [ verification settings ]
-DEFAULT_TTL_SECONDS = 300
-TOKEN_GENERATE_MAX_ATTEMPTS = 5
-CODE_LENGTH = 6
-TOKEN_BYTES = 32
-CODE_CHARS = "0123456789"
-# config/settings/base에 분리 필요시 pr 반려해주시길 바랍니다.
-
+CODE_LENGTH = settings.VERIFICATION_CODE_LENGTH
+TOKEN_BYTES = settings.VERIFICATION_TOKEN_BYTES
+CODE_CHARS = settings.VERIFICATION_CODE_CHARS
+DEFAULT_TTL_SECONDS = settings.VERIFICATION_DEFAULT_TTL_SECONDS
+TOKEN_GENERATE_MAX_ATTEMPTS = settings.VERIFICATION_TOKEN_GENERATE_MAX_ATTEMPTS
 
 def _normalize_identifier(identifier: str) -> str:
     return identifier.strip().lower()
