@@ -9,7 +9,6 @@ class NaverProfileSerializer(serializers.Serializer):
     birthday = serializers.CharField(required=True)
 
 
-
 class KakaoProfileSerializer(serializers.Serializer):
     id = serializers.CharField(required=True)
     kakao_account = serializers.DictField(required=True)
@@ -19,9 +18,7 @@ class KakaoProfileSerializer(serializers.Serializer):
 
         profile = kakao_account.get("profile") or {}
         if "nickname" not in profile:
-            raise serializers.ValidationError(
-                {"nickname": ["이 필드는 필수 항목입니다."]}
-            )
+            raise serializers.ValidationError({"nickname": ["이 필드는 필수 항목입니다."]})
 
         # birthday는 지금은 필수 x
         # if "birthday" not in kakao_account:
