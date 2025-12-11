@@ -1,6 +1,5 @@
 from rest_framework import serializers
-
-from apps.exams.models import Exam, ExamDeployment, ExamQuestion, ExamSubmission
+from apps.exams.models import Exam
 
 
 class ExamSerializer(serializers.ModelSerializer):
@@ -45,9 +44,9 @@ class ExamListSerializer(serializers.ModelSerializer):
             "id",
             "exam_title",
             "subject_id",
-            "subject_name",     # subject title
-            "question_count",   # get_question_count
-            "submit_count",     # get_submit_count
+            "subject_name",  # subject title
+            "question_count",  # get_question_count
+            "submit_count",  # get_submit_count
             "created_at",
             "updated_at",
         ]
