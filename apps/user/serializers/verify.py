@@ -18,11 +18,14 @@ class PhoneCodeSerializer(Serializer,BaseMixin):
     code = BaseMixin.get_verify_code()
 
 class TokensSerializer(Serializer,BaseMixin):
-    token = BaseMixin.get_verify_token()
+    verify_token = BaseMixin.get_verify_token()
 
 class AllTokensSerializer(Serializer,BaseMixin):
     sms_token = BaseMixin.get_verify_token()
     email_token = BaseMixin.get_verify_token()
 
     def validate_sms_token():
-        BaseMixin
+        BaseMixin.validate_verify_token()
+    
+    def validate_email_token():
+        BaseMixin.validate_verify_token
