@@ -19,8 +19,8 @@ class Cohort(TimeStampedModel):
     max_student = models.SmallIntegerField(
         validators=[MinValueValidator(1)],
     )
-    end_date = models.DateTimeField()
-    start_date = models.DateTimeField()
+    end_date = models.DateField()
+    start_date = models.DateField()
     status = models.CharField(
         choices=CohortStatusChoices.choices,
         default=CohortStatusChoices.PENDING,
