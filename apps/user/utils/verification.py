@@ -6,9 +6,13 @@ from typing import Any, Optional
 
 from django_redis import get_redis_connection
 
-DEFAULT_TTL_SECONDS = 600
+# [ verification settings ]
+DEFAULT_TTL_SECONDS = 300
+TOKEN_GENERATE_MAX_ATTEMPTS = 5
 CODE_LENGTH = 6
 TOKEN_BYTES = 32
+CODE_CHARS = "0123456789"
+# config/settings/base에 분리 필요시 pr 반려해주시길 바랍니다.
 
 
 def _normalize_identifier(identifier: str) -> str:
@@ -35,9 +39,8 @@ class VerificationService:
     def _token_key(self, identifier: str) -> str:
         return f"{self.namespace}:token:{identifier}"
 
-    def _token_lookup_key(self, token: str) -> str: # 토큰으로 identifier 찾기
+    def _token_lookup_key(self, token: str) -> str:  # 토큰으로 identifier 찾기 (identifer를 키로 가짐)
         return f"{self.namespace}:token_lookup:{token}"
-    
 
     def _conn(self) -> Any:
         return get_redis_connection(self.redis_alias)
@@ -45,7 +48,7 @@ class VerificationService:
     # 생성
     def generate_code(self, identifier: str, ttl_seconds: int = DEFAULT_TTL_SECONDS) -> str:
         normalized = _normalize_identifier(identifier)
-        digits = "0123456789"
+        digits = CODE_CHARS
         code = "".join(secrets.choice(digits) for _ in range(self.code_length))
         conn = self._conn()
         conn.set(self._code_key(normalized), code, ex=ttl_seconds)
@@ -60,7 +63,7 @@ class VerificationService:
         if previous:
             conn.delete(self._token_lookup_key(previous.decode()))
 
-        max_attempts = 5
+        max_attempts = TOKEN_GENERATE_MAX_ATTEMPTS
         for _ in range(max_attempts):
             raw = secrets.token_bytes(self.token_bytes)
             token = base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
@@ -128,8 +131,6 @@ _default_service = VerificationService()
 def generate_code(identifier: str, ttl_seconds: int = DEFAULT_TTL_SECONDS) -> str:
     return _default_service.generate_code(identifier, ttl_seconds)
 
-def generate_token(identifier: str, ttl_seconds: int = DEFAULT_TTL_SECONDS) -> str:
-    return _default_service.generate_token(identifier, ttl_seconds)
 
 def generate_token(identifier: str, ttl_seconds: int = DEFAULT_TTL_SECONDS) -> str:
     return _default_service.generate_token(identifier, ttl_seconds)
