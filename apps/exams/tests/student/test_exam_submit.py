@@ -60,9 +60,9 @@ class SimpleExamSubmitTest(TestCase):
         # 문제 1개 생성
         self.question = ExamQuestion.objects.create(
             exam=self.exam,
-            question="파이썬의 철자?",
+            question="공주의 규칙 1번",
             type=QuestionType.SHORT_ANSWER,
-            answer="파이썬",
+            answer="울지않기",
             point=5,
         )
 
