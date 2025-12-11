@@ -7,8 +7,8 @@ class UserRole(models.TextChoices):
     ASSISTANT = "assistant", "ASSISTANT"
 
 
-class ChatbotCompletion(models.Model):
-    session = models.ForeignKey("ChatbotSession", on_delete=models.CASCADE)
+class ChatbotCompletion(TimeStampedModel):
+    session = models.ForeignKey("ChatbotSession", on_delete=models.CASCADE, related_name="messages")
     message = models.TextField()
     role = models.TextField(choices=UserRole.choices)
     created_at = TimeStampedModel()
