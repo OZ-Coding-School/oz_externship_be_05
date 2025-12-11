@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.questions.models import Question, QuestionImage
+from apps.qna.models import Question, QuestionImage
 
 
 class QuestionImageSpecSerializer(serializers.ModelSerializer[QuestionImage]):

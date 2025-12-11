@@ -1,3 +1,5 @@
+from typing import Optional
+
 from django.db import models
 
 from apps.qna.models.question.question_base import Question
@@ -5,6 +7,7 @@ from apps.qna.models.question.question_base import Question
 
 class QuestionAIAnswer(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="ai_answers")
+    question_id: Optional[int]
 
     output = models.TextField()
 

@@ -1,8 +1,8 @@
 from .question import (
     Question,
+    QuestionAIAnswer,
     QuestionCategory,
     QuestionImage,
-    QuestionAIAnswer,
 )
 
 __all__ = [

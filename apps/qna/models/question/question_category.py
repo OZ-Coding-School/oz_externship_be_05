@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class QuestionCategory(models.Model):
     parent = models.ForeignKey("self", null=True, blank=True, on_delete=models.SET_NULL, related_name="children")
     name = models.CharField(max_length=15)
