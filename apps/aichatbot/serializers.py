@@ -37,8 +37,8 @@ class SessionSerializer(serializers.ModelSerializer[ChatbotSession]):
         read_only_fields = fields
 
 
-# 세션 생성 요청(question_id 받기), 지금은 Serializer로 하겠음 필요하면 ModelSerializer로 수정
-class SessionCreateSerializer(serializers.Serializer[ChatbotSession]):
+# 세션 생성 요청(question_id 받기)
+class SessionCreateSerializer(serializers.ModelSerializer[ChatbotSession]):
     question = serializers.IntegerField(help_text="Question ID(FK)")
     # spec API에서만 이렇게
     title = serializers.CharField(required=False, allow_blank=True, max_length=30)
@@ -61,8 +61,7 @@ class CompletionSerializer(serializers.ModelSerializer[ChatbotCompletion]):
 
 
 # completion 생성 (요청 - Request)
-# 동일하게, 지금은 serializer이지만 ModelSerializer가 될수도
-class CompletionCreateSerializer(serializers.Serializer[ChatbotCompletion]):
+class CompletionCreateSerializer(serializers.ModelSerializer[ChatbotCompletion]):
     message = serializers.CharField(required=False, allow_blank=True)
     # class Meta:
     #     model = ChatbotCompletion
