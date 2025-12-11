@@ -5,8 +5,8 @@ from typing import Any, Dict
 from django.utils import timezone
 from rest_framework import serializers
 
-from apps.exams.models.exam_submission import ExamSubmission
 from apps.exams.models.exam_deployment import ExamDeployment
+from apps.exams.models.exam_submission import ExamSubmission
 from apps.exams.services.student.exam_submit_service import create_exam_submission
 
 
@@ -82,8 +82,6 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
             # is_time_over=validated_data["is_time_over"],
         )
         return submission
-
-
 
     def to_representation(self, instance: ExamSubmission) -> Dict[str, Any]:
         """

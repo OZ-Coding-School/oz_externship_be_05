@@ -6,8 +6,9 @@ from typing import Any, Dict, Tuple
 from django.db import transaction
 
 from apps.exams.models.exam_deployment import ExamDeployment
-from apps.exams.models.exam_submission import ExamSubmission
 from apps.exams.models.exam_question import QuestionType
+from apps.exams.models.exam_submission import ExamSubmission
+
 
 def normalize_answers(
     deployment: ExamDeployment,
@@ -18,9 +19,7 @@ def normalize_answers(
     - 응시 대상 deployment에 포함된 모든 문항에 대해 키를 채워준다.
     """
     answers_by_qid = {
-        item["question_id"]: item.get("answer")
-        for item in raw_answers.get("questions", [])
-        if "question_id" in item
+        item["question_id"]: item.get("answer") for item in raw_answers.get("questions", []) if "question_id" in item
     }
 
     normalized: Dict[int, Any] = {}
@@ -31,6 +30,7 @@ def normalize_answers(
         normalized[question.id] = answers_by_qid.get(question.id)
 
     return normalized
+
 
 def evaluate_submission(
     deployment: ExamDeployment,
@@ -89,7 +89,6 @@ def evaluate_submission(
     return total_score, correct_count
 
 
-
 @transaction.atomic
 def create_exam_submission(
     *,
@@ -107,12 +106,7 @@ def create_exam_submission(
         deployment=deployment,
         started_at=started_at,
         cheating_count=cheating_count,
-        answers={
-            "questions": [
-                {"question_id": qid, "answer": answer}
-                for qid, answer in normalized_answers.items()
-            ]
-        },
+        answers={"questions": [{"question_id": qid, "answer": answer} for qid, answer in normalized_answers.items()]},
         score=score,
         correct_answer_count=correct_answer_count,
     )

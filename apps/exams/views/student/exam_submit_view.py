@@ -8,7 +8,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.exams.models.exam_deployment import ExamDeployment
-from apps.exams.serializers.student.exam_submit_serializer import ExamSubmissionCreateSerializer
+from apps.exams.serializers.student.exam_submit_serializer import (
+    ExamSubmissionCreateSerializer,
+)
 
 
 @extend_schema(
