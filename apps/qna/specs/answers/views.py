@@ -6,7 +6,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.answers.spec.serializers import AnswerSpecSerializer
+from apps.qna.specs.answers.serializers import AnswerSpecSerializer
 
 
 class AnswerListCreateSpecAPIView(APIView):
