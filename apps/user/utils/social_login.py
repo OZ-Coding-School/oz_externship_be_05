@@ -26,7 +26,7 @@ def parse_kakao_birthday(kakao_account: dict) -> date | None:
 
 def parse_naver_birthday(naver_account: dict) -> date | None:
     birthyear = naver_account.get("birthyear")
-    birthday = naver_account.get("birthday") 
+    birthday = naver_account.get("birthday")
 
     if not (birthyear and birthday):
         return None
@@ -82,10 +82,14 @@ class KakaoOAuthService:
         profile_image_url = profile.get("profile_image_url") or profile.get("thumbnail_image_url") or None
 
         # 카카오 유저가 존재하면 유저 바로 줘버려
-        social_user = SocialUser.objects.filter(
-            provider=SocialProvider.KAKAO,
-            provider_id=kakao_id,
-        ).select_related("user").first()
+        social_user = (
+            SocialUser.objects.filter(
+                provider=SocialProvider.KAKAO,
+                provider_id=kakao_id,
+            )
+            .select_related("user")
+            .first()
+        )
         if social_user:
             return social_user.user
 
@@ -157,7 +161,7 @@ class NaverOAuthService:
 
         return profile
 
-    #유저 생성
+    # 유저 생성
     def get_or_create_user(self, naver_profile: dict) -> User:
 
         naver_id = str(naver_profile.get("id"))
@@ -169,10 +173,14 @@ class NaverOAuthService:
         birthday_date = parse_naver_birthday(naver_profile)
 
         # 네이버 유저가 존재하면 유저 바로 줘버려
-        social_user = SocialUser.objects.filter(
-            provider=SocialProvider.NAVER,
-            provider_id=naver_id,
-        ).select_related("user").first()
+        social_user = (
+            SocialUser.objects.filter(
+                provider=SocialProvider.NAVER,
+                provider_id=naver_id,
+            )
+            .select_related("user")
+            .first()
+        )
 
         if social_user:
             return social_user.user
