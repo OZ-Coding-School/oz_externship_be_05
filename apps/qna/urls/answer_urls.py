@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.qna.specs.answers.views import (
+from apps.qna.spec.answer.views import (
     AnswerListCreateSpecAPIView,
     AnswerRetrieveUpdateSpecAPIView,
 )
