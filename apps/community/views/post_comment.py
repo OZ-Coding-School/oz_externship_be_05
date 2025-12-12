@@ -69,7 +69,6 @@ class PostCommentUpdateDestroyAPIView(APIView):
 
     def put(self, request, *args, **kwargs):
         comment_id = request.data.get('comment_id')
-        post_id = request.data.get("post_id")
         author_id = self.request.request.data("user")
 
         if not comment_id:
@@ -119,4 +118,32 @@ class PostCommentUpdateDestroyAPIView(APIView):
 
 
     def delete(self, request, *args, **kwargs):
-        pass
+        author_id = self.request.request.data("user")
+        comment_id = request.data.get('comment_id')
+
+        if not author_id:
+            return Response(
+                {"error_detail": "자격 인증 데이터가 제공되지 않았습니다."},
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        try:
+            comment = PostComment.objects.get(id=comment_id)
+        except PostComment.DoesNotExist:
+            return Response(
+                { "error_detail": "해당 댓글을 찾을 수 없습니다."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        if comment.author != request.user:
+            return Response(
+                {"error_detail": "권한이 없습니다."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        comment.delete()
+
+        return Response(
+            {"detail": "댓글이 삭제되었습니다."},
+            status=status.HTTP_200_OK
+        )
