@@ -2,7 +2,8 @@ from rest_framework import serializers
 
 from apps.community.models.post_comment_tags import PostCommentTag
 
-#apps/community/serializers/post_comment_tags.py
+
+# apps/community/serializers/post_comment_tags.py
 class PostCommentTagsSerializer(serializers.ModelSerializer[PostCommentTag]):
     class Meta:
         model = PostCommentTag
