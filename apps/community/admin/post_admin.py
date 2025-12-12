@@ -1,16 +1,13 @@
 from typing import TYPE_CHECKING
 
 from django.contrib import admin
-
 from apps.community.models.post import Post
 
 if TYPE_CHECKING:
     from django.contrib.admin import ModelAdmin as _ModelAdmin
-
     BaseAdmin = _ModelAdmin[Post]
 else:
     from django.contrib.admin import ModelAdmin as BaseAdmin
-
 
 @admin.register(Post)
 class PostAdmin(BaseAdmin):
