@@ -1,6 +1,7 @@
 from django.db import models
 from apps.core.models import TimeStampedModel
 
+
 # enum용 클래스 - 사용모델
 class ChatModel(models.TextChoices):
     GEMINI = "gemini", "GEMINI 2.7"
@@ -14,7 +15,7 @@ class ChatbotSession(TimeStampedModel):
     using_model = models.CharField(choices=ChatModel.choices, max_length=16)
 
     class Meta:
-        db_table = "chatbot_session"
+        db_table = "chatbot_sessions"
         ordering = ("-created_at", "-id")
         # indexes = [
         #     models.Index(fields=["user"], name="idx"),
