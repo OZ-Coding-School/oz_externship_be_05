@@ -1,34 +1,36 @@
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework import permissions, status
+from rest_framework.response import Response
+from rest_framework import serializers
+from apps.community.models import PostComment
+from apps.community.serializers import PostCommentSerializer,PostCommentTagsSerializer
 
 
+#apps/community/views.py
 class PostCommentListCreateAPIView(APIView):
+    serializer_class = PostCommentSerializer
+    permission_classes = [IsAuthenticated]
 
-    def get_post_id(self, request):
-        return request.query_params.get("post_id")
+    def get(self, request, *args, **kwargs):
+        post_id = request.query_params.get("post_id")
+        qs = PostComment.objects.filter(id=post_id).order_by("-created_at")
+        return qs
 
-    def get(self,request, *args, **kwargs):
-        post_id = self.get_post_id(request)
+
+
+    def post(self, request, *args, **kwargs):
         pass
 
-    def post(self,request, *args, **kwargs):
-        post_id = self.get_post_id(request)
-        pass
 
 class PostCommentUpdateDestroyAPIView(APIView):
+    serializer_class = PostCommentSerializer
+    permission_classes = [IsAuthenticated]
 
-    def get_post_id(self, request):
-        return request.query_params.get("post_id")
+    def put(self, request, *args, **kwargs):
+        post_id = request.query_params.get("post_id")
+        comment_id = request.query_params.get("comment_id")
+        return post_id, comment_id
 
-    def get_comment_id(self, request):
-        return request.query_params.get("comment_id")
-
-    def put(self,request, *args, **kwargs):
-        post_id = self.get_post_id(request)
-        comment_id = self.get_comment_id(request)
+    def delete(self, request, *args, **kwargs):
         pass
-
-    def delete(self,request, *args, **kwargs):
-        post_id = self.get_post_id(request)
-        comment_id = self.get_comment_id(request)
-        pass
-
