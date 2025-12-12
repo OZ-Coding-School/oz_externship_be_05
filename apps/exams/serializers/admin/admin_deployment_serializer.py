@@ -22,7 +22,7 @@ class AdminDeploymentSerializer(serializers.ModelSerializer[ExamDeployment]):
             "close_at",
             "status",
         ]
-        read_only_fields = ("id",)
+        read_only_fields = ("id", "access_code")
 
     # 시간 검증
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
@@ -40,5 +40,13 @@ class AdminDeploymentSerializer(serializers.ModelSerializer[ExamDeployment]):
         # create 일 경우
         if instance is None and open_at is not None:
             DeploymentValidator.validate_open(open_at)
+
+        # exam - cohort 관계 검증
+        exam = attrs.get("exam")
+        cohort = attrs.get("cohort")
+        if exam and cohort and exam.subject.course_id != cohort.course_id:
+            raise serializers.ValidationError(
+                {"cohort": "시험(exam)과 기수(cohort)의 과정(course)이 일치하지 않습니다."}
+            )
 
         return attrs
