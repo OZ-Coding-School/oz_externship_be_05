@@ -1,10 +1,11 @@
 from django.urls import path
 
-from apps.aichatbot.models.chatbot_sessions import ChatbotSession
-from apps.aichatbot.views import SessionDetailView, SessionGenerator, SessionListView
+from apps.aichatbot.views.session_views import (
+    SessionCreateListAPIView,
+    SessionDeleteView,
+)
 
 urlpatterns = [
-    path("sessions", SessionGenerator.as_view(), name="spec_session_generator"),
-    path("sessions/list", SessionListView.as_view(), name="spec_ChatbotSession"),
-    path("sessions/<int:session_id>", SessionDetailView.as_view(), name="spec_ChatbotSessionDetail"),
+    path("sessions", SessionCreateListAPIView.as_view(), name="spec-session-create-list"),
+    path("sessions/<int:session_id>", SessionDeleteView.as_view(), name="spec-session-delete"),
 ]

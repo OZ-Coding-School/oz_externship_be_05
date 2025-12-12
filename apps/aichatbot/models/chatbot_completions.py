@@ -1,5 +1,7 @@
 from django.db import models
+
 from apps.core.models import TimeStampedModel
+
 
 # ENUM용 클래스 - 유저
 class UserRole(models.TextChoices):
