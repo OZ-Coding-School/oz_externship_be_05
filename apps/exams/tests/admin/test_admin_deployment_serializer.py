@@ -12,29 +12,37 @@ from apps.exams.serializers.admin.admin_deployment_serializer import (
 
 
 class AdminDeploymentSerializerTest(TestCase):
+    course: Course
+    subject: Subject
+    exam: Exam
+    cohort: Cohort
 
-    def setUp(self) -> None:
+    @classmethod
+    def setUpTestData(cls) -> None:
         # course
-        self.course: Course = Course.objects.create(
+        cls.course = Course.objects.create(
             name="공주의 규칙",
             tag="PR",
             description="완소 퍼펙트 프린세스를 위한 과정",
         )
 
         # subject
-        self.subject: Subject = Subject.objects.create(
+        cls.subject = Subject.objects.create(
             title="공주를 위한 예절 a to z",
-            course=self.course,
+            course=cls.course,
             number_of_days=1,
             number_of_hours=1,
         )
 
         # exam
-        self.exam: Exam = Exam.objects.create(subject=self.subject, title="공주예절 시험")
+        cls.exam = Exam.objects.create(
+            subject=cls.subject,
+            title="공주예절 시험",
+        )
 
         # cohort
-        self.cohort: Cohort = Cohort.objects.create(
-            course=self.course,
+        cls.cohort = Cohort.objects.create(
+            course=cls.course,
             number=1,
             max_student=20,
             start_date=timezone.make_aware(datetime(2025, 1, 1)),
@@ -47,7 +55,6 @@ class AdminDeploymentSerializerTest(TestCase):
             "cohort": self.cohort.id,
             "exam": self.exam.id,
             "duration_time": 60,
-            "access_code": "공주등장",
             "open_at": timezone.now() + timedelta(hours=1),
             "close_at": timezone.now() + timedelta(hours=2),
             "status": "activated",
@@ -63,7 +70,6 @@ class AdminDeploymentSerializerTest(TestCase):
             "cohort": self.cohort.id,
             "exam": self.exam.id,
             "duration_time": 60,
-            "access_code": "공주실패",
             "open_at": timezone.now() - timedelta(hours=1),  # 과거 = 오류
             "close_at": timezone.now() + timedelta(hours=1),
             "status": "activated",
@@ -87,15 +93,13 @@ class AdminDeploymentSerializerTest(TestCase):
             questions_snapshot={},
         )
 
-        data: Dict[str, Any] = {"status": "activated"}
-
         serializer = AdminDeploymentSerializer(
             instance=deployment,
-            data=data,
+            data={},
             partial=True,
         )
 
-        assert serializer.is_valid(), serializer.errors
+        self.assertTrue(serializer.is_valid(), serializer.errors)
 
     def test_serializer_invalid_time(self) -> None:
         # open_at >= close_at 일 경우 ValidationError
@@ -104,7 +108,6 @@ class AdminDeploymentSerializerTest(TestCase):
             "cohort": self.cohort.id,
             "exam": self.exam.id,
             "duration_time": 60,
-            "access_code": "WHERE_IS_PRINCE",
             "open_at": timezone.now() + timedelta(hours=2),
             "close_at": timezone.now() + timedelta(hours=1),
             "status": "activated",
@@ -112,5 +115,5 @@ class AdminDeploymentSerializerTest(TestCase):
 
         serializer = AdminDeploymentSerializer(data=data)
 
-        assert not serializer.is_valid()
-        assert serializer.errors
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("open_at", serializer.errors)
