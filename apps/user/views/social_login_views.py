@@ -15,8 +15,7 @@ from apps.user.serializers.social_profile import (
 )
 from apps.user.utils.social_login import (
     KakaoOAuthService,
-    NaverOAuthService,
-)
+    NaverOAuthService,)
 
 
 class KakaoLoginStartAPIView(APIView):
@@ -115,7 +114,7 @@ class NaverCallbackAPIView(APIView):
         access_token: str = service.get_access_token(code, state)
         profile: dict = service.get_user_info(access_token)
 
-        serializer = NaverProfileSerializer(data=profile.get("response", {}))
+        serializer = NaverProfileSerializer(data=profile)
         serializer.is_valid(raise_exception=True)
 
         user = service.get_or_create_user(serializer.validated_data)
