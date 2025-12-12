@@ -108,3 +108,64 @@ class StudentEnrollmentRequest(models.Model):
 
     class Meta:
         db_table = "student_enrollment_requests"
+
+
+class CohortStudent(models.Model):
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "cohort_students"
+
+
+class TrainingAssistant(models.Model):
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "training_assistants"
+
+
+class OperationManager(models.Model):
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "operation_managers"
+
+
+class LearningCoach(models.Model):
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "learning_coachs"
+
+
+class WithdrawalReason(models.TextChoices):
+    GRADUATION = "GRADUATION", "졸업 및 수료"
+    TRANSFER = "TRANSFER", "편입 및 전학"
+    NO_LONGER_NEEDED = "NO_LONGER_NEEDED", "더 이상 필요하지 않음"
+    SERVICE_DISSATISFACTION = "SERVICE_DISSATISFACTION", "서비스 불만족"
+    PRIVACY_CONCERN = "PRIVACY_CONCERN", "개인정보 보호 우려"
+    OTHER = "OTHER", "기타"
+
+
+class Withdrawal(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    reason = models.CharField(choices=WithdrawalReason.choices)
+    reason_detail = models.TextField()
+    due_date = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "withdrawals"
