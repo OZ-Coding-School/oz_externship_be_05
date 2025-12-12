@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib import admin
 from django.urls import URLPattern, URLResolver, include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -10,6 +11,7 @@ from drf_spectacular.views import (
 urlpatterns: list[URLPattern | URLResolver] = [
     path("api/v1/qna/", include("apps.qna.urls.question_urls")),
     path("api/v1/posts/", include("apps.community.urls")),
+    path("admin/", admin.site.urls),
 ]
 
 if settings.DEBUG:
