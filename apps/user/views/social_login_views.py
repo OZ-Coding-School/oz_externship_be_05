@@ -1,4 +1,5 @@
-from typing import Any
+from typing import Any, Literal, cast
+from urllib.parse import urlencode
 
 from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
@@ -19,6 +20,37 @@ from apps.user.utils.social_login import (
     KakaoOAuthService,
     NaverOAuthService,
 )
+
+
+def frontend_redirect(*, provider: str, error: str | None = None) -> HttpResponseRedirect:
+    base = getattr(settings, "FRONTEND_SOCIAL_REDIRECT_URL", "")
+    params = {"provider": provider}
+    if error:
+        params["error"] = error
+    return redirect(f"{base}?{urlencode(params)}")
+
+
+def auth_cookies(resp: HttpResponseRedirect, *, access: str, refresh: str) -> None:
+    secure = getattr(settings, "SESSION_COOKIE_SECURE", False)
+    samesite = cast(Literal["Lax", "Strict", "None", False] | None, getattr(settings, "SESSION_COOKIE_SAMESITE", "Lax"))
+
+    resp.set_cookie(
+        "access",
+        access,
+        httponly=False,
+        secure=secure,
+        samesite=samesite,
+        path="/",
+    )
+
+    resp.set_cookie(
+        "refresh",
+        refresh,
+        httponly=True,
+        secure=secure,
+        samesite=samesite,
+        path="/",
+    )
 
 
 class KakaoLoginStartAPIView(APIView):
@@ -67,14 +99,14 @@ class NaverLoginStartAPIView(APIView):
 class KakaoCallbackAPIView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request: Request) -> Response | HttpResponseBadRequest:
-        code: str | None = request.query_params.get("code")
+    def get(self, request: Request) -> HttpResponseRedirect:
+        code = request.query_params.get("code")
         if not code:
-            return HttpResponseBadRequest("code is required")
+            return frontend_redirect(provider="kakao", error="code_required")
 
         service = KakaoOAuthService()
-        access_token: str = service.get_access_token(code)
-        profile: dict[str, Any] = service.get_user_info(access_token)
+        access_token = service.get_access_token(code)
+        profile = service.get_user_info(access_token)
 
         serializer = KakaoProfileSerializer(data=profile)
         serializer.is_valid(raise_exception=True)
@@ -82,40 +114,28 @@ class KakaoCallbackAPIView(APIView):
         user = service.get_or_create_user(profile)
 
         if not user.is_active:
-            return Response(
-                {
-                    "error_detail": {
-                        "detail": "탈퇴 신청한 계정입니다.",
-                        "expire_at": getattr(user, "expire_at", None),
-                    }
-                },
-                status.HTTP_403_FORBIDDEN,
-            )
+            return frontend_redirect(provider="kakao", error="inactive")
 
         refresh = RefreshToken.for_user(user)
 
-        return Response(
-            {"access": str(refresh.access_token), "refresh": str(refresh)},
-            status=status.HTTP_200_OK,
-        )
+        resp = frontend_redirect(provider="kakao")
+        auth_cookies(resp, access=str(refresh.access_token), refresh=str(refresh))
+        return resp
 
 
 class NaverCallbackAPIView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request: Request) -> Response:
-        code: str | None = request.query_params.get("code")
-        state: str | None = request.query_params.get("state")
+    def get(self, request: Request) -> HttpResponseRedirect:
+        code = request.query_params.get("code")
+        state = request.query_params.get("state")
 
         if not code or not state:
-            return Response(
-                {"error_detail": {"code": ["code and state are required"]}},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return frontend_redirect(provider="naver", error="code_state_required")
 
         service = NaverOAuthService()
-        access_token: str = service.get_access_token(code, state)
-        profile: dict[str, Any] = service.get_user_info(access_token)
+        access_token = service.get_access_token(code, state)
+        profile = service.get_user_info(access_token)
 
         serializer = NaverProfileSerializer(data=profile)
         serializer.is_valid(raise_exception=True)
@@ -123,19 +143,10 @@ class NaverCallbackAPIView(APIView):
         user = service.get_or_create_user(serializer.validated_data)
 
         if not user.is_active:
-            return Response(
-                {
-                    "error_detail": {
-                        "detail": "탈퇴 신청한 계정입니다.",
-                        "expire_at": getattr(user, "expire_at", None),
-                    }
-                },
-                status.HTTP_403_FORBIDDEN,
-            )
+            return frontend_redirect(provider="naver", error="inactive")
 
         refresh = RefreshToken.for_user(user)
 
-        return Response(
-            {"access": str(refresh.access_token), "refresh": str(refresh)},
-            status=status.HTTP_200_OK,
-        )
+        resp = frontend_redirect(provider="naver")
+        auth_cookies(resp, access=str(refresh.access_token), refresh=str(refresh))
+        return resp
