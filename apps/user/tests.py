@@ -119,16 +119,21 @@ class KakaoSocialLoginTests(TestCase):
         service.get_or_create_user.return_value = user
 
         url = reverse("kakao-callback")
-        resp: Any = self.client.get(url, {"code": "abcd"})
+        resp = self.client.get(url, {"code": "abcd"}, follow=False)
 
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertIn("access", resp.data)
-        self.assertIn("refresh", resp.data)
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("provider=kakao", resp["Location"])
+
+        self.assertIn("access", resp.cookies)
+        self.assertIn("refresh", resp.cookies)
 
     def test_kakao_login_requires_code(self) -> None:
         url = reverse("kakao-callback")
-        resp: Any = self.client.get(url)
-        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        resp = self.client.get(url, follow=False)
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("provider=kakao", resp["Location"])
+        self.assertIn("error=code_required", resp["Location"])
 
     @patch("apps.user.views.social_login_views.KakaoOAuthService")
     def test_kakao_login_inactive_user(self, service_mock: Any) -> None:
@@ -159,11 +164,11 @@ class KakaoSocialLoginTests(TestCase):
         service.get_or_create_user.return_value = user
 
         url = reverse("kakao-callback")
-        resp: Any = self.client.get(url, {"code": "zzz"})
+        resp = self.client.get(url, {"code": "zzz"}, follow=False)
 
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn("error_detail", resp.data)
-        self.assertIn("detail", resp.data["error_detail"])
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("provider=kakao", resp["Location"])
+        self.assertIn("error=inactive", resp["Location"])
 
 
 class NaverSocialLoginTests(TestCase):
@@ -190,17 +195,21 @@ class NaverSocialLoginTests(TestCase):
         service.get_or_create_user.return_value = user
 
         url = reverse("naver-callback")
-        resp: Any = self.client.get(url, {"code": "11", "state": "22"})
+        resp = self.client.get(url, {"code": "11", "state": "22"}, follow=False)
 
-        self.assertEqual(resp.status_code, status.HTTP_200_OK)
-        self.assertIn("access", resp.data)
-        self.assertIn("refresh", resp.data)
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("provider=naver", resp["Location"])
+        self.assertIn("access", resp.cookies)
+        self.assertIn("refresh", resp.cookies)
 
     def test_naver_requires_code_and_state(self) -> None:
         url = reverse("naver-callback")
+        resp = self.client.get(url, {"code": "abc"}, follow=False)
 
-        resp: Any = self.client.get(url, {"code": "abc"})
-        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("provider=naver", resp["Location"])
+        self.assertIn("error=code_state_required", resp["Location"])
+
 
     @patch("apps.user.views.social_login_views.NaverOAuthService")
     def test_naver_login_inactive_user(self, service_mock: Any) -> None:
@@ -229,8 +238,8 @@ class NaverSocialLoginTests(TestCase):
         service.get_or_create_user.return_value = user
 
         url = reverse("naver-callback")
-        resp: Any = self.client.get(url, {"code": "c", "state": "s"})
+        resp = self.client.get(url, {"code": "c", "state": "s"}, follow=False)
 
-        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn("error_detail", resp.data)
-        self.assertIn("detail", resp.data["error_detail"])
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("provider=naver", resp["Location"])
+        self.assertIn("error=inactive", resp["Location"])
