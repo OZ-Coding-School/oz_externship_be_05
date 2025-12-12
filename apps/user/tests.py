@@ -210,7 +210,6 @@ class NaverSocialLoginTests(TestCase):
         self.assertIn("provider=naver", resp["Location"])
         self.assertIn("error=code_state_required", resp["Location"])
 
-
     @patch("apps.user.views.social_login_views.NaverOAuthService")
     def test_naver_login_inactive_user(self, service_mock: Any) -> None:
         service: Any = MagicMock()
