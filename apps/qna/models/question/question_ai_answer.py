@@ -19,7 +19,6 @@ class QuestionAIAnswer(TimeStampedModel):
 
     using_model = models.CharField(max_length=30, choices=USING_MODEL_CHOICES)
 
-
     class Meta:
         db_table = "question_ai_answers"
 

@@ -12,7 +12,6 @@ class QuestionImage(TimeStampedModel):
 
     img_url = models.CharField(max_length=255)
 
-
     class Meta:
         db_table = "question_images"
 
