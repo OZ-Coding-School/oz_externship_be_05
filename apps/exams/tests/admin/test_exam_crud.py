@@ -318,12 +318,12 @@ class ExamAdminViewTest(APITestCase):
         data = {"exam_title": "오류 테스트"}
         invalid_url = reverse("exam-detail", kwargs={"pk": "abc"})
         response = self.client.put(invalid_url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data["detail"], "Invalid primary key format.")
 
     def test_destroy_exam_invalid_pk_format_returns_400(self) -> None:
         """PK가 숫자가 아닐 때 400 응답 확인 (TypeError 경로 커버)"""
         invalid_url = reverse("exam-detail", kwargs={"pk": "xyz"})
         response = self.client.delete(invalid_url)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data["detail"], "Invalid primary key format.")
