@@ -15,7 +15,8 @@ from apps.user.serializers.social_profile import (
 )
 from apps.user.utils.social_login import (
     KakaoOAuthService,
-    NaverOAuthService,)
+    NaverOAuthService,
+)
 
 
 class KakaoLoginStartAPIView(APIView):
