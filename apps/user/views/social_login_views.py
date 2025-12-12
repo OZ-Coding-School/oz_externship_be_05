@@ -23,7 +23,7 @@ from apps.user.utils.social_login import (
 
 
 def frontend_redirect(*, provider: str, error: str | None = None) -> HttpResponseRedirect:
-    base = getattr(settings, "FRONTEND_SOCIAL_REDIRECT_URL", "")
+    base = getattr(settings, "FRONTEND_SOCIAL_REDIRECT_URL", "") or "/"
     params = {"provider": provider}
     if error:
         params["error"] = error
