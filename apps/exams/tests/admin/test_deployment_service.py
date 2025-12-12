@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from typing import Any, TypedDict
+from typing import Any
 
 from django.test import TestCase
 from django.utils import timezone
@@ -17,15 +17,6 @@ from apps.exams.services.admin.admin_deployment_service import (
     set_deployment_status,
     update_deployment,
 )
-
-
-class CreateDeploymentParams(TypedDict):
-    cohort: Cohort
-    exam: Exam
-    duration_time: int
-    access_code: str
-    open_at: datetime
-    close_at: datetime
 
 
 class DeploymentServiceTests(TestCase):
@@ -88,22 +79,16 @@ class DeploymentServiceTests(TestCase):
         return open_at, close_at
 
     def _create_default_deployment(self, **override: Any) -> ExamDeployment:
-        import uuid
 
-        base: CreateDeploymentParams = {
+        base: dict[str, Any] = {
             "cohort": self.cohort,
             "exam": self.exam,
             "duration_time": 60,
-            # "access_code": "000",
-            "access_code": str(uuid.uuid4())[:8],
             "open_at": self.open_at,
             "close_at": self.close_at,
         }
 
-        params: CreateDeploymentParams = {
-            **base,
-            **override,  # type: ignore[typeddict-item]
-        }
+        params = {**base, **override}
 
         return create_deployment(**params)
 
@@ -130,7 +115,7 @@ class DeploymentServiceTests(TestCase):
             self._create_default_deployment(open_at=timezone.now() - timedelta(hours=1))
 
     def test_create_deployment_fail_course_mismatch(self) -> None:
-        other_course = Course.objects.create(name="공주의 스타일기")
+        # other_course = Course.objects.create(name="공주의 스타일기")
         other_cohort = Cohort.objects.create(
             course=self.course,
             number=2,
@@ -213,9 +198,8 @@ class DeploymentServiceTests(TestCase):
     # LIST ---------------------------------------------------------
 
     def test_list_deployments_default(self) -> None:
-        d1 = self._create_default_deployment(access_code="111")
+        d1 = self._create_default_deployment()
         d2 = self._create_default_deployment(
-            access_code="222",
             open_at=self.open_at + timedelta(hours=1),
             close_at=self.close_at + timedelta(hours=1),
         )
@@ -253,8 +237,8 @@ class DeploymentServiceTests(TestCase):
         self.assertEqual(first.id, d1.id)
 
     def test_list_deployments_filter_by_status(self) -> None:
-        d1 = self._create_default_deployment(access_code="111")
-        self._create_default_deployment(access_code="222")
+        d1 = self._create_default_deployment()
+        self._create_default_deployment()
 
         set_deployment_status(
             deployment=d1,
