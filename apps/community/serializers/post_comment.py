@@ -1,12 +1,10 @@
 from rest_framework import serializers
-
 from apps.community.models import PostComment, PostCommentTag
 from apps.community.serializers import PostCommentTagsSerializer
 
 #apps/community/serializers/post_comment.py
 class PostCommentSerializer(serializers.ModelSerializer[PostComment]):
     tags = PostCommentTagsSerializer(many=True, required=False)
-    author = serializers.ReadOnlyField(source='author.username')
 
     class Meta:
         model = PostComment
