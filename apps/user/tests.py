@@ -18,7 +18,7 @@ from apps.user.utils.social_login import (
     KakaoOAuthService,
     NaverOAuthService,
     parse_kakao_birthday,
-    parse_naver_birthday
+    parse_naver_birthday,
 )
 
 
