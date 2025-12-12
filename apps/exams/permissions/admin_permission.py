@@ -1,3 +1,6 @@
+from typing import ClassVar
+
+from django.db.models import Model
 from rest_framework import pagination, viewsets
 from rest_framework.permissions import AllowAny, IsAdminUser
 
@@ -16,7 +19,7 @@ class CustomPageNumberPagination(pagination.PageNumberPagination):
     max_page_size = 100
 
 
-class AdminModelViewSet(viewsets.ModelViewSet):
+class AdminModelViewSet(viewsets.ModelViewSet[Model]):
     """
     모든 관리자 전용 CRUD ViewSet이 상속받을 기본 클래스
     - IsAdminUser 권한을 적용합니다.
@@ -25,4 +28,4 @@ class AdminModelViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAdminUser]  # AllowAny: 개발환경 테스트용
     pagination_class = CustomPageNumberPagination
 
-    valid_sort_fields = ["title", "created_at", "updated_at"]  # abc, 최신
+    valid_sort_fields: ClassVar[list[str]] = ["title", "created_at", "updated_at"]  # abc, 최신

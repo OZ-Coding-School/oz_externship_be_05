@@ -1,7 +1,10 @@
-from django.db.models import Prefetch
-from rest_framework import status, viewsets
+from typing import Any, Type
+
+from django.db.models import Model, Prefetch, QuerySet
+from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer, Serializer
 
 from apps.exams.models import Exam, ExamDeployment
 from apps.exams.permissions.admin_permission import AdminModelViewSet
@@ -20,9 +23,9 @@ class ExamAdminViewSet(AdminModelViewSet):
     http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
 
     queryset = exam_service.get_exam_list()
-    serializer_class = ExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
+    serializer_class: Type[BaseSerializer[Any]] = ExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Model, Model]:
         """
         목록 조회(list) 시에만 성능 최적화(Prefetch)를 적용합니다.
         """
@@ -61,7 +64,7 @@ class ExamAdminViewSet(AdminModelViewSet):
 
         return queryset
 
-    def get_serializer_class(self):
+    def get_serializer_class(self) -> Type[BaseSerializer[Any]]:
         """
         요청 액션에 따라 다른 시리얼라이저를 사용합니다.
         get_serializer -> get_serializer_class
@@ -78,7 +81,7 @@ class ExamAdminViewSet(AdminModelViewSet):
         # POST, PUT, DELETE, GET 상세 조회
         return self.serializer_class
 
-    def create(self, request: Request, *args, **kwargs):
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """POST: 시험 생성 view"""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -90,16 +93,21 @@ class ExamAdminViewSet(AdminModelViewSet):
 
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
-    def update(self, request: Request, *args, **kwargs):
+    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """PUT/PATCH: 시험 수정 view"""
         partial = kwargs.pop("partial", False)
         try:
-            exam_id = self.kwargs.get("pk")
+            exam_id_value = self.kwargs.get("pk")
+
+            if exam_id_value is None:
+                raise ValueError("Primary key (pk) not provided.")
+            exam_id: int = int(exam_id_value)
+
             instance = self.get_object()
             serializer = self.get_serializer(instance, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
 
-            updated_exam = exam_service.update_exam(exam_id, serializer.validated_data)
+            updated_exam: Exam = exam_service.update_exam(exam_id, serializer.validated_data)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
 
@@ -107,10 +115,15 @@ class ExamAdminViewSet(AdminModelViewSet):
         response_serializer = ExamSerializer(updated_exam_with_subject)
         return Response(response_serializer.data)
 
-    def destroy(self, request: Request, *args, **kwargs):
+    def destroy(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """DELETE: 시험 삭제 view"""
         try:
-            exam_id = self.kwargs.get("pk")
+            exam_id_value = self.kwargs.get("pk")
+
+            if exam_id_value is None:
+                raise ValueError("Primary key (pk) not provided.")
+            exam_id: int = int(exam_id_value)
+
             exam_service.delete_exam(exam_id)
         except ValueError as e:
             return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
