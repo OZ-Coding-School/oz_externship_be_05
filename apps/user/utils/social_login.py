@@ -3,6 +3,7 @@ from datetime import date
 import requests
 from django.conf import settings
 from django.utils.crypto import get_random_string
+from rest_framework.exceptions import ValidationError
 
 from apps.user.models import SocialProvider, SocialUser, User
 
@@ -27,13 +28,12 @@ def parse_naver_birthday(naver_account: dict) -> date | None:
     birthyear = naver_account.get("birthyear")
     birthday = naver_account.get("birthday") 
 
-    if not (birthyear and birthday and len(birthday) == 4):
+    if not (birthyear and birthday):
         return None
-
     try:
         year = int(birthyear)
         month = int(birthday[:2])
-        day = int(birthday[2:])
+        day = int(birthday[3:])
         return date(year, month, day)
     except ValueError:
         return None
@@ -48,6 +48,7 @@ class KakaoOAuthService:
         self.client_id = settings.KAKAO_CLIENT_ID
         self.redirect_uri = settings.KAKAO_REDIRECT_URI
 
+    # 토큰 받아옴
     def get_access_token(self, code: str) -> str:
         data = {
             "grant_type": "authorization_code",
@@ -59,6 +60,7 @@ class KakaoOAuthService:
         resp.raise_for_status()
         return resp.json()["access_token"]
 
+    # 유저 정보 받아옴
     def get_user_info(self, access_token: str) -> dict:
         headers = {"Authorization": f"Bearer {access_token}"}
         resp = requests.get(self.USER_INFO_URL, headers=headers)
@@ -71,28 +73,44 @@ class KakaoOAuthService:
         profile = kakao_account.get("profile", {}) or {}
 
         email = kakao_account.get("email")
+        if not email:
+            raise ValidationError({"email": ["카카오 계정 이메일 제공에 동의가 필요합니다."]})
+
         name = profile.get("nickname", "카카오유저")
         gender = kakao_account.get("gender")
         birthday_date = parse_kakao_birthday(kakao_account)
         profile_image_url = profile.get("profile_image_url") or profile.get("thumbnail_image_url") or None
 
-        try:
-            social_user = SocialUser.objects.get(
+        # 카카오 유저가 존재하면 유저 바로 줘버려
+        social_user = SocialUser.objects.filter(
+            provider=SocialProvider.KAKAO,
+            provider_id=kakao_id,
+        ).select_related("user").first()
+        if social_user:
+            return social_user.user
+
+        # 이메일 유저가 존재하면 카카오로 연결
+        user = User.objects.filter(email__iexact=email).first()
+        if user:
+            SocialUser.objects.get_or_create(
+                user=user,
                 provider=SocialProvider.KAKAO,
                 provider_id=kakao_id,
             )
-            return social_user.user
-        except SocialUser.DoesNotExist:
-            pass
+            return user
 
+        # 유저가 없으면 생성하고 연결
         user = User.objects.create_user(
-            email=email or f"kakao_{kakao_id}@example.com",
-            password=get_random_string(20),
+            email=email,
+            password=None,
             name=name,
             gender="M" if gender == "male" else ("F" if gender == "female" else ""),
             birthday=birthday_date,
             profile_image_url=profile_image_url,
         )
+
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
 
         SocialUser.objects.create(
             user=user,
@@ -112,6 +130,7 @@ class NaverOAuthService:
         self.client_secret = settings.NAVER_CLIENT_SECRET
         self.redirect_uri = settings.NAVER_REDIRECT_URI
 
+    # 토큰 받아옴
     def get_access_token(self, code: str, state: str) -> str:
         params = {
             "grant_type": "authorization_code",
@@ -125,39 +144,59 @@ class NaverOAuthService:
         resp.raise_for_status()
         return resp.json()["access_token"]
 
+    # 유저정보 가져옴
     def get_user_info(self, access_token: str) -> dict:
         headers = {"Authorization": f"Bearer {access_token}"}
         resp = requests.get(self.USER_INFO_URL, headers=headers)
         resp.raise_for_status()
+
         data = resp.json()
-        print("네이버 유저 데이터", data)
+        profile = data.get("response")
+        if not profile:
+            raise ValidationError({"naver": ["네이버 프로필 응답이 비어있습니다."]})
 
-        return resp.json()
+        return profile
 
+    #유저 생성
     def get_or_create_user(self, naver_profile: dict) -> User:
-        resp = naver_profile.get("response", {}) or {}
 
-        naver_id = str(resp.get("id"))
-        email = resp.get("email")
-        name = resp.get("name", "네이버유저")
+        naver_id = str(naver_profile.get("id"))
+        email = naver_profile.get("email")
+        if not email:
+            raise ValidationError({"email": ["네이버 계정 이메일 제공에 동의가 필요합니다."]})
 
-        try:
-            social_user = SocialUser.objects.get(
+        name = naver_profile.get("name", "네이버유저")
+        birthday_date = parse_naver_birthday(naver_profile)
+
+        # 네이버 유저가 존재하면 유저 바로 줘버려
+        social_user = SocialUser.objects.filter(
+            provider=SocialProvider.NAVER,
+            provider_id=naver_id,
+        ).select_related("user").first()
+
+        if social_user:
+            return social_user.user
+
+        # 이메일 유저가 존재하면 카카오로 연결
+        user = User.objects.filter(email__iexact=email).first()
+        if user:
+            SocialUser.objects.get_or_create(
+                user=user,
                 provider=SocialProvider.NAVER,
                 provider_id=naver_id,
             )
-            return social_user.user
-        except SocialUser.DoesNotExist:
-            pass
+            return user
 
-        birthday_date = parse_naver_birthday(resp)
-
+        # 유저가 없으면 생성하고 연결
         user = User.objects.create_user(
-            email=email or f"naver_{naver_id}@example.com",
-            password=get_random_string(20),
+            email=email,
+            password=None,
             name=name,
             birthday=birthday_date,
         )
+
+        user.set_unusable_password()
+        user.save(update_fields=["password"])
 
         SocialUser.objects.create(
             user=user,
