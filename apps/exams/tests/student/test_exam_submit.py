@@ -503,7 +503,6 @@ class ExamSubmissionViewTest(APITestCase):
             "cheating_count": 1,
             "answers": {"questions": [{"question_id": self.single_choice_question.id, "answer": "3"}]},
         }
-        response = self.client.post(url, data)
-        print(response.data)
+        response = self.client.post(url, data, format="json")
 
         self.assertEqual(response.status_code, 201)
