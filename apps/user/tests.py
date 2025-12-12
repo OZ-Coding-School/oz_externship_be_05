@@ -8,8 +8,18 @@ from django.test import TestCase
 from apps.user.models import user as models
 
 from django.urls import reverse
-from rest_framework import status
 
+
+from django.test import TestCase, override_settings
+
+
+from apps.user import models
+from apps.user.utils.social_login import (
+    KakaoOAuthService,
+    NaverOAuthService,
+    parse_kakao_birthday,
+    parse_naver_birthday
+)
 
 
 class UserManagerTests(TestCase):
@@ -242,3 +252,49 @@ class NaverSocialLoginTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertIn("provider=naver", resp["Location"])
         self.assertIn("error=inactive", resp["Location"])
+
+
+class SocialLoginUtilsSimpleCoverageTests(TestCase):
+    def test_parse_kakao_birthday(self) -> None:
+        self.assertEqual(parse_kakao_birthday({"birthday": "0612"}), date(2000, 6, 12))
+        self.assertIsNone(parse_kakao_birthday({"birthday": "061"}))
+        self.assertIsNone(parse_kakao_birthday({}))
+
+    def test_parse_naver_birthday(self) -> None:
+        self.assertEqual(
+            parse_naver_birthday({"birthyear": "1999", "birthday": "06-12"}),
+            date(1999, 6, 12),
+        )
+        self.assertIsNone(parse_naver_birthday({"birthyear": "1999"}))
+        self.assertIsNone(parse_naver_birthday({}))
+
+    @override_settings(
+        NAVER_CLIENT_ID="dummy",
+        NAVER_CLIENT_SECRET="dummy",
+        NAVER_REDIRECT_URI="http://test/callback",
+    )
+    @patch("apps.user.utils.social_login.requests.get")
+    def test_naver_get_user_info_returns_response(self, get_mock: MagicMock) -> None:
+        fake_resp = MagicMock()
+        fake_resp.raise_for_status.return_value = None
+        fake_resp.json.return_value = {"response": {"id": "naver1", "email": "a@a.com"}}
+        get_mock.return_value = fake_resp
+
+        service = NaverOAuthService()
+        profile = service.get_user_info("token")
+        self.assertEqual(profile["id"], "naver1")
+
+    @override_settings(
+        KAKAO_CLIENT_ID="dummy",
+        KAKAO_REDIRECT_URI="http://test/callback",
+    )
+    @patch("apps.user.utils.social_login.requests.post")
+    def test_kakao_get_access_token(self, post_mock: MagicMock) -> None:
+        fake_resp = MagicMock()
+        fake_resp.raise_for_status.return_value = None
+        fake_resp.json.return_value = {"access_token": "kakao_token"}
+        post_mock.return_value = fake_resp
+
+        service = KakaoOAuthService()
+        token = service.get_access_token("code")
+        self.assertEqual(token, "kakao_token")
