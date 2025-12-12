@@ -124,7 +124,7 @@ class VerificationService:
         else:
             cache.delete(self._code_key(normalized))
 
-    def get_identifier_by_token(self, token: str) -> str:
+    def get_identifier_by_token(self, token: str) -> Optional[str]:
         cache = self._cache()
         value = cache.get(self._token_lookup_key(token))
         if value is None:

@@ -1,31 +1,37 @@
-from apps.user.serializers.base import BaseMixin
+from typing import Any
+
 from rest_framework.serializers import Serializer
 
-# 아름답다 👽
+from apps.user.serializers.base import BaseMixin
 
-class EmailCodeSerializer(Serializer,BaseMixin):
+
+class EmailCodeSerializer(Serializer[Any], BaseMixin):
     email = BaseMixin.get_email()
     code = BaseMixin.get_password()
+
 
 class ChangePasswordSerializer(EmailCodeSerializer):
     new_password = BaseMixin.get_password()
 
     def validate_new_password(self, value: str) -> str:
-        BaseMixin.validate_password(value)
+        return BaseMixin.validate_password(self, value)
 
-class PhoneCodeSerializer(Serializer,BaseMixin):
+
+class PhoneCodeSerializer(Serializer[Any], BaseMixin):
     phone_number = BaseMixin.get_phone_number()
     code = BaseMixin.get_verify_code()
 
-class TokensSerializer(Serializer,BaseMixin):
+
+class TokensSerializer(Serializer[Any], BaseMixin):
     verify_token = BaseMixin.get_verify_token()
 
-class AllTokensSerializer(Serializer,BaseMixin):
+
+class AllTokensSerializer(Serializer[Any], BaseMixin):
     sms_token = BaseMixin.get_verify_token()
     email_token = BaseMixin.get_verify_token()
 
-    def validate_sms_token():
-        BaseMixin.validate_verify_token()
-    
-    def validate_email_token():
-        BaseMixin.validate_verify_token
+    def validate_sms_token(self, value: str) -> str:
+        return BaseMixin.validate_verify_token(self, value)
+
+    def validate_email_token(self, value: str) -> str:
+        return BaseMixin.validate_verify_token(self, value)
