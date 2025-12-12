@@ -25,7 +25,7 @@ class KakaoProfileSerializer(serializers.Serializer):
         #     raise serializers.ValidationError(
         #         {"birthday": ["이 필드는 필수 항목입니다."]}
         #     )
-        
+
         if "email" not in kakao_account:
             raise serializers.ValidationError({"email": ["이 필드는 필수 항목입니다."]})
 
