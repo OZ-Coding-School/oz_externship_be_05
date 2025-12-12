@@ -27,8 +27,8 @@ class ExamSubmissionCreateAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def post(self, request: Request, deployment_pk: int) -> Response:
-        deployment = ExamDeployment.objects.get(pk=deployment_pk)
+    def post(self, request: Request, pk: int) -> Response:
+        deployment = ExamDeployment.objects.get(pk=pk)
 
         serializer = ExamSubmissionCreateSerializer(
             data=request.data,

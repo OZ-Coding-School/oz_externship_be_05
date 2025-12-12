@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 from django.db import transaction
 
@@ -10,24 +10,30 @@ from apps.exams.models.exam_question import QuestionType
 from apps.exams.models.exam_submission import ExamSubmission
 
 
+def _snapshot_questions(deployment: ExamDeployment) -> List[Dict[str, Any]]:
+    # 배포 스냅샷에서 문항 가져오기
+    snapshot = getattr(deployment, "questions_snapshot", None) or {}
+    questions = snapshot.get("questions", [])
+    if isinstance(questions, list):
+        return questions
+    return []
+
+
 def normalize_answers(
     deployment: ExamDeployment,
     raw_answers: Dict[str, Any],
 ) -> Dict[int, Any]:
-    """
-    - FE에서 온 answers를 question_id 기준 dict로 정규화하고
-    - 응시 대상 deployment에 포함된 모든 문항에 대해 키를 채워준다.
-    """
-    answers_by_qid = {
-        item["question_id"]: item.get("answer") for item in raw_answers.get("questions", []) if "question_id" in item
-    }
+    # FE answers -> qid 기준 dict
+    answers_by_qid: Dict[int, Any] = {}
+    for item in raw_answers.get("questions", []):
+        if "question_id" in item:
+            answers_by_qid[int(item["question_id"])] = item.get("answer")
 
+    # deployment에 포함된 모든 문항 qid를 채워넣기 (없는 건 None)
     normalized: Dict[int, Any] = {}
-
-    questions_qs = deployment.exam.questions.all()
-
-    for question in questions_qs:
-        normalized[question.id] = answers_by_qid.get(question.id)
+    for q in _snapshot_questions(deployment):
+        qid = int(q["question_id"])
+        normalized[qid] = answers_by_qid.get(qid)
 
     return normalized
 
@@ -36,19 +42,15 @@ def evaluate_submission(
     deployment: ExamDeployment,
     normalized_answers: Dict[int, Any],
 ) -> Tuple[int, int]:
-    """
-    자동 채점: 총점, 정답 개수 반환
-    """
     total_score = 0
     correct_count = 0
 
-    questions_qs = deployment.exam.questions.all()
-
-    for question in questions_qs:
-        user_answer = normalized_answers.get(question.id)
-        correct_answer = question.answer
-        question_type = question.type
-        question_point = question.point
+    for q in _snapshot_questions(deployment):
+        qid = int(q["question_id"])
+        user_answer = normalized_answers.get(qid)
+        correct_answer = q.get("answer")
+        question_type = q.get("type")
+        question_point = int(q.get("point", 0))
 
         is_correct = False
 
@@ -76,12 +78,9 @@ def evaluate_submission(
 
         # 빈칸 채우기
         elif question_type == QuestionType.FILL_BLANK:
-            # 예: correct_answer = ["A", "B"]
-            # user_answer = ["A", "B"]
             if isinstance(user_answer, list) and isinstance(correct_answer, list):
                 is_correct = user_answer == correct_answer
 
-        # 정답인 경우 채점
         if is_correct:
             correct_count += 1
             total_score += question_point

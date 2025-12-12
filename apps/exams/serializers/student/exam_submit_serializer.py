@@ -43,7 +43,7 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
             submitter=request.user,
         ).count()
         if existing_count >= 2:
-            raise serializers.ValidationError("해당 쪽지시험은 최대 2회까지만 제출할 수 있습니다.")
+            raise serializers.ValidationError({"detail": "해당 쪽지시험은 최대 2회까지만 제출할 수 있습니다."})
 
         # started_at 필수 + None 허용 안 함
         started_at = attrs.get("started_at")
