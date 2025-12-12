@@ -16,11 +16,7 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
     """
 
     # 시작시간
-    started_at = serializers.DateTimeField(
-        required=True,
-        allow_null=True,
-        help_text="시험시작시간"
-    )
+    started_at = serializers.DateTimeField(required=True, allow_null=True, help_text="시험시작시간")
 
     # 부정행위
     cheating_count = serializers.IntegerField(
@@ -46,7 +42,6 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
         if existing_count >= 2:
             raise serializers.ValidationError({"detail": "해당 쪽지시험은 최대 2회까지만 제출할 수 있습니다."})
 
-
         started_at = attrs["started_at"]
 
         now = timezone.now()
@@ -56,16 +51,13 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
         if elapsed < 0:
             raise serializers.ValidationError({"started_at": "시작시간은 현재 시간보다 빨라야합니다."})
 
-
         # 시간 제한 검증
         duration_time = getattr(deployment, "duration_time", None)
 
         # 시간초과 여부 > 즉시실패
         is_time_over = False
         if duration_time is not None and elapsed > duration_time:
-            raise serializers.ValidationError(
-             "시험 제한 시간이 초과되어 제출할 수 없습니다"
-            )
+            raise serializers.ValidationError("시험 제한 시간이 초과되어 제출할 수 없습니다")
         attrs["elapsed_seconds"] = int(elapsed)
         return attrs
 

@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import json
 from datetime import datetime
-from typing import Any, Dict, List, Tuple
+from json import JSONDecodeError
+from typing import Any, Dict, List, Tuple, cast
 
 from django.db import transaction
 
@@ -13,10 +14,14 @@ from apps.exams.models.exam_submission import ExamSubmission
 
 def _snapshot_questions(deployment: ExamDeployment) -> List[Dict[str, Any]]:
     # 배포 스냅샷에서 문항 가져오기
-    snapshot_json = getattr(deployment, "questions_snapshot", None) or {}
-    snapshot = json.loads(snapshot_json)
+    snapshot_json = deployment.questions_snapshot or {}
+    # snapshot = json.loads(cast(str, snapshot_json))
 
-    return snapshot.get("questions", [])
+    questions = snapshot_json.get("questions", [])
+    if not isinstance(questions, list):
+        return []
+    return questions
+
 
 def normalize_answers(
     deployment: ExamDeployment,
