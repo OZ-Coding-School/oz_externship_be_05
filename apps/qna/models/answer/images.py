@@ -6,7 +6,7 @@ from apps.core.models import TimeStampedModel
 
 class AnswerImage(TimeStampedModel):
     answer = models.ForeignKey(
-        "answers.Answer",  # Answer 모델 참조
+        "qna.Answer",  # Answer 모델 참조
         on_delete=models.CASCADE,  # 답변이 삭제되면 이미지도 삭제
         related_name="images",
         help_text="이미지가 속한 답변 ID",

@@ -13,7 +13,7 @@ class Answer(TimeStampedModel):
     )
 
     question = models.ForeignKey(
-        "questions.Question",
+        "qna.Question",
         on_delete=models.CASCADE,  # 답변이 속한 질문이 삭제되면 답변도 삭제
         related_name="answers",
         help_text="답변이 속한 질문 ID",
