@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.exams.models import Exam
 
 
-class ExamSerializer(serializers.ModelSerializer):
+class ExamSerializer(serializers.ModelSerializer[Exam]):
     """
     POST, PUT, GET (x단일 조회x) 요청 시 사용되는 기본 시리얼라이저입니다.
     """
@@ -26,7 +26,7 @@ class ExamSerializer(serializers.ModelSerializer):
         return obj.subject.title
 
 
-class ExamListSerializer(serializers.ModelSerializer):
+class ExamListSerializer(serializers.ModelSerializer[Exam]):
     """
     GET /api/v1/admin/exams 요청 시 사용되는 목록 조회 시리얼라이저입니다.
     subject_name: subject_id
