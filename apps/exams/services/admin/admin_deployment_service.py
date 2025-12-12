@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional, TypedDict
 
@@ -97,7 +98,6 @@ def create_deployment(
     cohort: Cohort,
     exam: Exam,
     duration_time: int,
-    access_code: str,
     open_at: datetime,
     close_at: datetime,
 ) -> ExamDeployment:
@@ -109,7 +109,7 @@ def create_deployment(
         cohort=cohort,
         exam=exam,
         duration_time=duration_time,
-        access_code=access_code,
+        access_code=str(uuid.uuid4())[:8],
         open_at=open_at,
         close_at=close_at,
         status=DeploymentStatus.ACTIVATED,
