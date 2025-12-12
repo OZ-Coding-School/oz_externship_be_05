@@ -1,7 +1,9 @@
+from typing import Any
+
 from rest_framework import serializers
 
 
-class NaverProfileSerializer(serializers.Serializer):
+class NaverProfileSerializer(serializers.Serializer[Any]):
     id = serializers.CharField(required=True)
     email = serializers.CharField(required=True)
     name = serializers.CharField(required=True)
@@ -9,11 +11,11 @@ class NaverProfileSerializer(serializers.Serializer):
     birthday = serializers.CharField(required=True)
 
 
-class KakaoProfileSerializer(serializers.Serializer):
+class KakaoProfileSerializer(serializers.Serializer[Any]):
     id = serializers.CharField(required=True)
     kakao_account = serializers.DictField(required=True)
 
-    def validate(self, attrs):
+    def validate(self, attrs: Any) -> Any:
         kakao_account = attrs.get("kakao_account", {})
 
         profile = kakao_account.get("profile") or {}
