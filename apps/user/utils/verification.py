@@ -7,11 +7,11 @@ from typing import Any, Optional
 from django.conf import settings
 from django.core.cache import caches
 
-CODE_LENGTH = settings.VERIFYCATION_CODE_LENGTH
-TOKEN_BYTES = settings.VERIFYCATION_TOKEN_BYTES
-CODE_CHARS = settings.VERIFYCATION_CODE_CHARS
+CODE_LENGTH = settings.VERIFICATION_CODE_LENGTH
+TOKEN_BYTES = settings.VERIFICATION_TOKEN_BYTES
+CODE_CHARS = settings.VERIFICATION_CODE_CHARS
 DEFAULT_TTL_SECONDS = settings.VERIFICATION_DEFAULT_TTL_SECONDS
-TOKEN_GENERATE_MAX_ATTEMPTS = settings.VERIFYCATION_TOKEN_GENERATE_MAX_ATTEMPTS
+TOKEN_GENERATE_MAX_ATTEMPTS = settings.VERIFICATION_TOKEN_GENERATE_MAX_ATTEMPTS
 
 
 def _normalize_identifier(identifier: str) -> str:
@@ -47,8 +47,7 @@ class VerificationService:
     # 생성
     def generate_code(self, identifier: str, ttl_seconds: int = DEFAULT_TTL_SECONDS) -> str:
         normalized = _normalize_identifier(identifier)
-        digits = CODE_CHARS
-        code = "".join(secrets.choice(digits) for _ in range(self.code_length))
+        code = "".join(secrets.choice(CODE_CHARS) for _ in range(self.code_length))
         cache = self._cache()
         cache.set(self._code_key(normalized), code, ttl_seconds)
         return code
@@ -131,31 +130,3 @@ class VerificationService:
         if value is None:
             return None
         return value.decode() if isinstance(value, (bytes, bytearray)) else value
-
-
-_default_service = VerificationService()
-# 멋진 기본 서비스
-
-
-def generate_code(identifier: str, ttl_seconds: int = DEFAULT_TTL_SECONDS) -> str:
-    return _default_service.generate_code(identifier, ttl_seconds)
-
-
-def generate_token(identifier: str, ttl_seconds: int = DEFAULT_TTL_SECONDS) -> str:
-    return _default_service.generate_token(identifier, ttl_seconds)
-
-
-def verify(identifier: str, submitted_code: str, consume: bool = True, is_token: bool = False) -> bool:
-    return _default_service.verify(identifier, submitted_code, consume, is_token)
-
-
-def get_remaining_ttl(identifier: str, is_token: bool = False) -> Optional[int]:
-    return _default_service.get_remaining_ttl(identifier, is_token)
-
-
-def delete(identifier: str, is_token: bool = False) -> None:
-    return _default_service.delete(identifier, is_token)
-
-
-def get_identifier_by_token(token: str) -> Optional[str]:
-    return _default_service.get_identifier_by_token(token)
