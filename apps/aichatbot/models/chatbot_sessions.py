@@ -1,4 +1,5 @@
 from django.db import models
+
 from apps.core.models import TimeStampedModel
 
 
@@ -17,8 +18,6 @@ class ChatbotSession(TimeStampedModel):
     class Meta:
         db_table = "chatbot_sessions"
         ordering = ("-created_at", "-id")
-        # indexes = [
-        #     models.Index(fields=["user"], name="idx"),
-        #     models.Index(),
-        # ]
-        # 이 방식은 잘 모르겠어요
+        constraints = [
+            models.UniqueConstraint(fields=("user", "question"), name="user_question_unique"),
+        ]
