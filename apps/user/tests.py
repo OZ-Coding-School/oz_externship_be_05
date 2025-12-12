@@ -105,7 +105,7 @@ class KakaoSocialLoginTests(TestCase):
                 "email": "gunwoo@test.com",
                 "gender": "male",
                 "birthday": "0612",
-            }
+            },
         }
 
         user = get_user_model().objects.create_user(
@@ -141,7 +141,7 @@ class KakaoSocialLoginTests(TestCase):
                 "email": "gunwoo@test.com",
                 "gender": "male",
                 "birthday": "0612",
-            }
+            },
         }
 
         user = get_user_model().objects.create_user(
@@ -172,13 +172,11 @@ class NaverSocialLoginTests(TestCase):
 
         service.get_access_token.return_value = "dummy_token"
         service.get_user_info.return_value = {
-            "response": {
-                "id": "test1234",
-                "email": "test@test.com",
-                "name": "건우의미쿠네이버계정",
-                "birthyear": "1000",
-                "birthday": "0612"
-            }
+            "id": "test1234",
+            "email": "test@test.com",
+            "name": "건우의미쿠네이버계정",
+            "birthyear": "1000",
+            "birthday": "0612",
         }
 
         user = get_user_model().objects.create_user(
@@ -199,7 +197,7 @@ class NaverSocialLoginTests(TestCase):
     def test_naver_requires_code_and_state(self) -> None:
         url = reverse("naver-callback")
 
-        resp = self.client.get(url, {"code": "abc"}) 
+        resp = self.client.get(url, {"code": "abc"})
         self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
 
     @patch("apps.user.views.social_login_views.NaverOAuthService")
@@ -209,13 +207,11 @@ class NaverSocialLoginTests(TestCase):
 
         service.get_access_token.return_value = "dummy"
         service.get_user_info.return_value = {
-            "response": {
-                "id": "test1234",
-                "email": "test@test.com",
-                "name": "건우의은밀한네이버계정",
-                "birthyear": "1000",
-                "birthday": "0612"
-            }
+            "id": "test1234",
+            "email": "test@test.com",
+            "name": "건우의은밀한네이버계정",
+            "birthyear": "1000",
+            "birthday": "0612",
         }
 
         user = get_user_model().objects.create_user(
@@ -236,4 +232,3 @@ class NaverSocialLoginTests(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
         self.assertIn("error_detail", resp.data)
         self.assertIn("detail", resp.data["error_detail"])
-        
