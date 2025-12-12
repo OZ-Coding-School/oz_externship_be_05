@@ -1,13 +1,30 @@
 from rest_framework import serializers
 
-from apps.community.models.post_comment import PostComment
+from apps.community.models import PostComment, PostCommentTag
+from apps.community.serializers import PostCommentTagsSerializer
 
-#apps/community/serializers.py
+#apps/community/serializers/post_comment.py
 class PostCommentSerializer(serializers.ModelSerializer[PostComment]):
+    tags = PostCommentTagsSerializer(many=True, required=False)
+    author = serializers.ReadOnlyField(source='author.username')
 
     class Meta:
         model = PostComment
         fields = [
+            "tags",
             "content",
         ]
         read_only_fields = ["id", "author", "post", "created_at", "updated_at"]
+
+    def create(self, validated_data):
+        tags_data = validated_data.pop('tags', [])
+        comment = PostComment.objects.create(**validated_data)
+
+        # 기존 시리얼라이저로 태그 생성
+        for tag_data in tags_data:
+            PostCommentTag.objects.create(
+                comment=comment,
+                tagged_user=tag_data['tagged_user']
+            )
+
+        return comment

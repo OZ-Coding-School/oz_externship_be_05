@@ -11,12 +11,21 @@ from apps.community.serializers import PostCommentSerializer,PostCommentTagsSeri
 class PostCommentListCreateAPIView(APIView):
     serializer_class = PostCommentSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = None
 
     def get(self, request, *args, **kwargs):
-        post_id = request.query_params.get("post_id")
+        post_id = self.request.query_params.get("post_id")
         qs = PostComment.objects.filter(id=post_id).order_by("-created_at")
-        return qs
-
+        if qs.exists():
+            return Response(
+                qs,
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {"error_detail": "해당 게시글을 찾을 수 없습니다."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
 
     def post(self, request, *args, **kwargs):
