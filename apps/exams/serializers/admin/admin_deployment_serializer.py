@@ -33,16 +33,12 @@ class AdminDeploymentSerializer(serializers.ModelSerializer[ExamDeployment]):
         open_at = attrs.get("open_at", getattr(instance, "open_at", None))
         close_at = attrs.get("close_at", getattr(instance, "close_at", None))
 
-        try:
-            # open_at < close_at
-            if open_at and close_at:
-                DeploymentValidator.validate_time(open_at, close_at)
+        # open_at < close_at
+        if open_at and close_at:
+            DeploymentValidator.validate_time(open_at, close_at)
 
-            # create 일 경우
-            if instance is None and open_at is not None:
-                DeploymentValidator.validate_open(open_at)
-        except serializers.ValidationError as e:
-            raise serializers.ValidationError(
-                {"non_field_errors": e.detail if isinstance(e.detail, list) else e.detail}
-            )
+        # create 일 경우
+        if instance is None and open_at is not None:
+            DeploymentValidator.validate_open(open_at)
+
         return attrs
