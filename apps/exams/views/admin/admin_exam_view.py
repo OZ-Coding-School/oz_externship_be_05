@@ -46,7 +46,7 @@ class ExamAdminViewSet(AdminModelViewSet):
 
             search_keyword = query_params.get("search_keyword")
             subject_id = query_params.get("subject_id")
-            sort_field = query_params.get("sort", "created_at")  # default 만든 시각
+            sort_field = query_params.get("sort")
             order = query_params.get("order", "desc")  # default 내림차순
 
             # 키워드 필터
@@ -58,9 +58,11 @@ class ExamAdminViewSet(AdminModelViewSet):
             if subject_id and subject_id.isdigit():
                 queryset = queryset.filter(subject_id=subject_id)
 
-            if sort_field in self.valid_sort_fields:
-                order_prefix = "-" if order == "desc" else ""  # desc: -, asc: default
-                queryset = queryset.order_by(f"{order_prefix}{sort_field}")
+            if sort_field is None or sort_field not in self.valid_sort_fields:
+                sort_field = "created_at"
+
+            order_prefix: str = "-" if order == "desc" else ""  # desc: -, asc: default
+            queryset = queryset.order_by(f"{order_prefix}{sort_field}")
 
         return queryset
 
