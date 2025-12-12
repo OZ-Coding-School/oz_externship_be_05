@@ -3,6 +3,8 @@ from datetime import datetime
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from apps.exams.models.exam_deployment import DeploymentStatus
+
 
 # 시험 배포 시간 검증
 class DeploymentValidator:
@@ -25,11 +27,6 @@ class DeploymentValidator:
 
     # 상태 기반 규칙
     @staticmethod
-    def validate_not_started(open_at: datetime) -> None:
-        if open_at <= DeploymentValidator._now():
+    def validate_not_started(*, open_at: datetime, status: str) -> None:
+        if open_at <= DeploymentValidator._now() and status == DeploymentStatus.ACTIVATED:
             raise ValidationError({"open_at": "이미 시작된 시험의 시작 시간은 수정/삭제할 수 없습니다."})
-
-    @staticmethod
-    def validate_not_closed(close_at: datetime) -> None:
-        if close_at <= DeploymentValidator._now():
-            raise ValidationError({"close_at": "종료된 시험의 상태는 변경할 수 없습니다."})
