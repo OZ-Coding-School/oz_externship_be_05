@@ -67,7 +67,6 @@ Error Response Schema
 
 
 # Session의 응답포멧
-# source의 mock 날릴것
 class SessionSerializer(serializers.ModelSerializer[ChatbotSession]):
     class Meta:
         model = ChatbotSession
