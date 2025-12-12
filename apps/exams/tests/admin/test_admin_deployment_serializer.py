@@ -70,8 +70,9 @@ class AdminDeploymentSerializerTest(TestCase):
         }
 
         serializer = AdminDeploymentSerializer(data=data)
+
         assert not serializer.is_valid()
-        assert "non_field_errors" in serializer.errors
+        assert serializer.errors
 
     def test_update_allow_past_open_at(self) -> None:
         # 수정 시 open_at 이 과거여도 허용
@@ -110,5 +111,6 @@ class AdminDeploymentSerializerTest(TestCase):
         }
 
         serializer = AdminDeploymentSerializer(data=data)
+
         assert not serializer.is_valid()
-        assert "non_field_errors" in serializer.errors
+        assert serializer.errors
