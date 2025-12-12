@@ -2,6 +2,7 @@ from typing import Any, Dict
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.db.models import QuerySet
 
 from apps.exams.models import Exam
 
@@ -11,7 +12,7 @@ class ExamService:
     쪽지시험(Exam)에 대한 비즈니스 로직을 처리합니다.
     """
 
-    def get_exam_list(self):
+    def get_exam_list(self) -> QuerySet[Exam]:
         """
         시험 목록 조회를 위한 쿼리셋을 반환합니다.
         """
@@ -43,7 +44,7 @@ class ExamService:
         return exam
 
     @transaction.atomic
-    def delete_exam(self, exam_id: int):
+    def delete_exam(self, exam_id: int) -> None:
         """
         쪽지시험을 삭제합니다.
         """
