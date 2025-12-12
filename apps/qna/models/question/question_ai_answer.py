@@ -2,10 +2,11 @@ from typing import Optional
 
 from django.db import models
 
+from apps.core.models import TimeStampedModel
 from apps.qna.models.question.question_base import Question
 
 
-class QuestionAIAnswer(models.Model):
+class QuestionAIAnswer(TimeStampedModel):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="ai_answers")
     question_id: Optional[int]
 
@@ -18,8 +19,6 @@ class QuestionAIAnswer(models.Model):
 
     using_model = models.CharField(max_length=30, choices=USING_MODEL_CHOICES)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "question_ai_answers"
