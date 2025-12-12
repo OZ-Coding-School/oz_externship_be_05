@@ -7,7 +7,7 @@ from apps.user.serializers.base import BaseMixin
 
 class EmailCodeSerializer(Serializer[Any], BaseMixin):
     email = BaseMixin.get_email()
-    code = BaseMixin.get_password()
+    verify_code = BaseMixin.get_verify_code()
 
 
 class ChangePasswordSerializer(EmailCodeSerializer):
@@ -19,7 +19,7 @@ class ChangePasswordSerializer(EmailCodeSerializer):
 
 class PhoneCodeSerializer(Serializer[Any], BaseMixin):
     phone_number = BaseMixin.get_phone_number()
-    code = BaseMixin.get_verify_code()
+    verify_code = BaseMixin.get_verify_code()
 
 
 class TokensSerializer(Serializer[Any], BaseMixin):
