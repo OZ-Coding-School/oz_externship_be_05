@@ -1,189 +1,138 @@
-# from django.test import TestCase
-import datetime
-from typing import Any, ClassVar
-from unittest.mock import MagicMock, patch  # MagicMock 임포트 추가
+from typing import Any, ClassVar, Optional, Type
 
-from django.urls import reverse
+from django.db.models import Model, Prefetch, QuerySet
 from rest_framework import status
-from rest_framework.test import APITestCase
+from rest_framework.request import Request
+from rest_framework.response import Response
+from rest_framework.serializers import BaseSerializer, Serializer
 
-from apps.courses.models import Course, Subject
-from apps.exams.models import Exam
+from apps.exams.models import Exam, ExamDeployment
+from apps.exams.permissions.admin_permission import AdminModelViewSet
+from apps.exams.serializers.admin import ExamListSerializer, ExamSerializer
 from apps.exams.services.admin import ExamService
-from apps.user.models import User
+
+# 서비스 인스턴스 생성
+exam_service = ExamService()
 
 
-class ExamAdminViewTest(APITestCase):
-    """ExamAdminViewSet 대한 테스트 케이스"""
+# [Exam] 제네릭 타입 추가 (가장 중요한 mypy 오류 해결)
+class ExamAdminViewSet(AdminModelViewSet[Exam]):
+    """
+    쪽지시험(Exam) 엔티티에 대한 관리자 CRUD API ViewSet입니다.
+    """
 
-    # ClassVar로 클래스 속성 선언
-    course: ClassVar[Course]
-    admin_user: ClassVar[User]
-    subject_python: ClassVar[Subject]
-    subject_flask: ClassVar[Subject]
-    subject_django: ClassVar[Subject]
-    exam_a: ClassVar[Exam]
-    exam_b: ClassVar[Exam]
-    exam_c: ClassVar[Exam]
+    http_method_names: ClassVar[list[str]] = ["get", "post", "put", "delete", "head", "options", "trace"]  # 타입 추가
 
-    @classmethod
-    def setUpTestData(cls) -> None:  # -> None 추가
-        """테스트 전체에서 사용될 공통 데이터 설정"""
+    queryset: QuerySet[Exam] = exam_service.get_exam_list()  # 타입 명시
+    serializer_class: Type[BaseSerializer[Any]] = ExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
 
-        cls.course = Course.objects.create(id=1, name="be 코스")
-        # 관리자 유저 생성
+    def get_queryset(self) -> QuerySet[Exam]:  # QuerySet[Exam]으로 반환 타입 명시
+        """
+        목록 조회(list) 시에만 성능 최적화(Prefetch)를 적용합니다.
+        """
+        queryset: QuerySet[Exam] = super().get_queryset()  # 타입 명시
+
+        if self.action == "list":
+            queryset = queryset.select_related("subject")
+            queryset = queryset.prefetch_related("questions")
+            queryset = queryset.prefetch_related(
+                Prefetch(
+                    "deployments",  # Exam 모델에 정의된 related_name="deployments" 사용
+                    queryset=ExamDeployment.objects.prefetch_related("submissions"),
+                )
+            )
+
+            # 필터링 서비스단으로 이동 검토.(추후 다른곳에서도 작업시)
+            query_params: dict[str, Any] = self.request.query_params
+
+            search_keyword: Optional[str] = query_params.get("search_keyword")
+            subject_id_str: Optional[str] = query_params.get("subject_id")
+            sort_field: str = query_params.get("sort", "created_at")  # default 만든 시각
+            order: str = query_params.get("order", "desc")  # default 내림차순
+
+            # 키워드 필터
+            if search_keyword:
+                queryset = queryset.filter(
+                    title__icontains=search_keyword
+                )  # Exam 모델의 대소문자무시(i) search_keyword포함 제목 필터링
+            # 과정 필터
+            if subject_id_str and subject_id_str.isdigit():
+                queryset = queryset.filter(subject_id=subject_id_str)
+
+            if sort_field in self.valid_sort_fields:
+                order_prefix: str = "-" if order == "desc" else ""  # desc: -, asc: default
+                queryset = queryset.order_by(f"{order_prefix}{sort_field}")
+
+        return queryset
+
+    def get_serializer_class(self) -> Type[BaseSerializer[Any]]:
+        """
+        요청 액션에 따라 다른 시리얼라이저를 사용합니다.
+        get_serializer -> get_serializer_class
+
+        * GET (목록): list
+        * GET (상세): retrieve
+        * POST: create
+        * PUT/PATCH: update
+        * DELETE: destroy
+        """
+        if self.action == "list":
+            return ExamListSerializer
+
+        # POST, PUT, DELETE, GET 상세 조회
+        return self.serializer_class
+
+    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """POST: 시험 생성 view"""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        exam: Exam = exam_service.create_exam(serializer.validated_data)  # 타입 추가
+
+        exam_with_subject: Exam = Exam.objects.select_related("subject").get(pk=exam.pk)  # subject_title N+1 쿼리 방지
+        response_serializer = ExamSerializer(exam_with_subject)
+
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
+
+    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """PUT/PATCH: 시험 수정 view"""
+        partial: bool = kwargs.pop("partial", False)  # 타입 추가
         try:
-            cls.admin_user = User.objects.create_superuser(
-                name="admin_test",
-                email="admin@test.com",
-                password="testpassword",
-                birthday=datetime.date(1990, 1, 1),
-            )
-        except Exception:
-            cls.admin_user = User.objects.create(
-                name="admin_test",
-                is_staff=True,
-                is_superuser=True,
-                birthday=datetime.date(1990, 1, 1),
-            )
+            exam_id_value: Optional[str] = self.kwargs.get("pk")  # 타입 추가
 
-        # Subject 인스턴스 생성
-        cls.subject_python = Subject.objects.create(
-            id=10, title="Python 기초", number_of_days=30, number_of_hours=10, course_id=cls.course.id
-        )
-        cls.subject_flask = Subject.objects.create(
-            id=15, title="Flask 심화", number_of_days=20, number_of_hours=15, course_id=cls.course.id
-        )
-        cls.subject_django = Subject.objects.create(
-            id=20, title="Django 심화", number_of_days=40, number_of_hours=20, course_id=cls.course.id
-        )
+            if exam_id_value is None:
+                raise ValueError("Primary key (pk) not provided.")
 
-        # Exam 인스턴스 생성
-        cls.exam_a = Exam.objects.create(
-            title="a기초 파이썬 시험", subject=cls.subject_python, created_at="2025-01-01T10:00:00Z"
-        )
-        cls.exam_b = Exam.objects.create(
-            title="c심화 장고 시험", subject=cls.subject_django, created_at="2025-01-02T11:00:00Z"
-        )
-        cls.exam_c = Exam.objects.create(
-            title="c심화 플라스크 시험", subject=cls.subject_flask, created_at="2025-01-20T11:00:00Z"
-        )
+            exam_id: int = int(exam_id_value)  # int로 변환 (mypy 오류 해결)
 
-    def setUp(self) -> None:  # -> None 추가
-        """각 테스트 메서드 실행 직전 실행"""
-        # 관리자 계정으로 강제 인증 (토큰/세션 상관없이 권한 적용)
-        self.client.force_authenticate(user=self.admin_user)
-        self.base_url = reverse("exam-list")
-        self.detail_url = reverse("exam-detail", kwargs={"pk": self.exam_a.pk})
+            instance: Exam = self.get_object()  # 타입 추가
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
 
-    # ====================================================================
-    # 1. 목록 조회 (list) 및 get_queryset 테스트
-    # ====================================================================
+            updated_exam: Exam = exam_service.update_exam(exam_id, serializer.validated_data)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except TypeError:  # int() 변환 실패 시
+            return Response({"detail": "Invalid primary key format."}, status=status.HTTP_400_BAD_REQUEST)
 
-    def test_list_all_exams_and_serializer_check(self) -> None:  # -> None 추가
-        """
-        기본 목록 조회 및 ExamListSerializer 사용 확인.
-        (get_queryset의 list 액션 분기 및 ExamListSerializer 검증)
-        """
-        response = self.client.get(self.base_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 3)
+        updated_exam_with_subject: Exam = Exam.objects.select_related("subject").get(pk=updated_exam.pk)  # 타입 추가
+        response_serializer = ExamSerializer(updated_exam_with_subject)
+        return Response(response_serializer.data)
 
-        # ExamListSerializer 사용 여부 검증 (필드 구조 확인)
-        first_result = response.data["results"][0]
-        self.assertIn("question_count", first_result)  # List 시리얼라이저에만 있는 필드
-        self.assertIn("submit_count", first_result)  # List 시리얼라이저에만 있는 필드
-        self.assertNotIn("thumbnail_img_url", first_result)  # ExamSerializer에는 있지만 List에는 없는 필드 (가정)
+    def destroy(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """DELETE: 시험 삭제 view"""
+        try:
+            exam_id_value: Optional[str] = self.kwargs.get("pk")  # 타입 추가
 
-    def test_list_exams_with_search_filter(self) -> None:  # -> None 추가
-        """제목 키워드 필터링(title__icontains) 확인"""
-        response = self.client.get(self.base_url, {"search_keyword": "파이썬"})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1)
-        self.assertEqual(response.data["results"][0]["exam_title"], "a기초 파이썬 시험")
+            if exam_id_value is None:
+                raise ValueError("Primary key (pk) not provided.")
 
-    def test_list_exams_with_subject_id_filter(self) -> None:  # -> None 추가
-        """subject_id 필터링 확인"""
-        response = self.client.get(self.base_url, {"subject_id": self.subject_django.id})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1)
-        self.assertEqual(response.data["results"][0]["exam_title"], "c심화 장고 시험")
+            exam_id: int = int(exam_id_value)  # int로 변환 (mypy 오류 해결)
 
-    def test_list_exams_with_sorting_created_at_desc(self) -> None:  # -> None 추가
-        """기본 정렬 (created_at desc) 확인"""
-        response = self.client.get(self.base_url)  # 기본값: sort=created_at, order=desc
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # desc 정렬 시 exam_c, exam_b, exam_a
-        self.assertEqual(response.data["results"][0]["exam_title"], "c심화 플라스크 시험")
+            exam_service.delete_exam(exam_id)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except TypeError:  # int() 변환 실패 시
+            return Response({"detail": "Invalid primary key format."}, status=status.HTTP_400_BAD_REQUEST)
 
-    def test_list_exams_with_sorting_asc(self) -> None:  # -> None 추가
-        """title 필드 오름차순 정렬 확인"""
-        response = self.client.get(self.base_url, {"sort": "title", "order": "asc"})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # '기초'가 '심화'보다 먼저 와야 함
-        self.assertEqual(response.data["results"][0]["exam_title"], "a기초 파이썬 시험")
-
-    def test_retrieve_exam_without_list_queryset_optimization(self) -> None:  # -> None 추가
-        """단일 조회(retrieve) 시 get_queryset의 list 분기를 건너뛰는지 확인"""
-        response = self.client.get(self.detail_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_create_exam_success_and_serializer_check(self) -> None:  # -> None 추가
-        """
-        시험 생성 성공 및 응답 시 ExamSerializer 사용 확인
-        """
-        data = {
-            "subject_id": self.subject_python.id,
-            "exam_title": "새로 만든 시험",
-            "thumbnail_img_url": "http://new.img/url.png",
-        }
-        response = self.client.post(self.base_url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Exam.objects.count(), 4)
-
-        # ExamSerializer 사용 여부 검증
-        response_data = response.data
-        self.assertIn("thumbnail_img_url", response_data)  # ExamSerializer에 있는 필드
-        self.assertIn("subject_title", response_data)  # ExamSerializer에 있는 필드
-        self.assertNotIn("question_count", response_data)  # ExamListSerializer에는 있지만 여기는 없어야 함 (계산값임)
-
-    def test_update_exam_success(self) -> None:  # -> None 추가
-        """
-        시험 수정 성공 확인
-        """
-        data = {
-            "subject_id": self.subject_django.id,  # Subject 변경 시도
-            "exam_title": "수정된 시험 제목",
-            "thumbnail_img_url": "http://updated.img/url.png",
-        }
-        response = self.client.put(self.detail_url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.exam_a.refresh_from_db()
-        self.assertEqual(self.exam_a.title, "수정된 시험 제목")
-
-    @patch.object(ExamService, "update_exam")
-    def test_update_exam_not_found_returns_404(self, mock_update_exam: MagicMock) -> None:  # MagicMock 및 -> None 추가
-        """update_exam 서비스에서 ValueError 발생 시 404 응답 확인"""
-        mock_update_exam.side_effect = ValueError("Exam not found for update")
-        data = {"subject_id": self.subject_python.id, "exam_title": "오류 테스트"}
-        response = self.client.put(self.detail_url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data["detail"], "Exam not found for update")
-
-    def test_destroy_exam_success(self) -> None:  # -> None 추가
-        """
-        시험 삭제 성공 확인
-        """
-        response = self.client.delete(self.detail_url)
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Exam.objects.count(), 2)
-
-    @patch.object(ExamService, "delete_exam")
-    def test_destroy_exam_not_found_returns_404(self, mock_delete_exam: MagicMock) -> None:  # MagicMock 및 -> None 추가
-        """delete_exam 서비스에서 ValueError 발생 시 404 응답 확인"""
-        mock_delete_exam.side_effect = ValueError("Exam not found for delete")
-        # 존재하지 않는 PK에 대한 URL 생성
-        non_existent_url = reverse("exam-detail", kwargs={"pk": 9999})
-        response = self.client.delete(non_existent_url)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data["detail"], "Exam not found for delete")
+        return Response(status=status.HTTP_204_NO_CONTENT)
