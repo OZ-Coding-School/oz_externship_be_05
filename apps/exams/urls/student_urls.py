@@ -1,3 +1,12 @@
-from django.urls import URLPattern, URLResolver
+from django.urls import URLPattern, URLResolver, path
 
-urlpatterns: list[URLPattern | URLResolver] = []
+from ..views.student.exam_submit_view import ExamSubmissionCreateAPIView
+
+urlpatterns: list[URLPattern | URLResolver] = [
+    path(
+        # student/submit
+        "deployments/<int:pk>/submit/",
+        ExamSubmissionCreateAPIView.as_view(),
+        name="exam_submit",
+    )
+]
