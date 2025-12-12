@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
@@ -12,12 +13,10 @@ from apps.exams.models.exam_submission import ExamSubmission
 
 def _snapshot_questions(deployment: ExamDeployment) -> List[Dict[str, Any]]:
     # 배포 스냅샷에서 문항 가져오기
-    snapshot = getattr(deployment, "questions_snapshot", None) or {}
-    questions = snapshot.get("questions", [])
-    if isinstance(questions, list):
-        return questions
-    return []
+    snapshot_json = getattr(deployment, "questions_snapshot", None) or {}
+    snapshot = json.loads(snapshot_json)
 
+    return snapshot.get("questions", [])
 
 def normalize_answers(
     deployment: ExamDeployment,

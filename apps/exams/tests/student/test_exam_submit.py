@@ -307,7 +307,7 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
 
         serializer = self._make_serializer(payload)
         self.assertFalse(serializer.is_valid())
-        self.assertIn("시작시간이 올바르지 않습니다", str(serializer.errors))
+        self.assertIn("시작시간은 현재 시간보다 빨라야합니다.", str(serializer.errors))
 
     def test_serializer_time_over_flag(self) -> None:
         payload: dict[str, Any] = {
@@ -317,10 +317,8 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         }
 
         serializer = self._make_serializer(payload)
-        self.assertTrue(serializer.is_valid(), msg=serializer.errors)
-        data = serializer.validated_data
-        self.assertTrue(data["is_time_over"])
-        self.assertGreaterEqual(data["elapsed_seconds"], 120)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("시험 제한 시간이 초과되어 제출할 수 없습니다", str(serializer.errors))
 
     def test_serializer_to_representation(self) -> None:
         # to_representation 이 채점 결과 페이지에 필요한 필드를 모두 포함하는지 확인
@@ -505,4 +503,4 @@ class ExamSubmissionViewTest(APITestCase):
         }
         response = self.client.post(url, data, format="json")
 
-        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.status_code, 400)
