@@ -1,3 +1,5 @@
+from typing import Any
+
 from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import redirect
@@ -65,14 +67,14 @@ class NaverLoginStartAPIView(APIView):
 class KakaoCallbackAPIView(APIView):
     permission_classes = [AllowAny]
 
-    def get(self, request: Request) -> Response:
+    def get(self, request: Request) -> Response | HttpResponseBadRequest:
         code: str | None = request.query_params.get("code")
         if not code:
             return HttpResponseBadRequest("code is required")
 
         service = KakaoOAuthService()
         access_token: str = service.get_access_token(code)
-        profile: dict = service.get_user_info(access_token)
+        profile: dict[str, Any] = service.get_user_info(access_token)
 
         serializer = KakaoProfileSerializer(data=profile)
         serializer.is_valid(raise_exception=True)
@@ -113,7 +115,7 @@ class NaverCallbackAPIView(APIView):
 
         service = NaverOAuthService()
         access_token: str = service.get_access_token(code, state)
-        profile: dict = service.get_user_info(access_token)
+        profile: dict[str, Any] = service.get_user_info(access_token)
 
         serializer = NaverProfileSerializer(data=profile)
         serializer.is_valid(raise_exception=True)
