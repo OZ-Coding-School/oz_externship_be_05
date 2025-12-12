@@ -43,7 +43,7 @@ class BaseMixin:
         }
         return serializers.CharField(**_merge_defaults(defaults, kwargs))
 
-    def validate_verify_code_field(self, value: str) -> str:
+    def validate_verify_code(self, value: str) -> str:
         if len(value) != getattr(settings, "VERIFICATION_CODE_LENGTH", 6):
             raise serializers.ValidationError("코드 길이가 올바르지 않습니다.")
         if any(ch not in settings.VERIFICATION_CODE_CHARS for ch in value):
@@ -52,7 +52,7 @@ class BaseMixin:
 
     # [인증 서비스 토큰] [토큰] [verify_token] [token]
     @staticmethod
-    def get_verify_token(**kwargs: Any) -> serializers.CharField:
+    def get_verify_token_field(**kwargs: Any) -> serializers.CharField:
         """
         인증 토큰 필드를 반환합니다.
         [☠️] validate가 있습니다 !
@@ -66,7 +66,7 @@ class BaseMixin:
 
     # [비밀번호] [password] [pw]
     @staticmethod
-    def get_password(**kwargs: Any) -> serializers.CharField:
+    def get_password_field(**kwargs: Any) -> serializers.CharField:
         """
         비밀번호 필드를 반환합니다.
         [☠️] validate가 있습니다 !
@@ -82,7 +82,7 @@ class BaseMixin:
 
     # [전화번호] [phone] [phone_number]
     @staticmethod
-    def get_phone_number(**kwargs: Any) -> serializers.CharField:
+    def get_phone_number_field(**kwargs: Any) -> serializers.CharField:
         """
         휴대폰 번호 필드를 반환합니다.
         [☠️] validate가 있습니다 !
