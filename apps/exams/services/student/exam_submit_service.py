@@ -6,10 +6,28 @@ from json import JSONDecodeError
 from typing import Any, Dict, List, Tuple, cast
 
 from django.db import transaction
+from rest_framework import serializers
 
 from apps.exams.models.exam_deployment import ExamDeployment
 from apps.exams.models.exam_question import QuestionType
 from apps.exams.models.exam_submission import ExamSubmission
+from apps.user.models import User
+
+
+# 시험 제출 2회 제한
+def validate_exam_submission_limit(
+    *,
+    deployment: ExamDeployment,
+    submitter: User,
+) -> None:
+    # 시험은 최대 2회까지 제출 가능
+    existing_count = ExamSubmission.objects.filter(
+        deployment=deployment,
+        submitter=submitter,
+    ).count()
+
+    if existing_count >= 2:
+        raise serializers.ValidationError({"detail": "해당 쪽지시험은 최대 2회까지만 제출할 수 있습니다."})
 
 
 def _snapshot_questions(deployment: ExamDeployment) -> List[Dict[str, Any]]:

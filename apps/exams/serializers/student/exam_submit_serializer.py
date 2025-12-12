@@ -7,7 +7,10 @@ from rest_framework import serializers
 
 from apps.exams.models.exam_deployment import ExamDeployment
 from apps.exams.models.exam_submission import ExamSubmission
-from apps.exams.services.student.exam_submit_service import create_exam_submission
+from apps.exams.services.student.exam_submit_service import (
+    create_exam_submission,
+    validate_exam_submission_limit,
+)
 
 
 class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[type-arg]
@@ -34,13 +37,8 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
         deployment: ExamDeployment = self.context["deployment"]
         submitter: Any = self.context["request"].user
 
-        # 시험은 두번까지만 제출 가능
-        existing_count = ExamSubmission.objects.filter(
-            deployment=deployment,
-            submitter=submitter,
-        ).count()
-        if existing_count >= 2:
-            raise serializers.ValidationError({"detail": "해당 쪽지시험은 최대 2회까지만 제출할 수 있습니다."})
+        # 제출 횟수 제한 검증(Service)
+        validate_exam_submission_limit(deployment=deployment, submitter=submitter)
 
         started_at = attrs["started_at"]
 
