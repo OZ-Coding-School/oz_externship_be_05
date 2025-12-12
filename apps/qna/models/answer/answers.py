@@ -8,7 +8,7 @@ class Answer(TimeStampedModel):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,  # 작성자가 삭제되면 답변도 삭제
-        related_name="answers_authored",
+        related_name="answers",
         help_text="답변 작성자 ID",
     )
 

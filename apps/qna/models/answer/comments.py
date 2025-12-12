@@ -8,12 +8,12 @@ class AnswerComment(TimeStampedModel):
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,  # 작성자가 삭제되면 댓글도 삭제
-        related_name="comments_authored",
+        related_name="comments",
         help_text="댓글 작성자 ID",
     )
 
     answer = models.ForeignKey(
-        "answers.Answer",  # Answer 모델 참조
+        "qna.Answer",  # Answer 모델 참조
         on_delete=models.CASCADE,  # 댓글이 달린 답변이 삭제되면 댓글도 삭제
         related_name="comments",
         help_text="댓글이 달린 답변 ID",
