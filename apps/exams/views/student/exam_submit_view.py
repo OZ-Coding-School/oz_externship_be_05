@@ -38,6 +38,5 @@ class ExamSubmissionCreateAPIView(APIView):
             },
         )
         serializer.is_valid(raise_exception=True)
-        submission = serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        submission = serializer.save(submitter=request.user, deployment=deployment)
+        return Response(serializer.to_representation(submission), status=201)

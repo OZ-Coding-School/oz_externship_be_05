@@ -258,7 +258,7 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         serializer = self._make_serializer(payload)
         self.assertTrue(serializer.is_valid(), msg=serializer.errors)
 
-        submission = serializer.save()
+        submission = serializer.save(submitter=self.user, deployment=self.deployment)
         self.assertIsInstance(submission, ExamSubmission)
 
     def test_serializer_block_third_submission(self) -> None:
@@ -273,12 +273,12 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         # 1회차
         s1 = self._make_serializer(payload)
         self.assertTrue(s1.is_valid(), msg=s1.errors)
-        s1.save()
+        s1.save(submitter=self.user, deployment=self.deployment)
 
         # 2회차
         s2 = self._make_serializer(payload)
         self.assertTrue(s2.is_valid(), msg=s2.errors)
-        s2.save()
+        s2.save(submitter=self.user, deployment=self.deployment)
 
         # 3회차 → 실패해야 함
         s3 = self._make_serializer(payload)
@@ -341,11 +341,6 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
 
         self.assertEqual(data["id"], submission.pk)
         self.assertEqual(data["deployment_id"], self.deployment.pk)
-        self.assertEqual(data["score"], submission.score)
-        self.assertEqual(data["correct_answer_count"], submission.correct_answer_count)
-        self.assertEqual(data["cheating_count"], 2)
-        self.assertIn("started_at", data)
-        self.assertIn("submitted_at", data)
 
 
 class ExamSubmissionViewTest(APITestCase):

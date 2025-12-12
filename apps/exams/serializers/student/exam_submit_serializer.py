@@ -31,13 +31,13 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
     )
 
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
-        request = self.context["request"]
         deployment: ExamDeployment = self.context["deployment"]
+        submitter: Any = self.context["request"].user
 
         # 시험은 두번까지만 제출 가능
         existing_count = ExamSubmission.objects.filter(
             deployment=deployment,
-            submitter=request.user,
+            submitter=submitter,
         ).count()
         if existing_count >= 2:
             raise serializers.ValidationError({"detail": "해당 쪽지시험은 최대 2회까지만 제출할 수 있습니다."})
@@ -62,30 +62,20 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
         return attrs
 
     def create(self, validated_data: Dict[str, Any]) -> ExamSubmission:
-        request = self.context["request"]
         deployment: ExamDeployment = self.context["deployment"]
+        submitter = validated_data["submitter"]
 
-        submission = create_exam_submission(
+        return create_exam_submission(
             deployment=deployment,
-            submitter=request.user,
+            submitter=submitter,
             started_at=validated_data["started_at"],
             cheating_count=validated_data["cheating_count"],
             raw_answers=validated_data["answers"],
-            # elapsed_seconds=validated_data["elapsed_seconds"],
-            # is_time_over=validated_data["is_time_over"],
         )
-        return submission
 
     def to_representation(self, instance: ExamSubmission) -> Dict[str, Any]:
-        """
-        응답은 채점 결과 확인 페이지로 이동할 때 필요한 최소 정보만 내려주기
-        """
+        # 응답은 채점 결과 확인 페이지로 이동할 때 필요한 최소 정보만 내려주기
         return {
             "id": instance.pk,
             "deployment_id": instance.deployment_id,
-            "score": instance.score,
-            "correct_answer_count": instance.correct_answer_count,
-            "cheating_count": instance.cheating_count,
-            "started_at": instance.started_at,
-            "submitted_at": instance.created_at,
         }
