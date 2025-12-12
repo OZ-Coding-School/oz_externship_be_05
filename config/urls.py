@@ -13,6 +13,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("api/v1/posts/", include("apps.community.urls")),
     path("api/v1/exams/", include("apps.exams.urls.student_urls")),
     path("admin/", admin.site.urls),
+    path("api/v1/answers/", include("apps.qna.urls.answer_urls")),
 ]
 
 if settings.DEBUG:
