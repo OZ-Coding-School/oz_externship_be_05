@@ -32,7 +32,6 @@ class PostCreateSerializerTest(TestCase):
         )
         self.category = PostCategory.objects.create(name="자유게시판")
 
-
     def validate_category_id(self, value: int) -> None:
         if not PostCategory.objects.filter(id=value).exists():
             raise serializers.ValidationError("잘못된 카테고리 ID")
