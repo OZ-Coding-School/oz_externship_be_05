@@ -8,6 +8,8 @@ from rest_framework.exceptions import ValidationError
 
 from apps.user.models import SocialProvider, SocialUser, User
 
+from abc import ABC, abstractmethod
+
 
 def parse_kakao_birthday(kakao_account: dict[str, Any]) -> date | None:
     birthday = kakao_account.get("birthday")
@@ -57,7 +59,7 @@ class KakaoOAuthService:
             "redirect_uri": cast(str, self.redirect_uri),
             "code": code,
         }
-        resp: requests.Response = requests.post(self.TOKEN_URL, data=data)
+        resp = requests.post(self.TOKEN_URL, data=data)
         resp.raise_for_status()
         token_data = resp.json()
         return str(token_data["access_token"])
@@ -65,17 +67,17 @@ class KakaoOAuthService:
     # 유저 정보 받아옴
     def get_user_info(self, access_token: str) -> dict[str, Any]:
         headers = {"Authorization": f"Bearer {access_token}"}
-        resp: requests.Response = requests.get(self.USER_INFO_URL, headers=headers)
+        resp = requests.get(self.USER_INFO_URL, headers=headers)
         resp.raise_for_status()
         profile_data: dict[str, Any] = resp.json()
         return profile_data
 
     def get_or_create_user(self, kakao_profile: dict[str, Any]) -> User:
         kakao_id = str(kakao_profile["id"])
-        kakao_account = kakao_profile.get("kakao_account", {}) or {}
-        profile = kakao_account.get("profile", {}) or {}
+        kakao_account = kakao_profile.get("kakao_account")
+        profile = kakao_account.get("profile")
 
-        email: str | None = kakao_account.get("email")
+        email = kakao_account.get("email")
         if not email:
             raise ValidationError({"email": ["카카오 계정 이메일 제공에 동의가 필요합니다."]})
 
@@ -96,7 +98,7 @@ class KakaoOAuthService:
         if social_user:
             return social_user.user
 
-        # 이메일 유저가 존재하면 카카오로 연결
+        # 이메일 유저가 존재하면 소셜 정보 생성 후 유저 줘버려
         user = User.objects.filter(email__iexact=email).first()
         if user:
             SocialUser.objects.get_or_create(
@@ -106,7 +108,7 @@ class KakaoOAuthService:
             )
             return user
 
-        # 유저가 없으면 생성하고 연결
+        # 유저가 없으면 생성하고 패스워드 생성 후 잠그고 유저 줘버려
         user = User.objects.create_user(
             email=email,
             password=get_random_string(20),
@@ -129,6 +131,7 @@ class KakaoOAuthService:
 
 
 class NaverOAuthService:
+    AUTHORIZE_URL = "https://nid.naver.com/oauth2.0/authorize"
     TOKEN_URL = "https://nid.naver.com/oauth2.0/token"
     USER_INFO_URL = "https://openapi.naver.com/v1/nid/me"
 
@@ -188,7 +191,7 @@ class NaverOAuthService:
         if social_user:
             return social_user.user
 
-        # 이메일 유저가 존재하면 카카오로 연결
+        # 이메일 유저가 존재하면 소셜 정보 생성 후 유저 줘버려
         user = User.objects.filter(email__iexact=email).first()
         if user:
             SocialUser.objects.get_or_create(
@@ -198,7 +201,7 @@ class NaverOAuthService:
             )
             return user
 
-        # 유저가 없으면 생성하고 연결
+        # 유저가 없으면 생성하고 연결 후 비번 잠근 후 유저 줘버려
         user = User.objects.create_user(
             email=email,
             password=get_random_string(20),
