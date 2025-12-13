@@ -1,9 +1,10 @@
-from typing import Any, Literal, cast
-from urllib.parse import urlencode
 import logging
 import uuid
-import requests
+from typing import Any, Literal, cast
+from urllib.parse import urlencode
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 
+import requests
 from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import redirect
@@ -26,6 +27,7 @@ from apps.user.utils.social_login import (
 
 logger = logging.getLogger(__name__)
 
+
 def frontend_redirect(*, provider: str, is_success: bool = True) -> HttpResponseRedirect:
     base = getattr(settings, "FRONTEND_SOCIAL_REDIRECT_URL", "") or "/"
     params = {"provider": provider, "is_success": is_success}
@@ -33,8 +35,10 @@ def frontend_redirect(*, provider: str, is_success: bool = True) -> HttpResponse
 
 
 def auth_cookies(resp: HttpResponseRedirect, *, access: str, refresh: str) -> None:
-    secure = getattr(settings, "SESSION_COOKIE_SECURE", False) #! https에서만 가능할지 환경변수로 관리할지 물어볼 것
-    samesite = cast(Literal["Lax", "Strict", "None", False] | None, getattr(settings, "SESSION_COOKIE_SAMESITE", "Lax")) #! 쿠키를 어디까지 허용할지 이것도 환경변수
+    secure = getattr(settings, "SESSION_COOKIE_SECURE", False)  #! https에서만 가능할지 환경변수로 관리할지 물어볼 것
+    samesite = cast(
+        Literal["Lax", "Strict", "None", False] | None, getattr(settings, "SESSION_COOKIE_SAMESITE", "Lax")
+    )  #! 쿠키를 어디까지 허용할지 이것도 환경변수
 
     resp.set_cookie(
         "access",
@@ -58,6 +62,14 @@ def auth_cookies(resp: HttpResponseRedirect, *, access: str, refresh: str) -> No
 class KakaoLoginStartAPIView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+            tags=["Social Login"],
+            summary="네이버 로그인 시작",
+            description={
+                302: OpenApiResponse(description="네이버 authorize URL로 리다이렉트")
+            }
+    )
+
     def get(self, request: Request) -> HttpResponseRedirect:
         state = uuid.uuid4().hex
         request.session["oauth_state_kakao"] = state
@@ -67,13 +79,21 @@ class KakaoLoginStartAPIView(APIView):
             f"?response_type=code"
             f"&client_id={settings.KAKAO_CLIENT_ID}"
             f"&redirect_uri={settings.KAKAO_REDIRECT_URI}"
-            f"&state={state}" 
+            f"&state={state}"
         )
         return redirect(authorize_url)
 
 
 class NaverLoginStartAPIView(APIView):
     permission_classes = [AllowAny]
+
+    @extend_schema(
+            tags=["Social Login"],
+            summary="카카오 로그인 시작",
+            description={
+                302: OpenApiResponse(description="카카오 authorize URL로 리다이렉트")
+            }
+    )
 
     def get(self, request: Request) -> HttpResponseRedirect:
         state = uuid.uuid4().hex
@@ -84,13 +104,29 @@ class NaverLoginStartAPIView(APIView):
             f"?response_type=code"
             f"&client_id={settings.NAVER_CLIENT_ID}"
             f"&redirect_uri={settings.NAVER_REDIRECT_URI}"
-            f"&state={state}" 
+            f"&state={state}"
         )
         return redirect(authorize_url)
 
 
 class KakaoCallbackAPIView(APIView):
     permission_classes = [AllowAny]
+
+    @extend_schema(
+        tags=["Social Login"],
+        summary="카카오 로그인 콜백",
+        description="카카오에서 code/state를 받아 토큰 교환 후 프론트로 302 redirect 한다.",
+        parameters=[
+            OpenApiParameter(name="code", required=False, type=str, location=OpenApiParameter.QUERY),
+            OpenApiParameter(name="state", required=False, type=str, location=OpenApiParameter.QUERY),
+        ],
+        responses={
+            302: OpenApiResponse(description="프론트로 리다이렉트 + 쿠키 설정"),
+            400: OpenApiResponse(description="code/state 누락 또는 state 불일치"),
+            403: OpenApiResponse(description="inactive user 등"),
+        },
+    )
+
     #! status 스키마 추가.
     def get(self, request: Request) -> HttpResponseRedirect:
         try:
@@ -98,11 +134,11 @@ class KakaoCallbackAPIView(APIView):
             state = request.query_params.get("state")
             # code, state 유무 검증.
             if not code or not state:
-                raise ValidationError({"code":"code_state_required"})
+                raise ValidationError({"code": "code_state_required"})
 
             # state를 확인하여 올바른 곳에서 온 요청인지 검증.
             if state != request.session.get("oauth_state_kakao"):
-                raise ValidationError({"code":"invalid state"})
+                raise ValidationError({"code": "invalid state"})
 
             service = KakaoOAuthService()
             access_token = service.get_access_token(code)
@@ -115,7 +151,7 @@ class KakaoCallbackAPIView(APIView):
 
             # 비활성화 유저인지 검증
             if not user.is_active:
-                raise ValidationError({"code":"inactive_user"})
+                raise ValidationError({"code": "inactive_user"})
 
             refresh = RefreshToken.for_user(user)
 
@@ -123,7 +159,7 @@ class KakaoCallbackAPIView(APIView):
             auth_cookies(resp, access=str(refresh.access_token), refresh=str(refresh))
             return resp
 
-        except ValidationError as e :
+        except ValidationError as e:
             logger.warning("kakao callback validation error: %s", e.detail)
             return frontend_redirect(provider="kakao", is_success=False)
         except requests.exceptions.HTTPError:
@@ -136,9 +172,23 @@ class KakaoCallbackAPIView(APIView):
             request.session.pop("oauth_state_kakao", None)
 
 
-
 class NaverCallbackAPIView(APIView):
     permission_classes = [AllowAny]
+
+    @extend_schema(
+        tags=["Social Login"],
+        summary="네이버 로그인 콜백",
+        description="네이버에서 code/state를 받아 토큰 교환 후 프론트로 302 redirect 한다.",
+        parameters=[
+            OpenApiParameter(name="code", required=False, type=str, location=OpenApiParameter.QUERY),
+            OpenApiParameter(name="state", required=False, type=str, location=OpenApiParameter.QUERY),
+        ],
+        responses={
+            302: OpenApiResponse(description="프론트로 리다이렉트 + 쿠키 설정"),
+            400: OpenApiResponse(description="code/state 누락 또는 state 불일치"),
+            403: OpenApiResponse(description="inactive user 등"),
+        },
+    )
 
     def get(self, request: Request) -> HttpResponseRedirect:
         try:
@@ -146,11 +196,11 @@ class NaverCallbackAPIView(APIView):
             state = request.query_params.get("state")
             # code, state 유무 검증.
             if not code or not state:
-                raise ValidationError({"code":"code_state_required"})
+                raise ValidationError({"code": "code_state_required"})
 
             # state를 확인하여 올바른 곳에서 온 요청인지 검증.
             if state != request.session.get("oauth_state_naver"):
-                raise ValidationError({"code":"invalid_status"})
+                raise ValidationError({"code": "invalid_status"})
 
             service = NaverOAuthService()
             access_token = service.get_access_token(code, state)
@@ -163,7 +213,7 @@ class NaverCallbackAPIView(APIView):
 
             # 비활성화 유저인지 검증.
             if not user.is_active:
-                raise ValidationError({"code":"inactive_user"})
+                raise ValidationError({"code": "inactive_user"})
 
             refresh = RefreshToken.for_user(user)
 
@@ -171,7 +221,7 @@ class NaverCallbackAPIView(APIView):
             auth_cookies(resp, access=str(refresh.access_token), refresh=str(refresh))
             return resp
 
-        except ValidationError as e :
+        except ValidationError as e:
             logger.warning("naver callback validation error: %s", e.detail)
             return frontend_redirect(provider="naver", is_success=False)
         except requests.exceptions.HTTPError:
