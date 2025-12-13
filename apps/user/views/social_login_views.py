@@ -64,11 +64,9 @@ class KakaoLoginStartAPIView(APIView):
 
     @extend_schema(
             tags=["Social Login"],
-            summary="네이버 로그인 시작",
-            description={
-                302: OpenApiResponse(description="네이버 authorize URL로 리다이렉트")
-            }
-    )
+            summary="카카오 로그인 시작",
+            responses={302: None},
+        )
 
     def get(self, request: Request) -> HttpResponseRedirect:
         state = uuid.uuid4().hex
@@ -89,11 +87,9 @@ class NaverLoginStartAPIView(APIView):
 
     @extend_schema(
             tags=["Social Login"],
-            summary="카카오 로그인 시작",
-            description={
-                302: OpenApiResponse(description="카카오 authorize URL로 리다이렉트")
-            }
-    )
+            summary="네이버 로그인 시작",
+            responses={302: None},
+        )
 
     def get(self, request: Request) -> HttpResponseRedirect:
         state = uuid.uuid4().hex
@@ -115,17 +111,10 @@ class KakaoCallbackAPIView(APIView):
     @extend_schema(
         tags=["Social Login"],
         summary="카카오 로그인 콜백",
-        description="카카오에서 code/state를 받아 토큰 교환 후 프론트로 302 redirect 한다.",
-        parameters=[
-            OpenApiParameter(name="code", required=False, type=str, location=OpenApiParameter.QUERY),
-            OpenApiParameter(name="state", required=False, type=str, location=OpenApiParameter.QUERY),
-        ],
-        responses={
-            302: OpenApiResponse(description="프론트로 리다이렉트 + 쿠키 설정"),
-            400: OpenApiResponse(description="code/state 누락 또는 state 불일치"),
-            403: OpenApiResponse(description="inactive user 등"),
-        },
+        parameters=[...],
+        responses={302: None, 400: None, 403: None},
     )
+
 
     #! status 스키마 추가.
     def get(self, request: Request) -> HttpResponseRedirect:
@@ -178,17 +167,10 @@ class NaverCallbackAPIView(APIView):
     @extend_schema(
         tags=["Social Login"],
         summary="네이버 로그인 콜백",
-        description="네이버에서 code/state를 받아 토큰 교환 후 프론트로 302 redirect 한다.",
-        parameters=[
-            OpenApiParameter(name="code", required=False, type=str, location=OpenApiParameter.QUERY),
-            OpenApiParameter(name="state", required=False, type=str, location=OpenApiParameter.QUERY),
-        ],
-        responses={
-            302: OpenApiResponse(description="프론트로 리다이렉트 + 쿠키 설정"),
-            400: OpenApiResponse(description="code/state 누락 또는 state 불일치"),
-            403: OpenApiResponse(description="inactive user 등"),
-        },
+        parameters=[...],
+        responses={302: None, 400: None, 403: None},
     )
+
 
     def get(self, request: Request) -> HttpResponseRedirect:
         try:
