@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from datetime import date
 from typing import Any, cast
 
@@ -7,8 +8,6 @@ from django.utils.crypto import get_random_string
 from rest_framework.exceptions import ValidationError
 
 from apps.user.models import SocialProvider, SocialUser, User
-
-from abc import ABC, abstractmethod
 
 
 def parse_kakao_birthday(kakao_account: dict[str, Any]) -> date | None:
