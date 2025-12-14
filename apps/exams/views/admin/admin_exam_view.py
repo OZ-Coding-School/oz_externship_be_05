@@ -1,5 +1,7 @@
 from typing import Any, Type
 
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import IntegrityError
 from django.db.models import Model, Prefetch, QuerySet
 from rest_framework import status
 from rest_framework.request import Request
@@ -58,8 +60,10 @@ class ExamAdminViewSet(AdminModelViewSet):
             if subject_id and subject_id.isdigit():
                 queryset = queryset.filter(subject_id=subject_id)
 
+            # 명시되지 않은 필터 요청 Default값으로 처리
             if sort_field is None or sort_field not in self.valid_sort_fields:
                 sort_field = "created_at"
+                order = "desc"
 
             order_prefix: str = "-" if order == "desc" else ""  # desc: -, asc: default
             queryset = queryset.order_by(f"{order_prefix}{sort_field}")
@@ -74,7 +78,7 @@ class ExamAdminViewSet(AdminModelViewSet):
         * GET (목록): list
         * GET (상세): retrieve
         * POST: create
-        * PUT/PATCH: update
+        * PUT/PATCH: update(PATCH 막음)
         * DELETE: destroy
         """
         if self.action == "list":
@@ -83,12 +87,46 @@ class ExamAdminViewSet(AdminModelViewSet):
         # POST, PUT, DELETE, GET 상세 조회
         return self.serializer_class
 
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """
+        커스텀 예외처리를 위하여 추가된 함수입니다.
+        """
+        try:
+            queryset = self.filter_queryset(self.get_queryset())
+
+            if not queryset.exists():  # 필터링 후 결과가 없을 때
+                return Response({"detail": "등록된 쪽지시험이 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+            # 3. Pagination 및 응답 생성
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+
+        except ValueError:
+            return Response({"detail": "유효하지 않은 조회 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """POST: 시험 생성 view"""
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
 
-        exam = exam_service.create_exam(serializer.validated_data)  # 서비스 호출 및 db저장
+        try:
+            serializer.is_valid(raise_exception=True)
+
+            # 2. 서비스 호출 및 404, 409 처리
+            exam = exam_service.create_exam(serializer.validated_data)  # 서비스 호출 및 db저장
+
+        except ObjectDoesNotExist:
+            return Response({"detail": "해당 과목 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        except IntegrityError:
+            return Response({"detail": "동일한 이름의 시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT)
+        except Exception as e:
+            if hasattr(e, "detail") and isinstance(e.detail, dict):
+                return Response({"detail": "유효하지 않은 시험 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            raise
 
         exam_with_subject = Exam.objects.select_related("subject").get(pk=exam.pk)  # subject_title N+1 쿼리 방지
         response_serializer = ExamSerializer(exam_with_subject)
@@ -101,7 +139,7 @@ class ExamAdminViewSet(AdminModelViewSet):
         try:
             exam_id_value = self.kwargs.get("pk")
 
-            if exam_id_value is None:
+            if exam_id_value is None:  # 필수값 확인
                 raise ValueError("Primary key (pk) not provided.")
             exam_id: int = int(exam_id_value)
 
@@ -110,8 +148,14 @@ class ExamAdminViewSet(AdminModelViewSet):
             serializer.is_valid(raise_exception=True)
 
             updated_exam: Exam = exam_service.update_exam(exam_id, serializer.validated_data)
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except ValueError:
+            return Response({"detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exam.DoesNotExist:
+            return Response({"detail": "수정할 쪽지시험 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        except IntegrityError:
+            return Response({"detail": "동일한 이름의 쪽지시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT)
+        except TypeError:
+            return Response({"detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
         updated_exam_with_subject = Exam.objects.select_related("subject").get(pk=updated_exam.pk)
         response_serializer = ExamSerializer(updated_exam_with_subject)
@@ -127,7 +171,13 @@ class ExamAdminViewSet(AdminModelViewSet):
             exam_id: int = int(exam_id_value)
 
             exam_service.delete_exam(exam_id)
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
+        except ValueError:
+            return Response({"detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exam.DoesNotExist:
+            return Response({"detail": "수정할 쪽지시험 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        except TypeError:
+            return Response({"detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
