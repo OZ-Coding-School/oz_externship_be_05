@@ -15,7 +15,7 @@ class StudentEnrollmentRequest(TimeStampedModel):
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=EnrollmentStatus.choices, default=EnrollmentStatus.PENDING)
-    accepted_at = models.DateTimeField(null=True, blank=True)
+    accepted_at = models.DateTimeField(null=True)
 
     class Meta:
         db_table = "student_enrollment_requests"
