@@ -3,17 +3,10 @@ from typing import Any
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
-
-from apps.user.models import user as models
-
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
-
-from django.test import TestCase, override_settings
-
-
-from apps.user import models
+from apps.user.models import user as models
 from apps.user.utils.social_login import (
     KakaoOAuthService,
     NaverOAuthService,
@@ -214,7 +207,7 @@ class NaverSocialLoginTests(TestCase):
         service.get_or_create_user.return_value = user
 
         url = reverse("naver-callback")
-        
+
         session = self.client.session
         session["oauth_state_naver"] = "test-state"
         session.save()
