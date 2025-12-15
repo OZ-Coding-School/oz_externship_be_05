@@ -1,59 +1,43 @@
-from typing import Any, cast
-
 from django.test import TestCase
-from rest_framework.exceptions import ValidationError
+from rest_framework.test import APIRequestFactory
+from rest_framework.views import APIView
 
-from apps.qna.models import Question, QuestionCategory
 from apps.qna.permissions.question.question_create_permission import (
-    validate_question_create_permission,
-    validate_question_title_unique,
+    QuestionCreatePermission,
 )
 from apps.user.models import RoleChoices, User
 
 
-# 학생권한이 아닌 경우 권한 실패
-class QuestionCreatePermissionValidatorTests(TestCase):
-    def test_permission_fail_when_not_student(self) -> None:
-        user = User.objects.create_user(
-            email="user@test.com",
-            password="test1234",
-            name="일반유저",
-            role=RoleChoices.USER,
-            phone_number="010-0000-0000",
-            gender="M",
-            birthday="2000-01-01",
-        )
-
-        with self.assertRaises(ValidationError) as context:
-            validate_question_create_permission(user)
-
-        self.assertEqual(cast(dict[str, Any], context.exception.detail)["type"], "permission_denied")
-
-
-# 제목 중복일 때 실패
-class QuestionCreateTitleValidatorTests(TestCase):
+class QuestionCreatePermissionTests(TestCase):
     def setUp(self) -> None:
-        self.category = QuestionCategory.objects.create(name="백엔드")
+        self.factory = APIRequestFactory()
+        self.permission = QuestionCreatePermission()
 
-        self.user = User.objects.create_user(
-            email="student@test.com",
+    def create_user(self, role: RoleChoices) -> User:
+        return User.objects.create_user(
+            email="permissiontest@test.com",
             password="test1234",
-            name="학생",
-            role=RoleChoices.ST,
+            name="권한 테스트 유저",
+            role=role,
             phone_number="010-0000-0000",
             gender="M",
             birthday="2000-01-01",
         )
 
-        Question.objects.create(
-            author=self.user,
-            category=self.category,
-            title="중복 제목",
-            content="내용",
-        )
+    # 성공: 학생 권한
+    def test_student_has_permission(self) -> None:
+        user = self.create_user(RoleChoices.ST)
+        request = self.factory.post("/api/v1/qna/questions")
+        request.user = user
 
-    def test_title_conflict(self) -> None:
-        with self.assertRaises(ValidationError) as context:
-            validate_question_title_unique("중복 제목")
+        view = APIView()
+        self.assertTrue(self.permission.has_permission(request, view))
 
-        self.assertEqual(cast(dict[str, Any], context.exception.detail)["type"], "title_conflict")
+    # 실패: 학생이 아닌 권한
+    def test_non_student_has_no_permission(self) -> None:
+        user = self.create_user(RoleChoices.USER)
+        request = self.factory.post("/api/v1/qna/questions")
+        request.user = user
+
+        view = APIView()
+        self.assertFalse(self.permission.has_permission(request, view))

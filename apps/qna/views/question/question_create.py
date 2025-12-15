@@ -1,52 +1,42 @@
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.qna.exceptions.question_exceptions import (
+    QuestionCreateValidationError,
+)
+from apps.qna.permissions.question.question_create_permission import (
+    QuestionCreatePermission,
+)
 from apps.qna.serializers.question.question_create import QuestionCreateSerializer
+from apps.qna.services.question.question_create_service import create_question
+from apps.user.models import User
 
 
 class QuestionCreateAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [QuestionCreatePermission]
 
     def post(self, request: Request) -> Response:
-        serializer = QuestionCreateSerializer(
-            data=request.data,
-            context={"request": request},
+        user = request.user
+        assert isinstance(user, User)
+
+        serializer = QuestionCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            raise QuestionCreateValidationError()
+
+        question = create_question(
+            author=user,
+            title=serializer.validated_data["title"],
+            content=serializer.validated_data["content"],
+            category_id=serializer.validated_data["category"],
+            image_urls=serializer.validated_data.get("image_urls", []),
         )
 
-        if serializer.is_valid():
-            question = serializer.save()
-            return Response(
-                {
-                    "message": "질문이 성공적으로 등록되었습니다.",
-                    "question_id": question.id,
-                },
-                status=status.HTTP_201_CREATED,
-            )
-
-        error_type = serializer.errors.get("type")
-
-        if error_type == ["permission_denied"]:
-            return Response(
-                {"error_detail": "질문 등록 권한이 없습니다."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
-        if error_type == ["title_conflict"]:
-            return Response(
-                {"error_detail": "중복된 질문 제목이 이미 존재합니다."},
-                status=status.HTTP_409_CONFLICT,
-            )
-
-        if error_type == ["category_not_found"]:
-            return Response(
-                {"error_detail": "선택한 카테고리를 찾을 수 없습니다."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
         return Response(
-            {"error_detail": "유효하지 않은 질문 등록 요청입니다."},
-            status=status.HTTP_400_BAD_REQUEST,
+            {
+                "message": "질문이 성공적으로 등록되었습니다.",
+                "question_id": question.id,
+            },
+            status=status.HTTP_201_CREATED,
         )

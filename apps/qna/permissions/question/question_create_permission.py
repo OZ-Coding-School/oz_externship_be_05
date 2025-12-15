@@ -1,32 +1,21 @@
-from typing import Optional
+from django.contrib.auth.models import AnonymousUser
+from rest_framework.permissions import BasePermission
+from rest_framework.request import Request
+from rest_framework.views import APIView
 
-from rest_framework import serializers
-
-from apps.qna.models import Question, QuestionCategory
-from apps.user.models import RoleChoices, User
-
-
-def validate_question_create_permission(user: User) -> None:
-    if user.role != RoleChoices.ST:
-        raise serializers.ValidationError({"type": "permission_denied"})
+from apps.qna.exceptions.question_exceptions import QuestionCreateNotAuthenticated
+from apps.user.models import RoleChoices
 
 
-def validate_question_title_unique(title: Optional[str]) -> None:
-    if not title:
-        return
+class QuestionCreatePermission(BasePermission):
+    message = "질문 등록 권한이 없습니다."  # 403
 
-    if Question.objects.filter(title=title).exists():
-        raise serializers.ValidationError({"type": "title_conflict"})
+    def has_permission(self, request: Request, view: APIView) -> bool:
+        user = request.user
 
+        # 401: 인증 안됨 → 커스텀 예외
+        if isinstance(user, AnonymousUser) or not user.is_authenticated:
+            raise QuestionCreateNotAuthenticated()
 
-def validate_question_category(category_id: int | None) -> None:
-    """
-    카테고리 검증
-    - None / 누락 → invalid_request 400
-    - 존재하지 않는 PK → category_not_found 404
-    """
-    if category_id is None:
-        raise serializers.ValidationError({"type": "invalid_request"})
-
-    if not QuestionCategory.objects.filter(id=category_id).exists():
-        raise serializers.ValidationError({"type": "category_not_found"})
+        # 403: 인증은 됐지만 학생 아님
+        return user.role == RoleChoices.ST
