@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from apps.qna.permissions.question.question_create_permission import (
     QuestionCreatePermission,
 )
-from apps.user.models import RoleChoices, User
+from apps.user.models.user import RoleChoices, User
 
 
 class QuestionCreatePermissionTests(TestCase):
