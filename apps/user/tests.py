@@ -129,7 +129,16 @@ class KakaoSocialLoginTests(TestCase):
         service.get_or_create_user.return_value = user
 
         url = reverse("kakao-callback")
-        resp = self.client.get(url, {"code": "abcd"}, follow=False)
+
+        session = self.client.session
+        session["oauth_state_kakao"] = "test-state"
+        session.save()
+
+        resp = self.client.get(
+            url,
+            {"code": "abcd", "state": "test-state"},
+            follow=False,
+        )
 
         self.assertEqual(resp.status_code, 302)
         self.assertIn("provider=kakao", resp["Location"])
@@ -143,7 +152,7 @@ class KakaoSocialLoginTests(TestCase):
 
         self.assertEqual(resp.status_code, 302)
         self.assertIn("provider=kakao", resp["Location"])
-        self.assertIn("error=code_required", resp["Location"])
+        self.assertIn("is_success=False", resp["Location"])
 
     @patch("apps.user.views.social_login_views.KakaoOAuthService")
     def test_kakao_login_inactive_user(self, service_mock: Any) -> None:
@@ -178,7 +187,7 @@ class KakaoSocialLoginTests(TestCase):
 
         self.assertEqual(resp.status_code, 302)
         self.assertIn("provider=kakao", resp["Location"])
-        self.assertIn("error=inactive", resp["Location"])
+        self.assertIn("is_success=False", resp["Location"])
 
 
 class NaverSocialLoginTests(TestCase):
@@ -205,7 +214,16 @@ class NaverSocialLoginTests(TestCase):
         service.get_or_create_user.return_value = user
 
         url = reverse("naver-callback")
-        resp = self.client.get(url, {"code": "11", "state": "22"}, follow=False)
+        
+        session = self.client.session
+        session["oauth_state_naver"] = "test-state"
+        session.save()
+
+        resp = self.client.get(
+            url,
+            {"code": "11", "state": "test-state"},
+            follow=False,
+        )
 
         self.assertEqual(resp.status_code, 302)
         self.assertIn("provider=naver", resp["Location"])
@@ -218,7 +236,7 @@ class NaverSocialLoginTests(TestCase):
 
         self.assertEqual(resp.status_code, 302)
         self.assertIn("provider=naver", resp["Location"])
-        self.assertIn("error=code_state_required", resp["Location"])
+        self.assertIn("is_success=False", resp["Location"])
 
     @patch("apps.user.views.social_login_views.NaverOAuthService")
     def test_naver_login_inactive_user(self, service_mock: Any) -> None:
@@ -251,7 +269,7 @@ class NaverSocialLoginTests(TestCase):
 
         self.assertEqual(resp.status_code, 302)
         self.assertIn("provider=naver", resp["Location"])
-        self.assertIn("error=inactive", resp["Location"])
+        self.assertIn("is_success=False", resp["Location"])
 
 
 class SocialLoginUtilsSimpleCoverageTests(TestCase):
