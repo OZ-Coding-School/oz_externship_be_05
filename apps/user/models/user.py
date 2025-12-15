@@ -91,68 +91,9 @@ class SocialUser(models.Model):
         db_table = "social_users"
 
 
-class EnrollmentStatus(models.TextChoices):
-    PENDING = "PENDING"
-    IN_PROGRESS = "IN_PROGRESS"
-    COMPLETED = "COMPLETED"
-
-
-class StudentEnrollmentRequest(TimeStampedModel):
-    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    status = models.CharField(max_length=20, choices=EnrollmentStatus.choices, default=EnrollmentStatus.PENDING)
-    accepted_at = models.DateTimeField(null=True, blank=True)
-
-    class Meta:
-        db_table = "student_enrollment_requests"
-
-
 class CohortStudent(TimeStampedModel):
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     class Meta:
         db_table = "cohort_students"
-
-
-class TrainingAssistant(TimeStampedModel):
-    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = "training_assistants"
-
-
-class OperationManager(TimeStampedModel):
-    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = "operation_managers"
-
-
-class LearningCoach(TimeStampedModel):
-    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = "learning_coachs"
-
-
-class WithdrawalReason(models.TextChoices):
-    GRADUATION = "GRADUATION", "졸업 및 수료"
-    TRANSFER = "TRANSFER", "편입 및 전학"
-    NO_LONGER_NEEDED = "NO_LONGER_NEEDED", "더 이상 필요하지 않음"
-    SERVICE_DISSATISFACTION = "SERVICE_DISSATISFACTION", "서비스 불만족"
-    PRIVACY_CONCERN = "PRIVACY_CONCERN", "개인정보 보호 우려"
-    OTHER = "OTHER", "기타"
-
-
-class Withdrawal(TimeStampedModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    reason = models.CharField(max_length=30, choices=WithdrawalReason.choices)
-    reason_detail = models.TextField()
-    due_date = models.DateField()
-
-    class Meta:
-        db_table = "withdrawals"

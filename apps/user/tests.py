@@ -5,7 +5,7 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from apps.user import models
+from apps.user.models import user as models
 
 
 class UserManagerTests(TestCase):
