@@ -89,11 +89,3 @@ class SocialUser(models.Model):
 
     class Meta:
         db_table = "social_users"
-
-
-class CohortStudent(TimeStampedModel):
-    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    class Meta:
-        db_table = "cohort_students"

@@ -29,3 +29,11 @@ class LearningCoach(TimeStampedModel):
 
     class Meta:
         db_table = "learning_coachs"
+
+
+class CohortStudent(TimeStampedModel):
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    class Meta:
+        db_table = "cohort_students"
