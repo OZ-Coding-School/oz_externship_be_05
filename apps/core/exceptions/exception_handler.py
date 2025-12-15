@@ -1,13 +1,10 @@
 from typing import Any, Optional
 
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
-from apps.qna.exceptions.question_exceptions import (
-    QuestionCreateValidationError,
-)
-
-VALIDATION_ERRORS = (QuestionCreateValidationError,)
+from apps.qna.views.question.question_create import QuestionCreateAPIView
 
 
 def custom_exception_handler(
@@ -18,14 +15,19 @@ def custom_exception_handler(
     if response is None:
         return None
 
-    # 400 ValidationError 계열
-    if isinstance(exc, VALIDATION_ERRORS):
+    view = context.get("view")
+
+    # 질문 등록 API 전용 400 메시지
+    if isinstance(exc, ValidationError) and isinstance(view, QuestionCreateAPIView):
+        response.data = {"error_detail": "유효하지 않은 질문 등록 요청입니다."}
+        return response
+
+    # 공통 ValidationError 포맷 통일
+    if isinstance(exc, ValidationError):
         detail = exc.detail
 
-        # detail이 list인 경우 (ValidationError 기본 형태)
         if isinstance(detail, list) and detail:
             response.data = {"error_detail": str(detail[0])}
-        # detail이 dict인 경우
         elif isinstance(detail, dict):
             response.data = {"error_detail": next(iter(detail.values()))}
         else:
@@ -33,7 +35,7 @@ def custom_exception_handler(
 
         return response
 
-    # detail → error_detail 통일
+    # 401 / 403 / 404 등 detail → error_detail
     if isinstance(response.data, dict) and "detail" in response.data:
         response.data = {"error_detail": str(response.data["detail"])}
 
