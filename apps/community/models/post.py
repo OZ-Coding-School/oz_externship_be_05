@@ -14,5 +14,10 @@ class Post(TimeStampedModel):
     is_visible = models.BooleanField(default=True)
     is_notice = models.BooleanField(default=False)
 
+    def __str__(self) -> str:
+        return self.title
+
     class Meta:
+        verbose_name = "Post"
+        verbose_name_plural = "Posts"
         db_table = "post"
