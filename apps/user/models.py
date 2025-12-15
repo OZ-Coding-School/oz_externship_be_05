@@ -100,7 +100,7 @@ class EnrollmentStatus(models.TextChoices):
 class StudentEnrollmentRequest(TimeStampedModel):
     cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    status = models.CharField(choices=EnrollmentStatus.choices, default=EnrollmentStatus.PENDING)
+    status = models.CharField(max_length=20, choices=EnrollmentStatus.choices, default=EnrollmentStatus.PENDING)
     accepted_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -150,7 +150,7 @@ class WithdrawalReason(models.TextChoices):
 
 class Withdrawal(TimeStampedModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    reason = models.CharField(choices=WithdrawalReason.choices)
+    reason = models.CharField(max_length=30, choices=WithdrawalReason.choices)
     reason_detail = models.TextField()
     due_date = models.DateField()
 
