@@ -1,5 +1,4 @@
-import random
-import string
+import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -7,6 +6,7 @@ from django.db import transaction
 from django.db.models import Avg, Count, QuerySet
 from rest_framework.exceptions import ValidationError
 
+from apps.core.utils.base62 import Base62
 from apps.courses.models import Cohort
 from apps.exams.models import Exam, ExamDeployment, ExamQuestion, ExamSubmission
 from apps.exams.models.exam_deployment import DeploymentStatus
@@ -109,7 +109,7 @@ def create_deployment(
         cohort=cohort,
         exam=exam,
         duration_time=duration_time,
-        access_code=_generate_base62_code(),
+        access_code=Base62.uuid_encode(uuid.uuid4(), length=6),
         open_at=open_at,
         close_at=close_at,
         status=DeploymentStatus.ACTIVATED,
@@ -196,9 +196,3 @@ def _build_questions_snapshot(exam: Exam) -> List[Dict[str, Any]]:
         }
         for q in questions
     ]
-
-
-# Base62 코드 생성 --------------------------------------------------------
-def _generate_base62_code(length: int = 8) -> str:
-    chars = string.ascii_letters + string.digits
-    return "".join(random.choice(chars) for _ in range(length))
