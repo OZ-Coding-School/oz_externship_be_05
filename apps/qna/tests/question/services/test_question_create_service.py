@@ -35,7 +35,7 @@ class QuestionCreateServiceTests(TestCase):
 
         self.assertEqual(Question.objects.count(), 1)
         self.assertEqual(QuestionImage.objects.count(), 1)
-        self.assertEqual(question.title, "정상 질문")
+        self.assertEqual(question.title, "질문 제목")
 
     # 409 제목 중복
     def test_duplicate_title_raises_409_error(self) -> None:
