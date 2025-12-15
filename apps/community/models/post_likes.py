@@ -7,7 +7,7 @@ from apps.user.models import User
 
 class PostLike(TimeStampedModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='post_likes')
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="post_likes")
     is_liked = models.BooleanField(default=True)
 
     class Meta:

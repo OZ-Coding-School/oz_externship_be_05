@@ -1,10 +1,15 @@
-from django.db.models import Count
 from typing import TYPE_CHECKING
 
 from django.contrib import admin
+from django.db.models import Count, QuerySet
+from django.http.request import HttpRequest
 
-from apps.community.admin.utils.filter import PostOrderingFilter, CustomSearchFilter
-from apps.community.admin.utils.inlines import CommentInline, AttachmentInline, ImageInline
+from apps.community.admin.utils.filter import CustomSearchFilter, PostOrderingFilter
+from apps.community.admin.utils.inlines import (
+    AttachmentInline,
+    CommentInline,
+    ImageInline,
+)
 from apps.community.models.post import Post
 
 if TYPE_CHECKING:
@@ -54,21 +59,23 @@ class PostAdmin(BaseAdmin):
     list_display_links = ("title",)
 
     # 커스텀 필터
-    list_filter = [PostOrderingFilter, CustomSearchFilter, 'category']
+    list_filter = [PostOrderingFilter, CustomSearchFilter, "category"]
 
-    def likes_count(self, obj):
-        return obj.post_likes.count()
+    @admin.display(description="likes count")
+    def likes_count(self, obj: Post) -> int:
+        if hasattr(obj, "likes_count"):
+            return int(obj.likes_count)
+        return 0
 
-    likes_count.short_description = 'likes count'
+    @admin.display(description="comments count")
+    def comment_count(self, obj: Post) -> int:
+        if hasattr(obj, "comment_count"):
+            return int(obj.comment_count)
+        return 0
 
-    def comment_count(self, obj):
-        return obj.post_comments.count()
-
-    comment_count.short_description = "comments count"
-
-    def get_queryset(self, request):
+    def get_queryset(self, request: HttpRequest) -> QuerySet[Post]:
         qs = super().get_queryset(request)
         return qs.annotate(
-            _comment_count=Count('post_comments'),
-            _likes_count=Count('post_likes'),
+            comment_count=Count("post_comments"),
+            likes_count=Count("post_likes"),
         )

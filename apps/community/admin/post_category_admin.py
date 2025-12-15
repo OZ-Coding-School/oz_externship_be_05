@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from django.contrib import admin
+
 from apps.community.admin.utils.filter import TimeOrderingFilter
 from apps.community.models.post_category import PostCategory
 
@@ -29,4 +30,4 @@ class PostCategoryAdmin(BaseAdmin):
     search_fields = ("name",)
     list_filter = (TimeOrderingFilter,)
     date_hierarchy = "created_at"
-    list_display_links = ('name',)
+    list_display_links = ("name",)
