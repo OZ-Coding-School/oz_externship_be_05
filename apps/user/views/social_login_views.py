@@ -61,7 +61,7 @@ class KakaoLoginStartAPIView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Social Login"],
+        tags=["Accounts"],
         summary="카카오 로그인 시작",
         responses={302: None},
     )
@@ -83,7 +83,7 @@ class NaverLoginStartAPIView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Social Login"],
+        tags=["Accounts"],
         summary="네이버 로그인 시작",
         responses={302: None},
     )
@@ -104,14 +104,7 @@ class NaverLoginStartAPIView(APIView):
 class KakaoCallbackAPIView(APIView):
     permission_classes = [AllowAny]
 
-    @extend_schema(
-        tags=["Social Login"],
-        summary="카카오 로그인 콜백",
-        parameters=[],
-        responses={302: None, 400: None, 403: None},
-    )
-
-    #! status 스키마 추가.
+    @extend_schema(exclude=True)
     def get(self, request: Request) -> HttpResponseRedirect:
         try:
             code = request.query_params.get("code")
@@ -159,12 +152,7 @@ class KakaoCallbackAPIView(APIView):
 class NaverCallbackAPIView(APIView):
     permission_classes = [AllowAny]
 
-    @extend_schema(
-        tags=["Social Login"],
-        summary="네이버 로그인 콜백",
-        parameters=[],
-        responses={302: None, 400: None, 403: None},
-    )
+    @extend_schema(exclude=True)
     def get(self, request: Request) -> HttpResponseRedirect:
         try:
             code = request.query_params.get("code")
@@ -175,7 +163,7 @@ class NaverCallbackAPIView(APIView):
 
             # state를 확인하여 올바른 곳에서 온 요청인지 검증.
             if state != request.session.get("oauth_state_naver"):
-                raise ValidationError({"code": "invalid_status"})
+                raise ValidationError({"code": "invalid_state"})
 
             service = NaverOAuthService()
             access_token = service.get_access_token(code, state)
