@@ -2,12 +2,12 @@ import logging
 import uuid
 from typing import Any, Literal, cast
 from urllib.parse import urlencode
-from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 
 import requests
 from django.conf import settings
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import redirect
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
@@ -63,11 +63,10 @@ class KakaoLoginStartAPIView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-            tags=["Social Login"],
-            summary="카카오 로그인 시작",
-            responses={302: None},
-        )
-
+        tags=["Social Login"],
+        summary="카카오 로그인 시작",
+        responses={302: None},
+    )
     def get(self, request: Request) -> HttpResponseRedirect:
         state = uuid.uuid4().hex
         request.session["oauth_state_kakao"] = state
@@ -86,11 +85,10 @@ class NaverLoginStartAPIView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-            tags=["Social Login"],
-            summary="네이버 로그인 시작",
-            responses={302: None},
-        )
-
+        tags=["Social Login"],
+        summary="네이버 로그인 시작",
+        responses={302: None},
+    )
     def get(self, request: Request) -> HttpResponseRedirect:
         state = uuid.uuid4().hex
         request.session["oauth_state_naver"] = state
@@ -111,10 +109,9 @@ class KakaoCallbackAPIView(APIView):
     @extend_schema(
         tags=["Social Login"],
         summary="카카오 로그인 콜백",
-        parameters=[...],
+        parameters=[],
         responses={302: None, 400: None, 403: None},
     )
-
 
     #! status 스키마 추가.
     def get(self, request: Request) -> HttpResponseRedirect:
@@ -167,11 +164,9 @@ class NaverCallbackAPIView(APIView):
     @extend_schema(
         tags=["Social Login"],
         summary="네이버 로그인 콜백",
-        parameters=[...],
+        parameters=[],
         responses={302: None, 400: None, 403: None},
     )
-
-
     def get(self, request: Request) -> HttpResponseRedirect:
         try:
             code = request.query_params.get("code")

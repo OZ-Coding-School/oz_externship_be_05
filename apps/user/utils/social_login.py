@@ -47,15 +47,15 @@ class KakaoOAuthService:
     USER_INFO_URL = "https://kapi.kakao.com/v2/user/me"
 
     def __init__(self) -> None:
-        self.client_id = settings.KAKAO_CLIENT_ID
-        self.redirect_uri = settings.KAKAO_REDIRECT_URI
+        self.client_id = cast(str, settings.KAKAO_CLIENT_ID)
+        self.redirect_uri = cast(str, settings.KAKAO_REDIRECT_URI)
 
     # 토큰 받아옴
     def get_access_token(self, code: str) -> str:
         data = {
             "grant_type": "authorization_code",
-            "client_id": cast(str, self.client_id),
-            "redirect_uri": cast(str, self.redirect_uri),
+            "client_id": self.client_id,
+            "redirect_uri": self.redirect_uri,
             "code": code,
         }
         resp = requests.post(self.TOKEN_URL, data=data)
@@ -73,8 +73,8 @@ class KakaoOAuthService:
 
     def get_or_create_user(self, kakao_profile: dict[str, Any]) -> User:
         kakao_id = str(kakao_profile["id"])
-        kakao_account = kakao_profile.get("kakao_account")
-        profile = kakao_account.get("profile")
+        kakao_account = kakao_profile.get("kakao_account") or {}
+        profile = kakao_account.get("profile") or {}
 
         email = kakao_account.get("email")
         if not email:
@@ -97,7 +97,7 @@ class KakaoOAuthService:
         if social_user:
             return social_user.user
 
-        # 이메일 유저가 존재하면 소셜 정보 생성 후 유저 줘버려
+        # 이메일 유저가 존재하면 소셜 정보 생성 후 유저 줘버려ㅇㅈㅁ
         user = User.objects.filter(email__iexact=email).first()
         if user:
             SocialUser.objects.get_or_create(
@@ -135,17 +135,17 @@ class NaverOAuthService:
     USER_INFO_URL = "https://openapi.naver.com/v1/nid/me"
 
     def __init__(self) -> None:
-        self.client_id = settings.NAVER_CLIENT_ID
-        self.client_secret = settings.NAVER_CLIENT_SECRET
-        self.redirect_uri = settings.NAVER_REDIRECT_URI
+        self.client_id = cast(str, settings.NAVER_CLIENT_ID)
+        self.client_secret = cast(str, settings.NAVER_CLIENT_SECRET)
+        self.redirect_uri = cast(str, settings.NAVER_REDIRECT_URI)
 
     # 토큰 받아옴
     def get_access_token(self, code: str, state: str) -> str:
         params = {
             "grant_type": "authorization_code",
-            "client_id": cast(str, self.client_id),
-            "client_secret": cast(str, self.client_secret),
-            "redirect_uri": cast(str, self.redirect_uri),
+            "client_id": self.client_id,
+            "client_secret": self.client_secret,
+            "redirect_uri": self.redirect_uri,
             "code": code,
             "state": state,
         }
