@@ -6,6 +6,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
+from apps.core.models import TimeStampedModel
 from apps.courses.models.cohorts_models import Cohort
 from apps.user.utils.nickname import generate_nickname
 
@@ -55,7 +56,7 @@ class RoleChoices(models.TextChoices):
     USER = "U", "User"
 
 
-class User(AbstractBaseUser, PermissionsMixin):
+class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=30)
     nickname = models.CharField(max_length=15, unique=True)
@@ -65,8 +66,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     profile_image_url = models.URLField(null=True, blank=True)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     role = models.CharField(choices=RoleChoices.choices, max_length=2, default=RoleChoices.USER)
 
     objects = UserManager()
@@ -90,21 +89,3 @@ class SocialUser(models.Model):
 
     class Meta:
         db_table = "social_users"
-
-
-class EnrollmentStatus(models.TextChoices):
-    PENDING = "PENDING"
-    IN_PROGRESS = "IN_PROGRESS"
-    COMPLETED = "COMPLETED"
-
-
-class StudentEnrollmentRequest(models.Model):
-    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    status = models.CharField(choices=EnrollmentStatus.choices, default=EnrollmentStatus.PENDING)
-    accepted_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = "student_enrollment_requests"
