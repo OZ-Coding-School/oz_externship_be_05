@@ -1,3 +1,4 @@
+from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -7,7 +8,7 @@ from apps.user.models.user import RoleChoices, User
 
 class QuestionCreateAPITests(APITestCase):
     def setUp(self) -> None:
-        self.url = "/api/v1/qna/questions"
+        self.url = reverse("question_create")
         self.category = QuestionCategory.objects.create(name="백엔드")
 
     def create_user(self, role: RoleChoices) -> User:
@@ -21,7 +22,7 @@ class QuestionCreateAPITests(APITestCase):
             birthday="2000-01-01",
         )
 
-    #
+    # 질문 생성 성공
     def test_question_create_success(self) -> None:
         user = self.create_user(RoleChoices.ST)
         self.client.force_authenticate(user=user)

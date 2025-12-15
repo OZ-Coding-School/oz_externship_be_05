@@ -17,6 +17,8 @@ from apps.user.models import User
 class QuestionCreateAPIView(APIView):
     permission_classes = [QuestionCreatePermission]
 
+    validation_error_message = "유효하지 않은 질문 등록 요청입니다."
+
     def post(self, request: Request) -> Response:
         user = request.user
         assert isinstance(user, User)

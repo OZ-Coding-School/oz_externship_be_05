@@ -4,8 +4,6 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
-from apps.qna.views.question.question_create import QuestionCreateAPIView
-
 
 def custom_exception_handler(
     exc: Exception,
@@ -17,22 +15,14 @@ def custom_exception_handler(
 
     view = context.get("view")
 
-    # 질문 등록 API 전용 400 메시지
-    if isinstance(exc, ValidationError) and isinstance(view, QuestionCreateAPIView):
-        response.data = {"error_detail": "유효하지 않은 질문 등록 요청입니다."}
-        return response
-
-    # 공통 ValidationError 포맷 통일
+    # 400 → validation_error_message / "유효하지 않은 요청입니다."
     if isinstance(exc, ValidationError):
-        detail = exc.detail
+        message = getattr(view, "validation_error_message", "유효하지 않은 요청입니다.")
 
-        if isinstance(detail, list) and detail:
-            response.data = {"error_detail": str(detail[0])}
-        elif isinstance(detail, dict):
-            response.data = {"error_detail": next(iter(detail.values()))}
-        else:
-            response.data = {"error_detail": str(detail)}
-
+        response.data = {
+            "error_detail": message,
+            "errors": exc.detail,
+        }
         return response
 
     # 401 / 403 / 404 등 detail → error_detail
