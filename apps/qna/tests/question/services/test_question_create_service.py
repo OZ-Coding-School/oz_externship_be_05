@@ -8,7 +8,7 @@ from apps.qna.services.question.question_create_service import (
     create_question,
     get_category_or_raise,
 )
-from apps.user.models import RoleChoices, User
+from apps.user.models.user import RoleChoices, User
 
 
 class QuestionCreateServiceTests(TestCase):

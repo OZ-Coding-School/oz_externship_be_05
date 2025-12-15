@@ -2,7 +2,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.qna.models import QuestionCategory
-from apps.user.models import RoleChoices, User
+from apps.user.models.user import RoleChoices, User
 
 
 class QuestionCreateAPITests(APITestCase):

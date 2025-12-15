@@ -4,7 +4,7 @@ from rest_framework.request import Request
 from rest_framework.views import APIView
 
 from apps.qna.exceptions.question_exceptions import QuestionCreateNotAuthenticated
-from apps.user.models import RoleChoices
+from apps.user.models.user import RoleChoices
 
 
 class QuestionCreatePermission(BasePermission):
