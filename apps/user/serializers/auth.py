@@ -79,3 +79,16 @@ class LoginSerializer(serializers.Serializer[Any], BaseMixin):
             raise serializers.ValidationError("비활성화된 계정입니다.")
         attrs["user"] = user
         return attrs
+
+
+class TokenRefreshSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField()
+    access_token = serializers.CharField(read_only=True)
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        try:
+            token = RefreshToken(attrs["refresh_token"])
+        except TokenError as exc:
+            raise serializers.ValidationError("로그인이 만료되었습니다.") from exc
+        attrs["access_token"] = str(token.access_token)
+        return attrs

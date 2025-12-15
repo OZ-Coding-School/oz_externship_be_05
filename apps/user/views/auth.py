@@ -8,10 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.user.models import User
-from apps.user.serializers.auth import (
-    LoginSerializer,
-    SignupSerializer,
-)
+from apps.user.serializers.auth import LoginSerializer, SignupSerializer, TokenRefreshSerializer
 from apps.user.utils.tokens import issue_token_pair
 
 
@@ -44,3 +41,18 @@ class LoginAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         user: User = serializer.validated_data["user"]
         return Response(issue_token_pair(user), status=status.HTTP_200_OK)
+
+
+class RefreshAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request: Request) -> Response:
+        serializer = TokenRefreshSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(
+            {
+                "refresh_token": serializer.validated_data["refresh_token"],
+                "access_token": serializer.validated_data["access_token"],
+            },
+            status=status.HTTP_200_OK,
+        )
