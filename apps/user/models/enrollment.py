@@ -1,10 +1,8 @@
-from django.contrib.auth import get_user_model
 from django.db import models
 
 from apps.core.models import TimeStampedModel
 from apps.courses.models.cohorts_models import Cohort
-
-User = get_user_model()
+from apps.user.models.user import User
 
 
 class EnrollmentStatus(models.TextChoices):
