@@ -156,3 +156,4 @@ class Withdrawal(TimeStampedModel):
 
     class Meta:
         db_table = "withdrawals"
+
