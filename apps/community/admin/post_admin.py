@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin
 from django.db.models import Count, QuerySet
@@ -62,16 +62,12 @@ class PostAdmin(BaseAdmin):
     list_filter = [PostOrderingFilter, CustomSearchFilter, "category"]
 
     @admin.display(description="likes count")
-    def likes_count(self, obj: Post) -> int:
-        if hasattr(obj, "likes_count"):
-            return int(obj.likes_count)
-        return 0
+    def likes_count(self, obj: Any) -> int:
+        return int(obj.likes_count)
 
     @admin.display(description="comments count")
-    def comment_count(self, obj: Post) -> int:
-        if hasattr(obj, "comment_count"):
-            return int(obj.comment_count)
-        return 0
+    def comment_count(self, obj: Any) -> int:
+        return int(obj.comment_count)
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Post]:
         qs = super().get_queryset(request)
