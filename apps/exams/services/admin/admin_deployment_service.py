@@ -8,13 +8,12 @@ from django.db.models import Avg, Count, QuerySet
 from rest_framework.exceptions import ValidationError
 
 from apps.courses.models import Cohort
-
-# from apps.courses.models import CohortStudent
 from apps.exams.models import Exam, ExamDeployment, ExamQuestion, ExamSubmission
 from apps.exams.models.exam_deployment import DeploymentStatus
 from apps.exams.services.admin.validators.deployment_validator import (
     DeploymentValidator,
 )
+from apps.user.models import CohortStudent
 
 
 # 시험 배포 목록 조회 -------------------------------------------------------
@@ -78,19 +77,19 @@ def get_admin_deployment_detail(*, deployment_id: int) -> ExamDeployment:
         "question",
         "point",
     )
-    #
-    # # 응시 대상자 수
-    # total_target_count = CohortStudent.objects.filter(cohort_id=deployment.cohort.id).count()
-    #
-    # # 응시자 수
-    # submit_count = ExamSubmission.objects.filter(deployment=deployment).count()
-    #
-    # # 미응시자 수
-    # not_submitted_count = max(total_target_count - submit_count, 0)
-    #
-    # setattr(deployment, "questions", list(questions))
-    # setattr(deployment, "submit_count", submit_count)
-    # setattr(deployment, "not_submitted_count", not_submitted_count)
+
+    # 응시 대상자 수
+    total_target_count = CohortStudent.objects.filter(cohort_id=deployment.cohort.id).count()
+
+    # 응시자 수
+    submit_count = ExamSubmission.objects.filter(deployment=deployment).count()
+
+    # 미응시자 수
+    not_submitted_count = max(total_target_count - submit_count, 0)
+
+    setattr(deployment, "questions", list(questions))
+    setattr(deployment, "submit_count", submit_count)
+    setattr(deployment, "not_submitted_count", not_submitted_count)
 
     return deployment
 
@@ -119,7 +118,6 @@ def create_deployment(
 
 
 # 시험 배포 정보 수정 (open_at, close_at, duration_time) -------------------------
-# TODO: API명세에는 배포 수정이 없음. 근데 있는 편이 유리하지 않나? 물어보기
 @transaction.atomic
 def update_deployment(
     *,
