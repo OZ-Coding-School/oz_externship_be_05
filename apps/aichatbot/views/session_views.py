@@ -1,9 +1,10 @@
+from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.pagination import CursorPagination
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -53,12 +54,16 @@ class CustomCursorPagination(CursorPagination):
     cursor_query_param = "cursor"
     page_size_query_param = "page_size"
     page_size = 10
+    ordering = "-created_at"
 
 
 class SessionCreateListAPIView(APIView):
     serializer_class = SessionSerializer
-    permission_classes = [AllowAny]  # IsAuthenticated
+    permission_classes = [IsAuthenticated]
     pagination_class = CustomCursorPagination
+
+    def get_queryset(self) -> QuerySet[ChatbotSession]:
+        return ChatbotSession.objects.filter(user=self.request.user)
 
     @extend_schema(
         tags=["Session"],
@@ -70,9 +75,14 @@ class SessionCreateListAPIView(APIView):
         },
     )
     def post(self, request: Request) -> Response:
-        serializer = self.serializer_class(data=request.data)
+        serializer = SessionCreateSerializer(
+            data=request.data,
+            context={"request": request},
+        )
         serializer.is_valid(raise_exception=True)
-        return Response(self.serializer_class().data, status=status.HTTP_201_CREATED)
+        session = serializer.save()
+        output = SessionSerializer(session)
+        return Response(output.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
         tags=["Session"],
@@ -88,26 +98,19 @@ class SessionCreateListAPIView(APIView):
                 name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값입니다."
             ),
         ],
+        responses={},
     )
     def get(self, request: Request) -> Response:
         paginator = self.pagination_class()
-        qs = paginator.paginate_queryset(queryset=self.get_queryset(), request=request)  # type: ignore
-        serializer = self.serializer_class(qs, many=True)
+        qs = self.get_queryset()
+        page = paginator.paginate_queryset(queryset=qs, request=request)
+        serializer = self.serializer_class(page, many=True)
         return paginator.get_paginated_response(serializer.data)
-
-
-# 실기능 구현
-# 커서 페이지네이션이면 queryset을 무조건 필요 = mock 데이터로 구현 x
-# 실기능 구현을 하는게 더 깔끔할 것
-# db는 넣을 수 있음
-# post 구현이 되면
-# 할 것: 1) mock 날리고 2) model로 썼던 mock도 날리고
-#
 
 
 # 세션 상세.
 class SessionDeleteView(APIView):
-    permission_classes = [AllowAny]  # IsAuthenticated
+    permission_classes = [IsAuthenticated]
     serializer_class = SessionSerializer
 
     @extend_schema(
