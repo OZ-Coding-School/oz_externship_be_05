@@ -3,8 +3,8 @@ from rest_framework import serializers
 from apps.user.models import User
 from apps.courses.models.cohorts_models import Cohort
 from apps.courses.models.courses_models import Course
-
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
+from apps.user.models.enrollment import StudentEnrollmentRequest
+from apps.user.models.withdraw import Withdrawal
 
 # 어드민 페이지 회원 목록 조회 API 시리얼라이저
 class AdminAccountListSerializer(serializers.ModelSerializer):
@@ -33,6 +33,8 @@ class CohortMiniSerializer(serializers.ModelSerializer):
         fields = ("id", "number", "status", "start_date", "end_date")
 
 class AdminAccountRetrieveSerializer(serializers.ModelSerializer):
+    assigned_courses = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = (
@@ -82,8 +84,8 @@ class AdminAccountResponseSerialzier(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            "id"
-            "email"
+            "id",
+            "email",
             "nickname",
             "name",
             "phone_number",
@@ -111,7 +113,7 @@ class AdminAccountRoleUpdateSerializer(serializers.Serializer):
     def validate(self, attrs):
         role = attrs["role"]
         cohort_id_present = "cohort_id" in attrs and attrs.get("cohort_id") is not None
-        courses_present =  attrs in "assigned_courses"
+        courses_present =  "assigned_courses" in attrs and attrs.get("assigned_courses") is not None
 
         # 유저,어드민은 role만 수정 가능
         if role in ROLE_USER:
@@ -152,31 +154,169 @@ class CohortMiniSerializer(serializers.ModelSerializer):
         model = Cohort
         fields = ("id", "number")
 
-class AdminAccountStudentSerializer(serializers.Serializer):
+class UserMiniSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Cohort
+        model = User
         fields = (
-            "count",
-            "next",
-            "previous",
-            "results",
-            "created_at",
+            "id",
+            "email",
+            "name",
+            "birthday",
+            "gender",
+        )
+
+class AdminAccountStudentSerializer(serializers.ModelSerializer):
+    cohort = CohortMiniSerializer(read_only=True)
+    course = serializers.SerializerMethodField()
+    user = UserMiniSerializer(read_only=True)
+
+    class Meta:
+        model = StudentEnrollmentRequest
+        fields = (
+            "id",
+            "user",
+            "cohort",
+            "course",
+            "status",
+            "created_at"
         )
     
-    def get_results(self, obj:Cohort):
-        results = []
-        obj.
+    def get_course(self, obj):
+        cohort = getattr(obj, "cohort", None)
+        course = getattr(obj, "course", None) if cohort else None
+        return CourseMiniSerializer(course).data if course else None
 
 
 # 수강생 등록 요청 목록 조회 API SR
-class AdminAccountStudentEnrollSerializer(serializers.Serializer):
-    count = serializers.IntegerField()
-    next = serializers.CharField()
-    previous = serializers.CharField()
+class AdminAccountStudentEnrollSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "email",
+            "nickname",
+            "name",
+            "phone_number",
+            "birthday",
+            "gender",
+            "status",
+        )
 
-    
 
-# 수강생 등록 요청 승인 API SR
+# 수강생 등록 요청 승인 Request API SR
+class AdminAccountStudentEnrollAcceptSerializer(serializers.Serializer):
+    detail = serializers.CharField(max_length=255)
+    success = serializers.IntegerField()
+    failed = serializers.IntegerField()
 
 
 # 수강생 등록 요청 거절 API SR
+class AdminAccountStudentEnrollRejectRequestSerializer(serializers.Serializer):
+    enrollments = serializers.ListField(
+        child=serializers.IntegerField(min_value=1),
+        allow_empty=False,
+        required=True,
+    )
+
+class AdminAccountStudentEnrollrejectResponseSerializer(serializers.Serializer):
+    detail = serializers.CharField(max_length=255)
+    success = serializers.IntegerField()
+    failed = serializers.IntegerField()
+
+
+#  어드민 페이지 회원 탈퇴 내역 목록 조회 API SR
+class UserMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "email",
+            "name",
+            "role",
+            "birthday",
+        )
+
+class AdminAccountWithdrawalListSerializer(serializers.ModelSerializer):
+    user = UserMiniSerializer(read_only=True)
+    reason_display = serializers.CharField(source="get_reason_display", read_only=True)
+    withdrawn_at = serializers.DateTimeField(source="created_at", read_only=True)
+
+    class Meta:
+        model = Withdrawal
+        fields = (
+            "id",
+            "user",
+            "reason",
+            "reason_display",
+            "withdrawn_at",
+        )
+
+
+#  어드민 페이지 회원 탈퇴 내역 상세 조회 API SR
+class UserMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            "id",
+            "email",
+            "name",
+            "gender",
+            "role",
+            "status",
+            "profile_img_url",
+            "created_at"
+        )
+
+class CourseMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = (
+            "id",
+            "name",
+            "tag"
+        )
+
+class CohortMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Cohort
+        fields = (
+            "id",
+            "number",
+            "status",
+            "start_date",
+            "end_date",
+        )
+
+class AdminAccountWithdrawalRetrieveSerializer(serializers.ModelSerializer):
+    user = UserMiniSerializer(read_only=True)
+    reason_display = serializers.CharField(source="get_reason_display", read_only=True)
+    assigned_courses = serializers.SerializerMethodField()
+    withdrawn_at = serializers.DateTimeField(source="created_at", read_only=True)
+
+
+    class Meta:
+        model = Withdrawal
+        fields = (
+            "id",
+            "user",
+            "assigned_courses",
+            "reason",
+            "reason_display",
+            "reason_detail",
+            "due_date",
+            "withdrawn_at",
+        )
+
+    def get_assigned_courses(self, obj: Withdrawal):
+        result = []
+        for cs in obj.user.cohort_students.all():
+            cohort = cs.cohort
+            if not cohort:
+                continue
+            course = cohort.course
+            result.append({
+                "course": CourseMiniSerializer(course).data,
+                "cohort": CohortMiniSerializer(cohort).data,
+            })
+        return result
+
