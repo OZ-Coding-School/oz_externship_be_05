@@ -25,8 +25,14 @@ class DeploymentValidator:
         if open_at <= DeploymentValidator._now():
             raise ValidationError({"open_at": "시험 시작 시간(open_at)은 현재 시각 이후여야 합니다."})
 
-    # 상태 기반 규칙
+    # 상태 기반 규칙 - 시작된 시험의 시간 변경 불가
     @staticmethod
     def validate_not_started(*, open_at: datetime, status: str) -> None:
         if open_at <= DeploymentValidator._now() and status == DeploymentStatus.ACTIVATED:
             raise ValidationError({"open_at": "이미 시작된 시험의 시작 시간은 수정/삭제할 수 없습니다."})
+
+    # 상태 기반 규칙 - 종료된 시험 변경 불가
+    @staticmethod
+    def validate_not_finished(*, close_at: datetime, status: str) -> None:
+        if close_at <= DeploymentValidator._now() and status == DeploymentStatus.DEACTIVATED:
+            raise ValidationError({"status": "종료된 시험은 변경할 수 없습니다."})

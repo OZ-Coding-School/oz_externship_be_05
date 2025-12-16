@@ -8,12 +8,11 @@ from rest_framework.exceptions import ValidationError
 
 from apps.core.utils.base62 import Base62
 from apps.courses.models import Cohort
-from apps.exams.models import Exam, ExamDeployment, ExamQuestion, ExamSubmission
+from apps.exams.models import Exam, ExamDeployment, ExamQuestion
 from apps.exams.models.exam_deployment import DeploymentStatus
 from apps.exams.services.admin.validators.deployment_validator import (
     DeploymentValidator,
 )
-from apps.user.models import CohortStudent
 
 
 # 시험 배포 목록 조회 -------------------------------------------------------
@@ -27,7 +26,7 @@ def list_admin_deployments(
 ) -> QuerySet[ExamDeployment]:
 
     qs: QuerySet[ExamDeployment] = ExamDeployment.objects.select_related("cohort", "exam").annotate(
-        participant_count=Count("submissions", distinct=True),
+        participant_count=Count("submissions__submitter", distinct=True),
         avg_score=Avg("submissions__score"),
     )
 
@@ -36,59 +35,45 @@ def list_admin_deployments(
         qs = qs.filter(cohort=cohort)
 
     if status is not None:
-        if status not in DeploymentStatus.values:
-            raise ValidationError({"status": "유효하지 않은 배포 상태입니다."})
         qs = qs.filter(status=status)
 
     # 검색(검색 키워드와 일부 또는 완전 일치)
     if search_keyword:
-        qs = qs.filter(
-            exam__title__icontains=search_keyword,
-        )
+        qs = qs.filter(exam__title__icontains=search_keyword)
 
     # 정렬(최신순, 응시횟수 많은 순, 평균 점수 높은 순)
-    sort_map = {
-        "created_at": "created_at",
-        "participant_count": "participant_count",
-        "avg_score": "avg_score",
-    }
+    if sort not in {"created_at", "participant_count", "avg_score"}:
+        sort = "created_at"
 
-    sort_field = sort_map.get(sort, "created_at")
     prefix = "-" if order == "desc" else ""
 
-    return qs.order_by(f"{prefix}{sort_field}")
+    return qs.order_by(f"{prefix}{sort}")
 
 
 # 단일 시험 배포 상세 조회 ---------------------------------------------------
 def get_admin_deployment_detail(*, deployment_id: int) -> ExamDeployment:
     try:
-        deployment = ExamDeployment.objects.select_related(
-            "exam",
-            "cohort",
-            "exam__subject",
-        ).get(pk=deployment_id)
+        deployment = (
+            ExamDeployment.objects.select_related("exam", "cohort", "exam__subject")
+            .annotate(
+                submit_count=Count("submissions__submitter", distinct=True),
+                total_target_count=Count("cohort__cohortstudent", distinct=True),
+            )
+            .get(pk=deployment_id)
+        )
     except ExamDeployment.DoesNotExist as exc:
         raise ValidationError({"deployment_id": "해당 배포 정보를 찾을 수 없습니다."}) from exc
 
-    # 시험 문항 조회
-    questions = ExamQuestion.objects.filter(exam=deployment.exam).values(
-        "id",
-        "type",
-        "question",
-        "point",
+    # 시험 문항 조회 - 배포 시점 스냅샷 사용
+    questions = deployment.questions_snapshot
+
+    # 미응시자수
+    not_submitted_count = max(
+        deployment.total_target_count - deployment.submit_count,
+        0,
     )
 
-    # 응시 대상자 수
-    total_target_count = CohortStudent.objects.filter(cohort_id=deployment.cohort.id).count()
-
-    # 응시자 수
-    submit_count = ExamSubmission.objects.filter(deployment=deployment).count()
-
-    # 미응시자 수
-    not_submitted_count = max(total_target_count - submit_count, 0)
-
-    setattr(deployment, "questions", list(questions))
-    setattr(deployment, "submit_count", submit_count)
+    setattr(deployment, "questions", questions)
     setattr(deployment, "not_submitted_count", not_submitted_count)
 
     return deployment
@@ -119,22 +104,21 @@ def create_deployment(
 
 # 시험 배포 정보 수정 (open_at, close_at, duration_time) -------------------------
 @transaction.atomic
-def update_deployment(
-    *,
-    deployment: ExamDeployment,
-    data: Dict[str, Any],
-) -> ExamDeployment:
+def update_deployment(*, deployment: ExamDeployment, data: Dict[str, Any]) -> ExamDeployment:
 
+    # 시작된 시험 수정 불가
     DeploymentValidator.validate_not_started(
         open_at=deployment.open_at,
         status=deployment.status,
     )
 
-    allowed_fields = {"open_at", "close_at", "duration_time"}
+    # 종료된 시험 수정 불가
+    DeploymentValidator.validate_not_finished(
+        close_at=deployment.close_at,
+        status=deployment.status,
+    )
 
     for field, value in data.items():
-        if field not in allowed_fields:
-            raise ValidationError({"field": "수정할 수 없는 필드입니다."})
         setattr(deployment, field, value)
 
     deployment.save(update_fields=list(data.keys()) + ["updated_at"])
@@ -149,8 +133,11 @@ def set_deployment_status(
     status: str,
 ) -> ExamDeployment:
 
-    if status not in DeploymentStatus.values:
-        raise ValidationError({"status": "유효하지 않은 배포 상태입니다."})
+    # 종료된 시험 상태 변경 불가
+    DeploymentValidator.validate_not_finished(
+        close_at=deployment.close_at,
+        status=deployment.status,
+    )
 
     # 비활성화시 응시 중인 시험은 즉시 종료되어야 함
     if deployment.status == DeploymentStatus.ACTIVATED and status == DeploymentStatus.DEACTIVATED:
@@ -164,15 +151,6 @@ def set_deployment_status(
 # 시험 배포 삭제 ---------------------------------------------------------
 @transaction.atomic
 def delete_deployment(*, deployment: ExamDeployment) -> None:
-
-    DeploymentValidator.validate_not_started(
-        open_at=deployment.open_at,
-        status=deployment.status,
-    )
-
-    # 응시 내역이 존재하면 삭제 불가
-    if ExamSubmission.objects.filter(deployment=deployment).exists():
-        raise ValidationError({"deployment": "응시 내역이 있는 시험 배포는 삭제할 수 없습니다."})
 
     deployment.delete()
 
