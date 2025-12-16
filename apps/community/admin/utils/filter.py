@@ -6,38 +6,11 @@ from django.http import HttpRequest
 
 
 # 정렬
-class PostOrderingFilter(SimpleListFilter):
-    title = "정렬 기준"
-    parameter_name = "order_by"
-
-    def lookups(self, request: Any, model_admin: Any) -> list[tuple[str, str]]:
-        return [
-            ("latest", "최신순"),
-            ("oldest", "오래된 순"),
-            ("most_views", "조회수 많은 순"),
-            ("most_likes", "좋아요 많은 순"),
-        ]
-
-    def queryset(self, request: Any, queryset: QuerySet[Any]) -> Any:
-
-        if self.value() == "latest":
-            return queryset.order_by("-created_at")
-
-        if self.value() == "oldest":
-            return queryset.order_by("created_at")
-
-        if self.value() == "most_views":
-            return queryset.order_by("-view_count")
-
-        if self.value() == "most_likes":
-            return queryset.annotate(like_count=Count("post_likes")).order_by("-like_count")
-
-        return queryset  # ordering 작동
 
 
 class TimeOrderingFilter(SimpleListFilter):
     title = "시간 정렬"
-    parameter_name = "order_by"
+    parameter_name = "order_by_time"
 
     def lookups(self, request: Any, model_admin: Any) -> list[tuple[str, str]]:
         return [
@@ -54,6 +27,31 @@ class TimeOrderingFilter(SimpleListFilter):
             return queryset.order_by("created_at")
 
         return queryset  # ordering 작동
+
+
+class PostOrderingFilter(TimeOrderingFilter):
+    title = "정렬 기준"
+    parameter_name = "order_by"
+
+    def lookups(self, request: Any, model_admin: Any) -> list[tuple[str, str]]:
+        time_options = super().lookups(request, model_admin)
+
+        post_options = [
+            ("most_views", "조회수 많은 순"),
+            ("most_likes", "좋아요 많은 순"),
+        ]
+
+        return time_options + post_options
+
+    def queryset(self, request: Any, queryset: QuerySet[Any]) -> Any:
+
+        if self.value() == "most_views":
+            return queryset.order_by("-view_count")
+
+        if self.value() == "most_likes":
+            return queryset.annotate(like_count=Count("post_likes")).order_by("-like_count")
+
+        return super().queryset(request, queryset) # ordering 작동
 
 
 # 검색 필터
