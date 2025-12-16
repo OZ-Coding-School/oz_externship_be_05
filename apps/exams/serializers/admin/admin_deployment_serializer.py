@@ -42,8 +42,8 @@ class AdminDeploymentSerializer(serializers.ModelSerializer[ExamDeployment]):
             DeploymentValidator.validate_open(open_at)
 
         # exam - cohort 관계 검증
-        exam = attrs.get("exam")
-        cohort = attrs.get("cohort")
+        exam = attrs.get("exam", getattr(instance, "exam", None))
+        cohort = attrs.get("cohort", getattr(instance, "cohort", None))
         if exam and cohort and exam.subject.course_id != cohort.course_id:
             raise serializers.ValidationError(
                 {"cohort": "시험(exam)과 기수(cohort)의 과정(course)이 일치하지 않습니다."}
