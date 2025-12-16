@@ -262,8 +262,8 @@ class PostListSerializerTest(TestCase):
     # 목록 시리얼라이저 필드 존재하는지 테스트
     def test_list_serializer_fields(self) -> None:
         queryset = Post.objects.annotate(
-            comment_count=Count("postcomment"),
-            like_count=Count("postlike"),
+            comment_count=Count("post_comments"),
+            like_count=Count("post_likes"),
         )
         post: Post = cast(Post, queryset.get(id=self.post.id))
 
@@ -284,8 +284,8 @@ class PostListSerializerTest(TestCase):
     # 작성자 정보 중첩 형식 테스트
     def test_list_author_nested_format(self) -> None:
         queryset = Post.objects.annotate(
-            comment_count=Count("postcomment"),
-            like_count=Count("postlike"),
+            comment_count=Count("post_comments"),
+            like_count=Count("post_likes"),
         )
         post: Post = cast(Post, queryset.get(id=self.post.id))
 
@@ -300,8 +300,8 @@ class PostListSerializerTest(TestCase):
     # 긴 내용 미리보기 잘림 테스트
     def test_list_content_preview_truncation(self) -> None:
         queryset = Post.objects.annotate(
-            comment_count=Count("postcomment"),
-            like_count=Count("postlike"),
+            comment_count=Count("post_comments"),
+            like_count=Count("post_likes"),
         )
         post: Post = cast(Post, queryset.get(id=self.post.id))
 
@@ -321,8 +321,8 @@ class PostListSerializerTest(TestCase):
             category=self.category,
         )
         queryset = Post.objects.annotate(
-            comment_count=Count("postcomment"),
-            like_count=Count("postlike"),
+            comment_count=Count("post_comments"),
+            like_count=Count("post_likes"),
         )
         short_post_annotated: Post = cast(Post, queryset.get(id=short_post.id))
 
@@ -333,7 +333,7 @@ class PostListSerializerTest(TestCase):
 
     # 좋아요 개수 기본값 테스트
     def test_list_like_count_default_zero(self) -> None:
-        queryset = Post.objects.annotate(comment_count=Count("postcomment"))
+        queryset = Post.objects.annotate(comment_count=Count("post_comments"))
         post: Post = cast(Post, queryset.get(id=self.post.id))
 
         serializer = PostListSerializer(instance=post)
@@ -344,8 +344,8 @@ class PostListSerializerTest(TestCase):
     # 댓글 개수 몇개인지 테스트
     def test_list_comment_count(self) -> None:
         queryset = Post.objects.annotate(
-            comment_count=Count("postcomment"),
-            like_count=Count("postlike"),
+            comment_count=Count("post_comments"),
+            like_count=Count("post_likes"),
         )
         post: Post = cast(Post, queryset.get(id=self.post.id))
 
@@ -376,7 +376,7 @@ class PostDetailSerializerTest(TestCase):
 
     # 상세조회 시리얼라이저 필드 존재 테스트
     def test_detail_serializer_fields(self) -> None:
-        queryset = Post.objects.annotate(like_count=Count("postlike"))
+        queryset = Post.objects.annotate(like_count=Count("post_likes"))
         post: Post = cast(Post, queryset.get(id=self.post.id))
 
         serializer = PostDetailSerializer(instance=post)
@@ -394,7 +394,7 @@ class PostDetailSerializerTest(TestCase):
 
     # 카테고리 정보가 중첩인지 형식 테스트
     def test_detail_category_nested_format(self) -> None:
-        queryset = Post.objects.annotate(like_count=Count("postlike"))
+        queryset = Post.objects.annotate(like_count=Count("post_likes"))
         post: Post = cast(Post, queryset.get(id=self.post.id))
 
         serializer = PostDetailSerializer(instance=post)
@@ -413,7 +413,7 @@ class PostDetailSerializerTest(TestCase):
             category=self.category,
         )
 
-        queryset = Post.objects.annotate(like_count=Count("postlike"))
+        queryset = Post.objects.annotate(like_count=Count("post_likes"))
         post_annotated: Post = cast(Post, queryset.get(id=post_with_category.id))
 
         serializer = PostDetailSerializer(instance=post_annotated)
@@ -432,7 +432,7 @@ class PostDetailSerializerTest(TestCase):
             category=self.category,
         )
 
-        queryset = Post.objects.annotate(like_count=Count("postlike"))
+        queryset = Post.objects.annotate(like_count=Count("post_likes"))
         long_post_annotated: Post = cast(Post, queryset.get(id=long_post.id))
 
         serializer = PostDetailSerializer(instance=long_post_annotated)
@@ -443,7 +443,7 @@ class PostDetailSerializerTest(TestCase):
 
     # 작서자 정보 형식 테스트
     def test_detail_author_format(self) -> None:
-        queryset = Post.objects.annotate(like_count=Count("postlike", distinct=True))
+        queryset = Post.objects.annotate(like_count=Count("post_likes", distinct=True))
         post: Post = cast(Post, queryset.get(id=self.post.id))
 
         serializer = PostDetailSerializer(instance=post)
@@ -456,7 +456,7 @@ class PostDetailSerializerTest(TestCase):
 
     # 좋아요 개수 테스트
     def test_detail_like_count(self) -> None:
-        queryset = Post.objects.annotate(like_count=Count("postlike"))
+        queryset = Post.objects.annotate(like_count=Count("post_likes"))
         post: Post = cast(Post, queryset.get(id=self.post.id))
 
         serializer = PostDetailSerializer(instance=post)
@@ -506,14 +506,14 @@ class PostSerializerIntegrationTest(TestCase):
         updated_post: Post = update_serializer.save()
 
         # 게시글 목록 조회
-        queryset_list = Post.objects.annotate(comment_count=Count("postcomment"), like_count=Count("postlike"))
+        queryset_list = Post.objects.annotate(comment_count=Count("post_comments"), like_count=Count("post_likes"))
         updated_post_for_list: Post = cast(Post, queryset_list.get(id=updated_post.id))
         list_serializer = PostListSerializer(instance=updated_post_for_list)
         list_data: Dict[str, Any] = list_serializer.data
         self.assertEqual(list_data["title"], "수정된 게시글")
 
         # 게시글 목록 상세조회
-        queryset_detail = Post.objects.annotate(like_count=Count("postlike"))
+        queryset_detail = Post.objects.annotate(like_count=Count("post_likes"))
         updated_post_for_detail: Post = cast(Post, queryset_detail.get(id=updated_post.id))
         detail_serializer = PostDetailSerializer(instance=updated_post_for_detail)
         detail_data: Dict[str, Any] = detail_serializer.data
