@@ -9,7 +9,9 @@ class UserRole(models.TextChoices):
     ASSISTANT = "assistant", "ASSISTANT"
 
 
+# objects 선언: 이미 매니저가 할당되어 있지만 mypy용으로 명시적 선언 함
 class ChatbotCompletion(TimeStampedModel):
+    objects: models.Manager["ChatbotCompletion"] = models.Manager()
     session = models.ForeignKey("ChatbotSession", on_delete=models.CASCADE, related_name="messages")
     message = models.TextField()
     role = models.CharField(choices=UserRole.choices, max_length=9)

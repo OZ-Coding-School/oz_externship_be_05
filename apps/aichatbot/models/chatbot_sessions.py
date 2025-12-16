@@ -9,9 +9,12 @@ class ChatModel(models.TextChoices):
     OPENAI = "openai", "OPENAI 4.7"
 
 
+# objects 선언: 이미 매니저가 할당되어 있지만 mypy용으로 명시적 선언 함
 class ChatbotSession(TimeStampedModel):
+    objects: models.Manager["ChatbotSession"] = models.Manager()
+
     user = models.ForeignKey("user.User", on_delete=models.CASCADE, db_index=True)
-    question = models.ForeignKey("questions.Question", on_delete=models.CASCADE, db_index=True)
+    question = models.ForeignKey("qna.Question", on_delete=models.CASCADE, db_index=True)
     title = models.CharField(max_length=30)
     using_model = models.CharField(choices=ChatModel.choices, max_length=16)
 
