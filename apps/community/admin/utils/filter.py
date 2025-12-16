@@ -4,7 +4,6 @@ from django.contrib.admin import ModelAdmin, SimpleListFilter
 from django.db.models import Count, Q, QuerySet
 from django.http import HttpRequest
 
-
 # 정렬
 
 
@@ -51,7 +50,7 @@ class PostOrderingFilter(TimeOrderingFilter):
         if self.value() == "most_likes":
             return queryset.annotate(like_count=Count("post_likes")).order_by("-like_count")
 
-        return super().queryset(request, queryset) # ordering 작동
+        return super().queryset(request, queryset)  # ordering 작동
 
 
 # 검색 필터
