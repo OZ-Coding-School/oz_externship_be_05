@@ -77,8 +77,8 @@ class AdminDeploymentSerializerTest(TestCase):
 
         serializer = AdminDeploymentSerializer(data=data)
 
-        assert not serializer.is_valid()
-        assert serializer.errors
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("open_at", serializer.errors)
 
     def test_update_allow_past_open_at(self) -> None:
         # 수정 시 open_at 이 과거여도 허용
@@ -114,6 +114,59 @@ class AdminDeploymentSerializerTest(TestCase):
         }
 
         serializer = AdminDeploymentSerializer(data=data)
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("open_at", serializer.errors)
+
+    def test_invalid_exam_cohort_course_mismatch(self) -> None:
+        # exam의 course - cohort의 course가 다르면 오류
+        other_course = Course.objects.create(
+            name="공주의 생존규칙",
+            tag="PS",
+            description="공주를 위한 생존 교육",
+        )
+
+        other_cohort = Cohort.objects.create(
+            course=other_course,
+            number=1,
+            max_student=20,
+            start_date=timezone.make_aware(datetime(2025, 1, 1)),
+            end_date=timezone.make_aware(datetime(2025, 2, 1)),
+        )
+
+        data: Dict[str, Any] = {
+            "cohort": other_cohort.id,
+            "exam": self.exam.id,  # 다른 코스의 exam
+            "duration_time": 60,
+            "open_at": timezone.now() + timedelta(hours=1),
+            "close_at": timezone.now() + timedelta(hours=2),
+            "status": "activated",
+        }
+
+        serializer = AdminDeploymentSerializer(data=data)
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("cohort", serializer.errors)
+
+    def test_update_time_order_validation(self) -> None:
+        # 수정 - 시간 검증
+        deployment = ExamDeployment.objects.create(
+            cohort=self.cohort,
+            exam=self.exam,
+            duration_time=60,
+            access_code="공주수정",
+            open_at=timezone.now() + timedelta(hours=1),
+            close_at=timezone.now() + timedelta(hours=2),
+            status="activated",
+            questions_snapshot={},
+        )
+
+        # close_at < open_at 시도
+        serializer = AdminDeploymentSerializer(
+            instance=deployment,
+            data={"close_at": timezone.now() - timedelta(hours=1)},
+            partial=True,
+        )
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("open_at", serializer.errors)
