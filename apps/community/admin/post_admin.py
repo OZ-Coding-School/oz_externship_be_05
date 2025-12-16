@@ -72,6 +72,6 @@ class PostAdmin(BaseAdmin):
     def get_queryset(self, request: HttpRequest) -> QuerySet[Post]:
         qs = super().get_queryset(request)
         return qs.annotate(
-            comment_count=Count("post_comments"),
-            likes_count=Count("post_likes"),
+            comment_count=Count("post_comments", distinct=True),
+            likes_count=Count("post_likes", distinct=True),
         )
