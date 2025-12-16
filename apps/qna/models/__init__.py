@@ -4,12 +4,21 @@ from .question import (
     QuestionCategory,
     QuestionImage,
 )
+from .answer import (
+    Answer,
+    AnswerComment,
+    AnswerImage,
+)
+
 
 __all__ = [
+    #question models
     "Question",
     "QuestionCategory",
     "QuestionImage",
     "QuestionAIAnswer",
+    #answer models
+    "Answer", 
+    "AnswerComment", 
+    "AnswerImage",
 ]
-
-# Answer 모델도 추가될 예정
