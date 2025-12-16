@@ -42,7 +42,7 @@ class PostReadFieldsSerializerMixin(serializers.ModelSerializer[Post]):
 
 
 # 생성
-class PostCreateSerializer(PostWriteFieldsSerializer, serializers.Serializer[Post]):
+class PostCreateSerializer(PostWriteFieldsSerializer):
 
     def create(self, validated_data: Dict[str, Any]) -> Post:
         user: User = self.context["request"].user
@@ -62,7 +62,7 @@ class PostCreateSerializer(PostWriteFieldsSerializer, serializers.Serializer[Pos
 
 
 # 수정
-class PostUpdateSerializer(PostWriteFieldsSerializer, serializers.Serializer[Post]):
+class PostUpdateSerializer(PostWriteFieldsSerializer):
 
     def update(self, instance: Post, validated_data: Dict[str, Any]) -> Post:
         instance.title = validated_data["title"]
@@ -81,7 +81,7 @@ class PostUpdateSerializer(PostWriteFieldsSerializer, serializers.Serializer[Pos
 
 
 # 조회
-class PostListSerializer(PostReadFieldsSerializerMixin, serializers.ModelSerializer[Post]):
+class PostListSerializer(PostReadFieldsSerializerMixin):
     thumbnail_img_url = serializers.SerializerMethodField()
     content_preview = serializers.SerializerMethodField()
     comment_count = serializers.SerializerMethodField()
@@ -113,7 +113,7 @@ class PostListSerializer(PostReadFieldsSerializerMixin, serializers.ModelSeriali
 
 
 # 상세조회
-class PostDetailSerializer(PostReadFieldsSerializerMixin, serializers.ModelSerializer[Post]):
+class PostDetailSerializer(PostReadFieldsSerializerMixin):
     category = serializers.SerializerMethodField()
 
     class Meta:
@@ -138,6 +138,3 @@ class PostDetailSerializer(PostReadFieldsSerializerMixin, serializers.ModelSeria
             "id": obj.category.id,
             "name": category.name,
         }
-
-    def get_like_count(self, obj: Post) -> int:
-        return int(getattr(obj, "like_count", 0))
