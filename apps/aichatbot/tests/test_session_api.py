@@ -62,7 +62,7 @@ class SessionCreateAPITests(APITestCase):
 
         # DB에 ChatbotSession 이 하나 생성됐는지 확인
         self.assertEqual(ChatbotSession.objects.count(), 1)
-        session: Any = ChatbotSession.objects.first() # 주의할것
+        session: Any = ChatbotSession.objects.first()  # 주의할것
         assert session is not None
 
         # 생성된 인스턴스 필드값 검증
