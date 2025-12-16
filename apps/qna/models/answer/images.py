@@ -25,4 +25,4 @@ class AnswerImage(TimeStampedModel):
         ordering = ["-created_at"]  # 최신 이미지가 먼저 오도록 정렬
 
     def __str__(self) -> str:
-        return f"{self.pk}번 이미지 (A: {self.answer_id})"  # type: ignore
+        return f"{self.pk}번 이미지"
