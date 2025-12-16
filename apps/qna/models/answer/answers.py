@@ -29,4 +29,4 @@ class Answer(TimeStampedModel):
         ordering = ["-created_at"]  # 최신 답변이 먼저 오도록 정렬
 
     def __str__(self) -> str:
-        return f"{self}번 답변 (Q: {self.question})"
+        return f"{self.pk}번 답변 (Q: {self.question_id})"  # type: ignore

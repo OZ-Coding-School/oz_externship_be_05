@@ -15,7 +15,7 @@ class AnswerComment(TimeStampedModel):
     answer = models.ForeignKey(
         "qna.Answer",  # Answer 모델 참조
         on_delete=models.CASCADE,  # 댓글이 달린 답변이 삭제되면 댓글도 삭제
-        related_name="comments",
+        related_name="answer_comments",
         help_text="댓글이 달린 답변 ID",
     )
 
@@ -28,4 +28,4 @@ class AnswerComment(TimeStampedModel):
         ordering = ["-created_at"]  # 최신 댓글이 먼저 오도록 정렬
 
     def __str__(self) -> str:
-        return f"{self}번 댓글 (A: {self.answer})"
+        return f"{self.pk}번 댓글 (A: {self.answer_id})"  # type: ignore

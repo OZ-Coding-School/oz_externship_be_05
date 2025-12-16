@@ -11,10 +11,12 @@ class AnswerImage(TimeStampedModel):
         Answer,
         on_delete=models.CASCADE,  # 답변이 삭제되면 이미지도 삭제
         related_name="images",
+        null=True,
+        blank=True,
         help_text="이미지가 속한 답변 ID",
     )
 
-    image_url = models.ImageField(upload_to="answer_images/", help_text="답변 이미지 파일")
+    image_url = models.CharField(max_length=255, help_text="이미지 파일 경로 URL")
 
     class Meta:
         db_table = "answers_images"
@@ -23,4 +25,4 @@ class AnswerImage(TimeStampedModel):
         ordering = ["-created_at"]  # 최신 이미지가 먼저 오도록 정렬
 
     def __str__(self) -> str:
-        return f"{self}번 이미지 (A: {self.answer})"
+        return f"{self.pk}번 이미지 (A: {self.answer_id})"  # type: ignore
