@@ -7,7 +7,7 @@ from apps.user.models import User
 
 class PostComment(TimeStampedModel):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="post_comments")
     content = models.CharField(max_length=300)
 
     class Meta:

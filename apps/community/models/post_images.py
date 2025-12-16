@@ -5,7 +5,7 @@ from apps.core.models import TimeStampedModel
 
 
 class PostImage(TimeStampedModel):
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="post_images")
     img_url = models.URLField()
 
     class Meta:
