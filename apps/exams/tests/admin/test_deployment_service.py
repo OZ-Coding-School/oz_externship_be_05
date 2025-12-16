@@ -102,6 +102,13 @@ class DeploymentServiceTests(TestCase):
         deployment.save(update_fields=["close_at"])
         return deployment
 
+    def _force_finished(self, deployment: ExamDeployment) -> ExamDeployment:
+        deployment.open_at = timezone.now() - timedelta(hours=2)
+        deployment.close_at = timezone.now() - timedelta(hours=1)
+        deployment.status = DeploymentStatus.DEACTIVATED
+        deployment.save(update_fields=["open_at", "close_at", "status"])
+        return deployment
+
     # CREATE ---------------------------------------------------------
 
     def test_create_deployment_success(self) -> None:
@@ -115,11 +122,14 @@ class DeploymentServiceTests(TestCase):
         self.assertIsNotNone(deployment.id)
 
     def test_create_deployment_with_invalid_time_range(self) -> None:
-        deployment = self._create_default_deployment(
+        self._create_default_deployment(
             open_at=self.close_at,
             close_at=self.close_at,
         )
-        self.assertIsNotNone(deployment.id)
+
+        deployment = ExamDeployment.objects.get()
+
+        self.assertGreaterEqual(deployment.open_at, deployment.close_at)
 
     # UPDATE ---------------------------------------------------------
 
@@ -131,15 +141,29 @@ class DeploymentServiceTests(TestCase):
         )
         self.assertEqual(updated.duration_time, 90)
 
-    def test_update_started_deployment_allows_update(self) -> None:
+    def test_update_started_deployment_raises_error(self) -> None:
         deployment = self._create_default_deployment()
         self._force_started(deployment)
 
-        with self.assertRaises(ValidationError):
+        with self.assertRaises(ValidationError) as ve:
             update_deployment(
                 deployment=deployment,
                 data={"open_at": timezone.now() + timedelta(hours=10)},
             )
+
+        self.assertIn("open_at", ve.exception.detail)
+
+    def test_update_finished_deployment_raises_error(self) -> None:
+        deployment = self._create_default_deployment()
+        self._force_finished(deployment)
+
+        with self.assertRaises(ValidationError) as ve:
+            update_deployment(
+                deployment=deployment,
+                data={"duration_time": 90},
+            )
+
+        self.assertIn("status", ve.exception.detail)
 
     # STATUS ---------------------------------------------------------
 
@@ -151,16 +175,34 @@ class DeploymentServiceTests(TestCase):
         )
         self.assertEqual(updated.status, DeploymentStatus.DEACTIVATED)
 
-    def test_set_status_after_closed(self) -> None:
+    def test_set_status_after_closed_raises_error(self) -> None:
         deployment = self._create_default_deployment()
-        self._force_closed(deployment)
+        self._force_finished(deployment)
 
-        updated = set_deployment_status(
+        with self.assertRaises(ValidationError) as ve:
+            set_deployment_status(
+                deployment=deployment,
+                status=DeploymentStatus.ACTIVATED,
+            )
+
+        self.assertIn("status", ve.exception.detail)
+
+    def test_set_status_early_termination_allows_reactivation(self) -> None:
+        deployment = self._create_default_deployment()
+
+        # 조기 종료(close_at 전에 DEACTIVATED)
+        set_deployment_status(
             deployment=deployment,
             status=DeploymentStatus.DEACTIVATED,
         )
 
-        self.assertEqual(updated.status, DeploymentStatus.DEACTIVATED)
+        # 재활성화
+        updated = set_deployment_status(
+            deployment=deployment,
+            status=DeploymentStatus.ACTIVATED,
+        )
+
+        self.assertEqual(updated.status, DeploymentStatus.ACTIVATED)
 
     # DELETE ---------------------------------------------------------
 
@@ -171,15 +213,29 @@ class DeploymentServiceTests(TestCase):
         with self.assertRaises(ExamDeployment.DoesNotExist):
             ExamDeployment.objects.get(id=deployment.id)
 
-    def test_delete_started_deployment(self) -> None:
+    # 시작된 시험도 가능
+    def test_delete_started_deployment_success(self) -> None:
         deployment = self._create_default_deployment()
         self._force_started(deployment)
 
-        with self.assertRaises(ValidationError):
-            delete_deployment(deployment=deployment)
+        delete_deployment(deployment=deployment)
+
+        with self.assertRaises(ExamDeployment.DoesNotExist):
+            ExamDeployment.objects.get(id=deployment.id)
+
+    # 종료된 시험도 가능
+    def test_delete_finished_deployment_success(self) -> None:
+        deployment = self._create_default_deployment()
+        self._force_finished(deployment)
+
+        delete_deployment(deployment=deployment)
+
+        with self.assertRaises(ExamDeployment.DoesNotExist):
+            ExamDeployment.objects.get(id=deployment.id)
 
     # LIST ---------------------------------------------------------
 
+    # 기본 정렬
     def test_list_deployments_default(self) -> None:
         d1 = self._create_default_deployment()
         d2 = self._create_default_deployment(
@@ -199,6 +255,7 @@ class DeploymentServiceTests(TestCase):
         self.assertEqual(first.id, d2.id)
         self.assertEqual(last.id, d1.id)
 
+    # 기수별 필터링
     def test_list_deployments_filter_by_cohort(self) -> None:
         other_cohort = Cohort.objects.create(
             course=self.exam.subject.course,
@@ -219,6 +276,7 @@ class DeploymentServiceTests(TestCase):
 
         self.assertEqual(first.id, d1.id)
 
+    # 상태별 필터링
     def test_list_deployments_filter_by_status(self) -> None:
         d1 = self._create_default_deployment()
         self._create_default_deployment()
@@ -235,6 +293,63 @@ class DeploymentServiceTests(TestCase):
         assert first is not None
 
         self.assertEqual(first.id, d1.id)
+
+    # 시험 제목 키워드 검색
+    def test_list_deployments_search_by_keyword(self) -> None:
+        other_exam = Exam.objects.create(
+            title="왕자예절 시험",
+            subject=self.subject,
+        )
+
+        d1 = self._create_default_deployment()  # 공주예절 시험
+        self._create_default_deployment(exam=other_exam)  # 왕자예절 시험
+
+        # 공주로 검색
+        deployments = list_admin_deployments(search_keyword="공주")
+        self.assertEqual(deployments.count(), 1)
+
+        first = deployments.first()
+        assert first is not None
+        self.assertEqual(first.id, d1.id)
+
+    # 응시자 수 기준 정렬 (많은 순)
+    def test_list_deployments_sort_by_participant_count(self) -> None:
+        d1 = self._create_default_deployment()
+        d2 = self._create_default_deployment(
+            open_at=self.open_at + timedelta(hours=1),
+            close_at=self.close_at + timedelta(hours=1),
+        )
+
+        deployments = list_admin_deployments(sort="participant_count", order="desc")
+        self.assertEqual(deployments.count(), 2)
+
+    # 평균 점수 기준 정렬 (높은 순)
+    def test_list_deployments_sort_by_avg_score(self) -> None:
+        d1 = self._create_default_deployment()
+        d2 = self._create_default_deployment(
+            open_at=self.open_at + timedelta(hours=1),
+            close_at=self.close_at + timedelta(hours=1),
+        )
+
+        deployments = list_admin_deployments(sort="avg_score", order="desc")
+        self.assertEqual(deployments.count(), 2)
+
+    # 잘못된 기준을 주면 created_at으로 제공
+    def test_list_deployments_invalid_sort_defaults_to_created_at(self) -> None:
+        d1 = self._create_default_deployment()
+        d2 = self._create_default_deployment(
+            open_at=self.open_at + timedelta(hours=1),
+            close_at=self.close_at + timedelta(hours=1),
+        )
+
+        # 잘못된 sort 값
+        deployments = list_admin_deployments(sort="invalid_field", order="desc")
+        self.assertEqual(deployments.count(), 2)
+
+        # created_at 기준 내림차순이므로 d2가 먼저
+        first = deployments.first()
+        assert first is not None
+        self.assertEqual(first.id, d2.id)
 
     # GET ---------------------------------------------------------
 
