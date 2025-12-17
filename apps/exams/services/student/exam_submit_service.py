@@ -28,9 +28,9 @@ def validate_exam_submission_limit(
         raise serializers.ValidationError({"error_detail": "이미 제출된 시험입니다."})
 
 
-def _snapshot_questions(deployment: ExamDeployment) -> List[Dict[str, Any]]:
+def _snapshot_questions(submission: ExamDeployment) -> List[Dict[str, Any]]:
     # 배포 스냅샷에서 문항 가져오기
-    snapshot_json = deployment.questions_snapshot or {}
+    snapshot_json = submission.questions_snapshot or {}
     # snapshot = json.loads(cast(str, snapshot_json))
 
     questions = snapshot_json.get("questions", [])

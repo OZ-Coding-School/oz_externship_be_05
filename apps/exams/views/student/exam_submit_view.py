@@ -27,9 +27,9 @@ class ExamSubmissionCreateAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def post(self, request: Request, deployment_pk: int) -> Response:
+    def post(self, request: Request) -> Response:
         try:
-            deployment = ExamDeployment.objects.get(pk=deployment_pk)
+            deployment = ExamDeployment.objects.get()
         except ExamDeployment.DoesNotExist:
             return Response({"error_detail": "해당 시험 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
 
