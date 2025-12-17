@@ -1,10 +1,10 @@
 from typing import Any
 
 from rest_framework import status
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.exceptions import NotFound, PermissionDenied
 
 from apps.community.models.post import Post
 from apps.community.models.post_comment import PostComment
@@ -62,7 +62,6 @@ class PostCommentUpdateDestroyAPIView(APIView):
             raise PermissionDenied("권한이 없습니다.")
 
         return comment
-
 
     def put(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         comment_id = kwargs.get("comment_id")
