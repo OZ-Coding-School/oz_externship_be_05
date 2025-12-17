@@ -5,6 +5,7 @@ from typing import Any
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.utils import timezone
+from rest_framework.exceptions import NotFound
 from rest_framework.test import APITestCase
 
 from apps.courses.models import Cohort, Course, Subject
@@ -14,6 +15,7 @@ from apps.exams.models.exam_question import ExamQuestion, QuestionType
 from apps.exams.models.exam_submission import ExamSubmission
 from apps.exams.serializers.student.exam_submit_serializer import (
     ExamSubmissionCreateSerializer,
+    ExamSubmissionTimeout,
 )
 from apps.exams.services.student.exam_submit_service import (
     create_exam_submission,
@@ -313,8 +315,9 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         }
 
         serializer = self._make_serializer(payload)
-        self.assertFalse(serializer.is_valid())
-        self.assertIn("시작시간은 현재 시간보다 빨라야합니다.", str(serializer.errors))
+        with self.assertRaises(NotFound) as ctx:
+            serializer.is_valid(raise_exception=True)
+        self.assertIn("유효하지 않은 시험 응시 세션입니다.", str(ctx.exception))
 
     def test_serializer_time_over_flag(self) -> None:
         payload: dict[str, Any] = {
@@ -324,8 +327,9 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         }
 
         serializer = self._make_serializer(payload)
-        self.assertFalse(serializer.is_valid())
-        self.assertIn("시험 제한 시간이 초과되어 자동제출되었습니다", str(serializer.errors))
+        with self.assertRaises(ExamSubmissionTimeout) as ctx:
+            serializer.is_valid(raise_exception=True)
+        self.assertIn("시험 제한 시간이 초과되어 자동제출되었습니다", str(ctx.exception))
 
     def test_serializer_to_representation(self) -> None:
         # to_representation 이 채점 결과 페이지에 필요한 필드를 모두 포함하는지 확인
@@ -511,4 +515,4 @@ class ExamSubmissionViewTest(APITestCase):
         }
         response = self.client.post(url, data, format="json")
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 408)
