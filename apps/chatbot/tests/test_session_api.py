@@ -1,8 +1,6 @@
 import datetime
 from typing import Any
 
-from django.http import HttpRequest
-from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -26,9 +24,13 @@ class SessionCreateAPITests(APITestCase):
     @classmethod
     def setUpTestData(cls) -> None:
 
-        cls.password = "password1234" # 해싱용 password 설정
+        cls.password = "password1234"  # 해싱용 password 설정
         cls.user = User.objects.create_user(
-            email="api_tester@example.com", password=cls.password, birthday=datetime.date(2000, 1, 1)
+            email="api_tester@example.com",
+            password=cls.password,
+            name="testuser",
+            nickname="testuser",
+            birthday=datetime.date(2000, 1, 1),
         )
 
         cls.question_category = QuestionCategory.objects.create(
@@ -133,7 +135,7 @@ class SessionListAPITests(APITestCase):
         cls.password = "pass"  # 해싱용 password 설정
         cls.user = User.objects.create_user(
             email="test@example.com",
-            password= cls.password,
+            password=cls.password,
             name="mainuser",
             nickname="mainuser",
             birthday=datetime.date(2000, 1, 1),
@@ -184,7 +186,7 @@ class SessionListAPITests(APITestCase):
     # 인증 X → 세션목록 조회 X
     def test_list_authentication_false(self) -> None:
 
-        self.client.force_authenticate(user=None) # 인증 해제!
+        self.client.force_authenticate(user=None)  # 인증 해제!
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertIn("detail", response.data)

@@ -1,12 +1,9 @@
 import datetime
 from typing import Any
 
-from django.contrib.auth import get_user_model
 from django.http import HttpRequest
-from django.urls import reverse
-from rest_framework import status
-from rest_framework.test import APIRequestFactory
 from django.test import TestCase
+from rest_framework.test import APIRequestFactory
 
 from apps.chatbot.models.chatbot_sessions import ChatbotSession, ChatModel
 from apps.chatbot.serializers.session_serializers import SessionCreateSerializer
@@ -21,13 +18,14 @@ from apps.user.models import User
 
 class SessionCreateSerializerTests(TestCase):
     user: User
+    password: str
     question_category: QuestionCategory
     question: Question
     factory: APIRequestFactory
 
     @classmethod
     def setUpTestData(cls) -> None:
-        cls.password = "00000000"   # 해싱용 password 설정, 로그인 대비
+        cls.password = "00000000"  # 해싱용 password 설정, 로그인 대비
         # 유저 생성
         cls.user = User.objects.create_user(
             email="test@example.com",
