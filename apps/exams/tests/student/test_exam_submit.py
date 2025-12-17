@@ -501,10 +501,10 @@ class ExamSubmissionViewTest(APITestCase):
         )
 
     def test_exam_submission_view(self) -> None:
-        url = reverse("exam_submit", kwargs={"pk": self.deployment.pk})
+        url = reverse("exam_submit", kwargs={"deployment_pk": self.deployment.pk})
         self.client.force_authenticate(user=self.user)
         data = {
-            "started_at": timezone.now() - timedelta(minutes=50),
+            "started_at": (timezone.now() - timedelta(minutes=50)).isoformat(),
             "cheating_count": 1,
             "answers": {"questions": [{"question_id": self.single_choice_question.id, "answer": "3"}]},
         }
