@@ -11,8 +11,7 @@ class AnswerImage(TimeStampedModel):
         Answer,
         on_delete=models.CASCADE,  # 답변이 삭제되면 이미지도 삭제
         related_name="images",
-        null=True,
-        blank=True,
+        # 프론트엔드단에서 s3통한 동시생성으로 Null,blank 삭제
         help_text="이미지가 속한 답변 ID",
     )
 
