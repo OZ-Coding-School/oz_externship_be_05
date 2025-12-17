@@ -1,6 +1,8 @@
 from typing import cast
 
 from rest_framework import status
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,12 +25,12 @@ from apps.user.models import User
 
 class QuestionAPIView(APIView):
 
-    def get_authenticators(self):
+    def get_authenticators(self) -> list[BaseAuthentication]:
         if self.request.method == "GET":
             return []
         return super().get_authenticators()
 
-    def get_permissions(self):
+    def get_permissions(self) -> list[BasePermission]:
         if self.request.method == "POST":
             return [QuestionCreatePermission()]
         return []

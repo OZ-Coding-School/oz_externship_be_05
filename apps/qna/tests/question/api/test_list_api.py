@@ -24,7 +24,7 @@ class QuestionListAPITests(APITestCase):
         self.url = reverse("questions")
 
     # QuerySerializer 자체 검증 실패 400
-    def test_query_serializer_validation_error_message(self)-> None:
+    def test_query_serializer_validation_error_message(self) -> None:
         response = self.client.get(self.url, {"page": 0})
 
         self.assertEqual(response.status_code, 400)
@@ -35,7 +35,7 @@ class QuestionListAPITests(APITestCase):
         self.assertIn("errors", response.data)
 
     # 잘못된 페이지 요청 400
-    def test_question_list_invalid_page_returns_400(self)-> None:
+    def test_question_list_invalid_page_returns_400(self) -> None:
         Question.objects.create(
             author=self.user,
             category=self.category,
