@@ -63,15 +63,16 @@ class PostAdmin(BaseAdmin):
 
     @admin.display(description="likes count")
     def likes_count(self, obj: Any) -> int:
-        return int(obj.likes_count)
+        return int(obj._likes_count)
 
     @admin.display(description="comments count")
     def comment_count(self, obj: Any) -> int:
-        return int(obj.comment_count)
+        return int(obj._comment_count)
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Post]:
         qs = super().get_queryset(request)
-        return qs.annotate(
-            comment_count=Count("post_comments", distinct=True),
-            likes_count=Count("post_likes", distinct=True),
+        qs = qs.annotate(
+            _comment_count=Count("post_comments", distinct=True),
+            _likes_count=Count("post_likes", distinct=True),
         )
+        return qs

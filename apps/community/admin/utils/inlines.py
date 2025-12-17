@@ -43,4 +43,4 @@ class ImageInline(admin.TabularInline):  # type: ignore[type-arg]
         else:
             return "(URL 없음)"
 
-    get_preview.short_description = "미리보기"  # type: ignore[attr-defined]
+    get_preview.short_description = "preview"  # type: ignore[attr-defined]
