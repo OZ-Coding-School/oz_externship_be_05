@@ -25,8 +25,9 @@ class PostCommentListCreateAPIView(APIView):
             raise NotFound("해당 게시글을 찾을 수 없습니다.")
 
     def get(self, request: Any, *args: Any, **kwargs: Any) -> Response:
-        post_id = kwargs.get("post_id")
-        post = self.check_post(post_id)
+        post_id: int = int(kwargs["post_id"])
+
+        self.check_post(post_id)
 
         qs = PostComment.objects.filter(post_id=post_id).select_related("author").order_by("-created_at")
 
@@ -35,8 +36,9 @@ class PostCommentListCreateAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request: Any, *args: Any, **kwargs: Any) -> Response:
-        post_id = kwargs.get("post_id")
-        post = self.check_post(post_id)
+        post_id: int = int(kwargs["post_id"])
+
+        self.check_post(post_id)
 
         serializer = PostCommentSerializer(data=request.data)
 
@@ -64,7 +66,7 @@ class PostCommentUpdateDestroyAPIView(APIView):
         return comment
 
     def put(self, request: Any, *args: Any, **kwargs: Any) -> Response:
-        comment_id = kwargs.get("comment_id")
+        comment_id: int = int(kwargs["comment_id"])
         comment = self.check_comment(comment_id)
 
         serializer = PostCommentSerializer(comment, data=request.data, partial=True)
@@ -77,7 +79,7 @@ class PostCommentUpdateDestroyAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def delete(self, request: Any, *args: Any, **kwargs: Any) -> Response:
-        comment_id = kwargs.get("comment_id")
+        comment_id: int = int(kwargs["comment_id"])
         comment = self.check_comment(comment_id)
 
         comment.delete()

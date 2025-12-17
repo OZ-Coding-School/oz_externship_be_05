@@ -11,17 +11,14 @@ from apps.user.models import User
 
 class TestPostCommentListCreateAPIView(APITestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
 
         test_user = User.objects.create_user(
             name="test_user", password="password", email="test@test.com", birthday=datetime.now()
         )
 
-        tagged_user = User.objects.create_user(
-            name="tag_user",
-            password="password123",
-            email="tag@tag.com",
-            birthday=datetime.now()
+        self.tagged_user = User.objects.create_user(
+            name="tag_user", password="password123", email="tag@tag.com", birthday=datetime.now()
         )
 
         category = PostCategory.objects.create(name="테스트")
@@ -33,7 +30,7 @@ class TestPostCommentListCreateAPIView(APITestCase):
 
         self.post_url = f"/api/v1/posts/{self.post.id}/comments"
 
-    def test_get_comments(self):
+    def test_get_comments(self) -> None:
         user = User.objects.first()
         self.client.force_authenticate(user=user)
 
@@ -42,7 +39,7 @@ class TestPostCommentListCreateAPIView(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
 
-    def test_get_comments_not_exist(self):
+    def test_get_comments_not_exist(self) -> None:
         user = User.objects.first()
         self.client.force_authenticate(user=user)
 
@@ -51,7 +48,7 @@ class TestPostCommentListCreateAPIView(APITestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data["detail"], "해당 게시글을 찾을 수 없습니다.")
 
-    def test_create_comment(self):
+    def test_create_comment(self) -> None:
         user = User.objects.first()
         self.client.force_authenticate(user=user)
 
@@ -62,7 +59,7 @@ class TestPostCommentListCreateAPIView(APITestCase):
         self.assertEqual(response.data["detail"], "댓글이 등록되었습니다.")
         self.assertEqual(PostComment.objects.filter(post=self.post).count(), 3)
 
-    def test_create_comment_with_empty_content(self):
+    def test_create_comment_with_empty_content(self) -> None:
         user = User.objects.first()
         self.client.force_authenticate(user=user)
 
@@ -71,12 +68,11 @@ class TestPostCommentListCreateAPIView(APITestCase):
 
         self.assertEqual(response.status_code, 400)
 
-    def test_create_comment_with_tagged_user(self):
+    def test_create_comment_with_tagged_user(self) -> None:
         user = User.objects.first()
         self.client.force_authenticate(user=user)
 
-        data = {"content": "새 댓글",
-                "tagged_user": user.id}
+        data = {"content": "새 댓글", "tagged_user": self.tagged_user.id}
 
         response = self.client.post(self.post_url, data)
 
@@ -86,7 +82,7 @@ class TestPostCommentListCreateAPIView(APITestCase):
 
 class TestPostCommentUpdateDestroyAPIView(APITestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.user = User.objects.create_user(
             name="test_user", password="password", email="test@test.com", birthday=datetime.now()
         )
@@ -96,10 +92,7 @@ class TestPostCommentUpdateDestroyAPIView(APITestCase):
         )
 
         tagged_user = User.objects.create_user(
-            name="tag_user",
-            password="password123",
-            email="tag@tag.com",
-            birthday=datetime.now()
+            name="tag_user", password="password123", email="tag@tag.com", birthday=datetime.now()
         )
 
         category = PostCategory.objects.create(name="테스트")
@@ -110,7 +103,7 @@ class TestPostCommentUpdateDestroyAPIView(APITestCase):
 
         self.comment_url = f"/api/v1/posts/{self.post.id}/comments/{self.comment.id}"
 
-    def test_update_comment(self):
+    def test_update_comment(self) -> None:
         self.client.force_authenticate(user=self.user)
 
         data = {"content": "수정 댓글"}
@@ -119,7 +112,7 @@ class TestPostCommentUpdateDestroyAPIView(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["content"], "수정 댓글")
 
-    def test_update_comment_by_other(self):
+    def test_update_comment_by_other(self) -> None:
         self.client.force_authenticate(user=self.other_user)
 
         data = {"content": "수정 댓글"}
@@ -128,7 +121,7 @@ class TestPostCommentUpdateDestroyAPIView(APITestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data["detail"], "권한이 없습니다.")
 
-    def test_update_comment_not_exist(self):
+    def test_update_comment_not_exist(self) -> None:
         self.client.force_authenticate(user=self.user)
 
         data = {"content": "수정 시도"}
@@ -137,7 +130,7 @@ class TestPostCommentUpdateDestroyAPIView(APITestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data["detail"], "해당 댓글을 찾을 수 없습니다.")
 
-    def test_update_comment_with_empty_content(self):
+    def test_update_comment_with_empty_content(self) -> None:
         self.client.force_authenticate(user=self.user)
 
         data = {"content": ""}
@@ -145,16 +138,15 @@ class TestPostCommentUpdateDestroyAPIView(APITestCase):
 
         self.assertEqual(response.status_code, 400)
 
-    def test_update_comment_with_tagged_user(self):
+    def test_update_comment_with_tagged_user(self) -> None:
         self.client.force_authenticate(user=self.user)
 
-        data = {"content": "태그 수정",
-                "tagged_user": self.user.id}
+        data = {"content": "태그 수정", "tagged_user": self.user.id}
         response = self.client.put(self.comment_url, data)
 
         self.assertEqual(response.status_code, 200)
 
-    def test_delete_comment_not_exist(self):
+    def test_delete_comment_not_exist(self) -> None:
         self.client.force_authenticate(user=self.user)
 
         response = self.client.delete(f"/api/v1/posts/{self.post.id}/comments/999")
@@ -162,7 +154,7 @@ class TestPostCommentUpdateDestroyAPIView(APITestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data["detail"], "해당 댓글을 찾을 수 없습니다.")
 
-    def test_delete_comment_by_other(self):
+    def test_delete_comment_by_other(self) -> None:
         self.client.force_authenticate(user=self.other_user)
 
         response = self.client.delete(self.comment_url)
@@ -170,7 +162,7 @@ class TestPostCommentUpdateDestroyAPIView(APITestCase):
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data["detail"], "권한이 없습니다.")
 
-    def test_delete_comment(self):
+    def test_delete_comment(self) -> None:
         self.client.force_authenticate(user=self.user)
 
         response = self.client.delete(self.comment_url)
