@@ -3,7 +3,8 @@ from __future__ import annotations
 from typing import Any, Dict
 
 from django.utils import timezone
-from rest_framework import serializers
+from rest_framework import serializers, status
+from rest_framework.exceptions import NotFound
 
 from apps.exams.models.exam_deployment import ExamDeployment
 from apps.exams.models.exam_submission import ExamSubmission
@@ -11,6 +12,13 @@ from apps.exams.services.student.exam_submit_service import (
     create_exam_submission,
     validate_exam_submission_limit,
 )
+
+
+# 408 에러 정의
+class ExamSubmissionTimeout(NotFound):
+    status_code = status.HTTP_408_REQUEST_TIMEOUT
+    default_detail = "시험 제한 시간이 초과되어 자동제출되었습니다"
+    default_code = "exam_timeout"
 
 
 class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[type-arg]
@@ -47,16 +55,16 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
 
         # started_at 미래인 경우 오류
         if elapsed < 0:
-            raise serializers.ValidationError({"started_at": "시작시간은 현재 시간보다 빨라야합니다."})  # TODO 400
+            raise NotFound(detail="유효하지 않은 시험 응시 세션입니다.")  # ERROR 400
 
         # 시간 제한 검증
         duration_time = getattr(deployment, "duration_time", None)
 
-        # 시간초과 여부 > 즉시실패
-        is_time_over = False
+        # 시간초과 여부 > 즉시제출
         if duration_time is not None and elapsed > duration_time:
-            raise serializers.ValidationError("시험 제한 시간이 초과되어 자동제출되었습니다")  # TODO 408 에러로 바꾸기
+            raise ExamSubmissionTimeout()
         attrs["elapsed_seconds"] = int(elapsed)
+        attrs["submitter"] = submitter
         return attrs
 
     def create(self, validated_data: Dict[str, Any]) -> ExamSubmission:
