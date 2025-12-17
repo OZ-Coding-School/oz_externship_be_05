@@ -31,7 +31,8 @@ class SessionCreateListAPIView(APIView):
     pagination_class = CustomCursorPagination
 
     def get_queryset(self) -> QuerySet[ChatbotSession]:
-        return ChatbotSession.objects.filter(user=self.request.user)
+        user = self.request.user
+        return ChatbotSession.objects.filter(user=user.id)
 
     @extend_schema(
         tags=["Session"],
