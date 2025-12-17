@@ -50,3 +50,36 @@ class CompletionCreateSerializerTests(TestCase):
         )
 
         cls.factory = APIRequestFactory()
+
+    # 리퀘스트 생성
+    def _make_request(self) -> HttpRequest:
+        request = self.factory.post("/fake-url", {})
+        request.user = self.user
+        return request
+
+    # 정상 입력 → 시리얼라이저 통해 create → chatbotcompletion 생성?
+    def test_valid_payload_create_completion(self) -> None:
+        data: dict[str, str] = {
+            "message": "AI에게 질문.",
+        }
+
+        request = self._make_request()
+        serializer = CompletionCreateSerializer(
+            data=data,
+            context={"request": request, "session": self.session},
+        )
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        completion = serializer.save()
+
+        # DB에 세션 1개만 생성됐나요?
+        self.assertEqual(ChatbotCompletion.objects.count(), 1)
+        self.assertEqual(completion.session, self.session)
+        self.assertEqual(completion.message, data["message"])
+        self.assertEqual(completion.role, "user")
+
+
+    # 메세지 누락 케이스
+
+    # 빈 메세지면 invalid 나오나요(경우가 더 있나 이거)
+
+    #
