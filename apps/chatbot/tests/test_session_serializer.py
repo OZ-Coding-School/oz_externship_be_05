@@ -97,8 +97,9 @@ class SessionCreateSerializerTests(TestCase):
 
     # choice에 없는 모델 보냈을때 invalid 테스트
     def test_invalid_using_model_choice_is_invalid(self) -> None:
+        # question으로만 넣으면 validation error 발생함. question.id 넣을것
         data: dict[str, Any] = {
-            "question": self.question,
+            "question": self.question.id,
             "using_model": "fakeAI",
         }
 

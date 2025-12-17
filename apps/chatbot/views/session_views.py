@@ -60,6 +60,7 @@ class CustomCursorPagination(CursorPagination):
 class SessionCreateListAPIView(APIView):
     serializer_class = SessionSerializer
     permission_classes = [IsAuthenticated]
+    pagination_class = CustomCursorPagination
 
     def get_queryset(self) -> QuerySet[ChatbotSession]:
         return ChatbotSession.objects.filter(user=self.request.user)

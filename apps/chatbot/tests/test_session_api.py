@@ -18,6 +18,7 @@ from apps.user.models import User
 # 잘못된 요청 시 적절한 status code 반환 여부
 class SessionCreateAPITests(APITestCase):
     user: "User"
+    password: str
     question_category: QuestionCategory
     question: Question
     url: str
@@ -118,6 +119,8 @@ class SessionListAPITests(APITestCase):
 
     user: User
     other_user: User
+    password: str
+    password2: str
     question_category: QuestionCategory
     question: Question
     question2: Question
