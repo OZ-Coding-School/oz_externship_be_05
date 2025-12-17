@@ -5,43 +5,6 @@ from rest_framework import serializers
 from apps.chatbot.models.chatbot_sessions import ChatbotSession, ChatModel
 from apps.qna.models import Question
 
-"""
-세션용 serializers
-- POST: 세션 생성
-- GET: 세션 목록
-- DELETE: (명세서 추가해야함) 
-
-Request Body Schema
-- POST
-"{
-  ""question_id"": str | null,
-}"
-
-Success Response Schema
-- POST
-"{
-  ""id"": int,
-  ""user"": int,
-  ""question"": int,
-  ""title"": str,
-  ""using_model"": str,
-  ""created_at"": datetime,
-  ""updated_at"": datetime
-}"
-
-- GET
-"200: {
-  ""next"": str | null,
-  ""previous"": str | null,
-  ""result"": [
-    {  
-      ""id"": int,
-      ""title"": str,
-    }
-  ]
-}"
-"""
-
 
 # Session의 응답포멧
 class SessionSerializer(serializers.ModelSerializer[ChatbotSession]):
@@ -62,7 +25,7 @@ class SessionCreateSerializer(serializers.ModelSerializer[ChatbotSession]):
             "user": {"read_only": True},
             "created_at": {"read_only": True},
             "updated_at": {"read_only": True},
-            "title": {"required": True},
+            "title": {"required": False},  # 없을 경우 New Chat 적용
             "using_model": {"required": True},
         }
 

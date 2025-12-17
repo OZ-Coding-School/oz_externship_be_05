@@ -15,39 +15,7 @@ from apps.chatbot.serializers.session_serializers import (
     SessionSerializer,
 )
 
-"""
-- POST 세션 생성
-- GET 세션 목록
-
-세션 상세
-GET 세션의 대화내역 목록
-DELETE 세션의 대화내역 전체 삭제
-
-Success Response Schema
-- POST
-"{
-  ""id"": int,
-  ""user"": int,
-  ""question"": int,
-  ""title"": str,
-  ""using_model"": str,
-  ""created_at"": datetime,
-  ""updated_at"": datetime
-}"
-
-- GET
-"200: {
-  ""next"": str | null,
-  ""previous"": str | null,
-  ""result"": [
-    {  
-      ""id"": int,
-      ""title"": str,
-    }
-  ]
-}"
-
-"""
+# DELETE: 세션의 대화내역 전체 삭제 (명세서 추가 필요)
 
 
 class CustomCursorPagination(CursorPagination):
