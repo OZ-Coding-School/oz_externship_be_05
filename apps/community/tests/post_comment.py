@@ -42,7 +42,7 @@ class TestPostCommentListCreateAPIView(APITestCase):
         response = self.client.get(f"/api/v1/posts/999/comments")
 
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.data["error_detail"], "해당 게시글을 찾을 수 없습니다.")
+        self.assertEqual(response.data["detail"], "해당 게시글을 찾을 수 없습니다.")
 
     def test_create_comment(self):
         user = User.objects.first()
@@ -100,7 +100,7 @@ class TestPostCommentUpdateDestroyAPIView(APITestCase):
         response = self.client.put(self.comment_url, data)
 
         self.assertEqual(response.status_code, 403)
-        self.assertEqual(response.data["error_detail"], "권한이 없습니다.")
+        self.assertEqual(response.data["detail"], "권한이 없습니다.")
 
     def test_update_comment_not_exist(self):
         self.client.force_authenticate(user=self.user)
@@ -108,8 +108,8 @@ class TestPostCommentUpdateDestroyAPIView(APITestCase):
         data = {"content": "수정 시도"}
         response = self.client.put(f"/api/v1/posts/{self.post.id}/comments/999", data)
 
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.data["error_detail"], "해당 댓글을 찾을 수 없습니다.")
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.data["detail"], "해당 댓글을 찾을 수 없습니다.")
 
     def test_update_comment_with_empty_content(self):
         self.client.force_authenticate(user=self.user)
@@ -125,7 +125,7 @@ class TestPostCommentUpdateDestroyAPIView(APITestCase):
         response = self.client.delete(f"/api/v1/posts/{self.post.id}/comments/999")
 
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.data["error_detail"], "해당 댓글을 찾을 수 없습니다.")
+        self.assertEqual(response.data["detail"], "해당 댓글을 찾을 수 없습니다.")
 
     def test_delete_comment_by_other(self):
         self.client.force_authenticate(user=self.other_user)
@@ -133,7 +133,7 @@ class TestPostCommentUpdateDestroyAPIView(APITestCase):
         response = self.client.delete(self.comment_url)
 
         self.assertEqual(response.status_code, 403)
-        self.assertEqual(response.data["error_detail"], "권한이 없습니다.")
+        self.assertEqual(response.data["detail"], "권한이 없습니다.")
 
     def test_delete_comment(self):
         self.client.force_authenticate(user=self.user)
