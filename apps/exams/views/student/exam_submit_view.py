@@ -31,7 +31,7 @@ class ExamSubmissionCreateAPIView(APIView):
         try:
             deployment = ExamDeployment.objects.get(pk=deployment_pk)
         except ExamDeployment.DoesNotExist:
-            return Response({"error_detail": "해당시험을 찾을 수 없음"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"error_detail": "해당 시험 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = ExamSubmissionCreateSerializer(
             data=request.data,
