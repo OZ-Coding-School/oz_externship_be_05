@@ -23,6 +23,34 @@ class QuestionListAPITests(APITestCase):
 
         self.url = reverse("questions")
 
+    # QuerySerializer 자체 검증 실패 400
+    def test_query_serializer_validation_error_message(self)-> None:
+        response = self.client.get(self.url, {"page": 0})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data["error_detail"],
+            "유효하지 않은 목록 조회 요청입니다.",
+        )
+        self.assertIn("errors", response.data)
+
+    # 잘못된 페이지 요청 400
+    def test_question_list_invalid_page_returns_400(self)-> None:
+        Question.objects.create(
+            author=self.user,
+            category=self.category,
+            title="테스트 질문",
+            content="내용",
+        )
+        response = self.client.get(self.url, {"page": 999})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.data["errors"],
+            {"page": ["유효하지 않은 페이지입니다."]},
+        )
+        self.assertIn("error_detail", response.data)
+
     # 질문 없을 때 404
     def test_empty_question_list(self) -> None:
         response = self.client.get(self.url)

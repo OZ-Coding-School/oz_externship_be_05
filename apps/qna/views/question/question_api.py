@@ -1,7 +1,6 @@
 from typing import cast
 
 from rest_framework import status
-from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -33,7 +32,6 @@ class QuestionAPIView(APIView):
         if self.request.method == "POST":
             return [QuestionCreatePermission()]
         return []
-
 
     def get(self, request: Request) -> Response:
         self.validation_error_message = "유효하지 않은 목록 조회 요청입니다."

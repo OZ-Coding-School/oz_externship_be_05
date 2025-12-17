@@ -1,8 +1,9 @@
 from typing import Sequence
 
-from django.core.paginator import Paginator
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, OuterRef, QuerySet, Subquery
 from django.db.models.functions import Substr
+from rest_framework.exceptions import ValidationError
 
 from apps.qna.exceptions.question_exceptions import QuestionListEmptyError
 from apps.qna.models import Question, QuestionImage
@@ -45,10 +46,13 @@ def get_question_list(
     # pagination
     paginator = Paginator(annotated_qs, page_size)
 
-    if paginator.count == 0:
+    if paginator.count == 0:  # 질문 개수 = 0
         raise QuestionListEmptyError()
 
-    page_obj = paginator.page(page)
+    try:
+        page_obj = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        raise ValidationError({"page": ["유효하지 않은 페이지입니다."]})
 
     return list(page_obj.object_list), {
         "page": page,
