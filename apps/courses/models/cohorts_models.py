@@ -26,7 +26,12 @@ class Cohort(TimeStampedModel):
         default=CohortStatusChoices.PENDING,
     )
 
+    def __str__(self) -> str:
+        return self.course.name
+
     class Meta:
+        verbose_name = "Cohort"
+        verbose_name_plural = "Cohorts"
         db_table = "cohorts"
         constraints = [
             models.CheckConstraint(check=models.Q(number__gte=1), name="number_non_negative"),
