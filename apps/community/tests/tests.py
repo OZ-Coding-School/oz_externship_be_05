@@ -295,7 +295,7 @@ class PostListSerializerTest(TestCase):
         author_data: Dict[str, Any] = cast(Dict[str, Any], data["author"])
         self.assertEqual(author_data["id"], self.user.id)
         self.assertEqual(author_data["name"], "테스터")
-        self.assertIn("profile_img_url", author_data)
+        self.assertIn("profile_image_url", author_data)
 
     # 긴 내용 미리보기 잘림 테스트
     def test_list_content_preview_truncation(self) -> None:
@@ -452,7 +452,7 @@ class PostDetailSerializerTest(TestCase):
         author_data: Dict[str, Any] = cast(Dict[str, Any], data["author"])
         self.assertEqual(author_data["id"], self.user.id)
         self.assertEqual(author_data["name"], "테스터")
-        self.assertIn("profile_img_url", author_data)
+        self.assertIn("profile_image_url", author_data)
 
     # 좋아요 개수 테스트
     def test_detail_like_count(self) -> None:

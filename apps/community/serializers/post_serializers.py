@@ -34,7 +34,7 @@ class PostReadFieldsSerializerMixin(serializers.ModelSerializer[Post]):
         return {
             "id": author.id,
             "name": author.nickname,
-            "profile_img_url": getattr(author, "profile_img_url", None),
+            "profile_image_url": getattr(author, "profile_image_url", None),
         }
 
     def get_like_count(self, obj: Post) -> int:
@@ -135,6 +135,6 @@ class PostDetailSerializer(PostReadFieldsSerializerMixin):
         if obj.category is None:
             return None
         return {
-            "id": obj.category.id,
+            "id": category.id,
             "name": category.name,
         }
