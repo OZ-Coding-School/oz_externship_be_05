@@ -25,7 +25,7 @@ def validate_exam_submission_limit(
     ).count()
 
     if existing_count >= 2:
-        raise serializers.ValidationError({"error_detail": "해당 쪽지시험은 최대 2회까지만 제출할 수 있습니다."})
+        raise serializers.ValidationError({"error_detail": "이미 제출된 시험입니다."})
 
 
 def _snapshot_questions(deployment: ExamDeployment) -> List[Dict[str, Any]]:
