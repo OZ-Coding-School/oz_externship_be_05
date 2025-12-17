@@ -8,7 +8,7 @@ from apps.user.models.user import RoleChoices, User
 
 class QuestionCreateAPITests(APITestCase):
     def setUp(self) -> None:
-        self.url = reverse("question_create")
+        self.url = reverse("questions")
         self.category = QuestionCategory.objects.create(name="백엔드")
 
     def create_user(self, role: RoleChoices) -> User:

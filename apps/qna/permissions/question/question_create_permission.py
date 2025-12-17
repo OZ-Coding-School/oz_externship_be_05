@@ -18,4 +18,7 @@ class QuestionCreatePermission(BasePermission):
             raise QuestionCreateNotAuthenticated()
 
         # 403: 인증은 됐지만 학생 아님
-        return user.role == RoleChoices.ST
+        if user.role != RoleChoices.ST:
+            return False
+
+        return True
