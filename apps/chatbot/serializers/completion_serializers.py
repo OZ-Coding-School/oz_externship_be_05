@@ -36,7 +36,7 @@ class CompletionCreateSerializer(serializers.ModelSerializer[ChatbotCompletion])
     def create(self, validated_data: dict[str, Any]) -> ChatbotCompletion:
         session = self.context["session"]
         if session is None:
-            raise serializers.ValidationError("Session does not exist") # 여기 붙는게 맞나? 따로 함수를 쓰는게?
+            raise serializers.ValidationError("Session does not exist")  # 여기 붙는게 맞나? 따로 함수를 쓰는게?
 
         message = validated_data["message"]
 
@@ -46,5 +46,6 @@ class CompletionCreateSerializer(serializers.ModelSerializer[ChatbotCompletion])
             role="user",
         )
         return completion
+
 
 # delete용 Serializer
