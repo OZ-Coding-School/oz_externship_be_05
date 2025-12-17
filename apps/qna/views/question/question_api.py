@@ -23,18 +23,17 @@ from apps.user.models import User
 
 
 class QuestionAPIView(APIView):
-    authentication_classes = []
 
-    def get_permissions(self) -> list[BasePermission]:
-        # GET: 모두 허용
+    def get_authenticators(self):
         if self.request.method == "GET":
             return []
+        return super().get_authenticators()
 
-        # POST: 질문 등록 권한
+    def get_permissions(self):
         if self.request.method == "POST":
             return [QuestionCreatePermission()]
-
         return []
+
 
     def get(self, request: Request) -> Response:
         self.validation_error_message = "유효하지 않은 목록 조회 요청입니다."
