@@ -7,8 +7,8 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIRequestFactory, APITestCase
 
-from apps.aichatbot.models.chatbot_sessions import ChatbotSession, ChatModel
-from apps.aichatbot.serializers.session_serializers import SessionCreateSerializer
+from apps.chatbot.models.chatbot_sessions import ChatbotSession, ChatModel
+from apps.chatbot.serializers.session_serializers import SessionCreateSerializer
 from apps.qna.models import QuestionCategory
 from apps.qna.models.question.question_base import Question
 from apps.user.models import User

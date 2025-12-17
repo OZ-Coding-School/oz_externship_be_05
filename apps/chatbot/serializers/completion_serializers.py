@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.aichatbot.models.chatbot_completions import ChatbotCompletion
+from apps.chatbot.models.chatbot_completions import ChatbotCompletion
 
 """
 컴플리션용 serializers

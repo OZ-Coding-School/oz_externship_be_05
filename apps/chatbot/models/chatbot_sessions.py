@@ -13,8 +13,8 @@ class ChatModel(models.TextChoices):
 class ChatbotSession(TimeStampedModel):
     objects: models.Manager["ChatbotSession"] = models.Manager()
 
-    user = models.ForeignKey("user.User", on_delete=models.CASCADE, db_index=True)
-    question = models.ForeignKey("qna.Question", on_delete=models.CASCADE, db_index=True)
+    user = models.ForeignKey("user.User", on_delete=models.CASCADE)
+    question = models.ForeignKey("qna.Question", on_delete=models.CASCADE)
     title = models.CharField(max_length=30)
     using_model = models.CharField(choices=ChatModel.choices, max_length=16)
 

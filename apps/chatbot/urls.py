@@ -1,11 +1,11 @@
 from django.urls import path
 
-from apps.aichatbot.views.session_views import (
+from apps.chatbot.views.session_views import (
     SessionCreateListAPIView,
     SessionDeleteView,
 )
 
-app_name = "aichatbot"
+app_name = ("chatbot")
 
 urlpatterns = [
     path("sessions", SessionCreateListAPIView.as_view(), name="session-list-create"),

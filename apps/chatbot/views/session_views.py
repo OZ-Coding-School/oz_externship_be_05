@@ -4,13 +4,13 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.pagination import CursorPagination
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.aichatbot.models.chatbot_sessions import ChatbotSession
-from apps.aichatbot.serializers.session_serializers import (
+from apps.chatbot.models.chatbot_sessions import ChatbotSession
+from apps.chatbot.serializers.session_serializers import (
     SessionCreateSerializer,
     SessionSerializer,
 )
@@ -60,7 +60,6 @@ class CustomCursorPagination(CursorPagination):
 class SessionCreateListAPIView(APIView):
     serializer_class = SessionSerializer
     permission_classes = [IsAuthenticated]
-    pagination_class = CustomCursorPagination
 
     def get_queryset(self) -> QuerySet[ChatbotSession]:
         return ChatbotSession.objects.filter(user=self.request.user)
@@ -98,7 +97,10 @@ class SessionCreateListAPIView(APIView):
                 name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값입니다."
             ),
         ],
-        responses={},
+        responses={
+            "200": SessionSerializer,
+            "400": {"object": "object", "example": {"error": "Bad Request"}},
+        },
     )
     def get(self, request: Request) -> Response:
         paginator = self.pagination_class()
