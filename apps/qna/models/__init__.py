@@ -1,3 +1,8 @@
+from .answer import (
+    Answer,
+    AnswerComment,
+    AnswerImage,
+)
 from .question import (
     Question,
     QuestionAIAnswer,
@@ -6,10 +11,13 @@ from .question import (
 )
 
 __all__ = [
+    # question models
     "Question",
     "QuestionCategory",
     "QuestionImage",
     "QuestionAIAnswer",
+    # answer models
+    "Answer",
+    "AnswerComment",
+    "AnswerImage",
 ]
-
-# Answer 모델도 추가될 예정
