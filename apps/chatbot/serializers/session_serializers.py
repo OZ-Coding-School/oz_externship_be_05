@@ -29,14 +29,6 @@ class SessionCreateSerializer(serializers.ModelSerializer[ChatbotSession]):
             "using_model": {"required": True},
         }
 
-    def validate_question(self, value: Question) -> Question:
-        request = self.context["request"]
-        user = request.user
-
-        if value.author != user:
-            raise serializers.ValidationError("본인이 작성한 질문에 대해서만 세션을 만들 수 있습니다.")
-        return value
-
     def create(self, validated_data: dict[str, Any]) -> ChatbotSession:
         request = self.context["request"]
         user = request.user
