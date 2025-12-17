@@ -44,7 +44,7 @@ class SessionCreateAPITests(APITestCase):
             content="API 테스트용 질문 내용입니다.",
         )
 
-        cls.url = reverse("aichatbot:session-list-create")
+        cls.url = reverse("chatbot:session-list-create")
 
     # 초기화 메서드. user를 인증 상태로(로그인 필요없게)
     def setUp(self) -> None:
@@ -172,7 +172,7 @@ class SessionListAPITests(APITestCase):
             user=cls.other_user, question=cls.question3, title="남의세션", using_model="gemini"
         )
 
-        cls.url = reverse("aichatbot:session-list-create")
+        cls.url = reverse("chatbot:session-list-create")
 
     def setUp(self) -> None:
         self.client.force_authenticate(self.user)
@@ -189,4 +189,4 @@ class SessionListAPITests(APITestCase):
         self.client.force_authenticate(user=None)  # 인증 해제!
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-        self.assertIn("detail", response.data)
+        self.assertIn("error_detail", response.data)
