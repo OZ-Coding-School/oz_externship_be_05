@@ -289,7 +289,7 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         # 3회차 → 실패해야 함
         s3 = self._make_serializer(payload)
         self.assertFalse(s3.is_valid())
-        self.assertIn("최대 2회까지만 제출할 수 있습니다", str(s3.errors))
+        self.assertIn("이미 제출된 시험입니다.", str(s3.errors))
 
     def test_serializer_missing_started_at(self) -> None:
         # started_at 필드가 누락된 경우 에러가 발생해야 한다.
