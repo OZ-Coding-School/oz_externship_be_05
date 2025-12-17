@@ -1,15 +1,20 @@
+from typing import Any
+
 from rest_framework import serializers
 
 from apps.qna.models import Question
-from apps.qna.services.question.question_list.category_utils import build_category_path
+from apps.qna.services.question.question_list.category_utils import (
+    CategoryPath,
+    build_category_path,
+)
 
 
-class QuestionAuthorSerializer(serializers.Serializer):
+class QuestionAuthorSerializer(serializers.Serializer[dict[str, object]]):
     nickname = serializers.CharField()
     profile_image_url = serializers.CharField(allow_null=True)
 
 
-class QuestionListSerializer(serializers.ModelSerializer): # type: ignore[type-arg]
+class QuestionListSerializer(serializers.ModelSerializer[Question]):
     category = serializers.SerializerMethodField()
     author = QuestionAuthorSerializer()
 
@@ -17,6 +22,9 @@ class QuestionListSerializer(serializers.ModelSerializer): # type: ignore[type-a
     answer_count = serializers.IntegerField()
 
     thumbnail_image_url = serializers.URLField(allow_null=True)
+
+    # 요청 단위 캐시 타입 명시
+    _category_path_cache: dict[int, CategoryPath]
 
     class Meta:
         model = Question
@@ -33,11 +41,11 @@ class QuestionListSerializer(serializers.ModelSerializer): # type: ignore[type-a
         ]
 
     # Serializer 인스턴스 생성 시 요청 단위 캐시 공간 초기화
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self._category_path_cache: dict[int, dict] = {}
+        self._category_path_cache = {}
 
-    def get_category(self, obj: Question) -> dict:
+    def get_category(self, obj: Question) -> CategoryPath:
         category_id = obj.category_id
 
         # 캐시에 없으면 계산

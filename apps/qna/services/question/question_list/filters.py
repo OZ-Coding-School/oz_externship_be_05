@@ -11,9 +11,9 @@ def filter_by_answered(
     answered: bool | None,
 ) -> QuerySet[Question]:
     if answered is True:
-        return qs.filter(answer_count__gt=0) # type: ignore[misc]
+        return qs.filter(answer_count__gt=0)  # type: ignore[misc]
     if answered is False:
-        return qs.filter(answer_count=0) # type: ignore[misc]
+        return qs.filter(answer_count=0)  # type: ignore[misc]
     return qs
 
 

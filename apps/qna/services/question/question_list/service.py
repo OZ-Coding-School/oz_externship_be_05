@@ -1,5 +1,7 @@
+from typing import Sequence
+
 from django.core.paginator import Paginator
-from django.db.models import BooleanField, Case, Count, OuterRef, Subquery, When, QuerySet
+from django.db.models import Count, OuterRef, QuerySet, Subquery
 from django.db.models.functions import Substr
 
 from apps.qna.exceptions.question_exceptions import QuestionListEmptyError
@@ -19,33 +21,36 @@ def get_question_list(
     search: str | None = None,
     page: int,
     page_size: int,
-) -> tuple[QuerySet[Question], dict[str, int]]:
-    qs: QuerySet[Question] = (
+) -> tuple[Sequence[Question], dict[str, int]]:
+
+    # base queryset
+    base_qs: QuerySet[Question] = (
         Question.objects.select_related("author", "category")
-        .annotate(
-            answer_count=Count("answers", distinct=True),
-        ) # type: ignore[misc]
+        .annotate(answer_count=Count("answers", distinct=True))
         .order_by("-created_at")
     )
 
-    qs: QuerySet[Question] = filter_by_answered(qs, answered)
-    qs: QuerySet[Question] = filter_by_category(qs, category)
-    qs: QuerySet[Question] = filter_by_search(qs, search)
+    # 필터 단계
+    filtered_qs = filter_by_answered(base_qs, answered)
+    filtered_qs = filter_by_category(filtered_qs, category)
+    filtered_qs = filter_by_search(filtered_qs, search)
 
-    qs: QuerySet[Question] = qs.annotate(content_preview=Substr("content", 1, 100)) # type: ignore[misc]
-
-    thumbnail_subquery = (
-        QuestionImage.objects.filter(question=OuterRef("pk")).order_by("created_at").values("img_url")[:1]
+    # annotate 단계 (가짜 컬럼들)
+    annotated_qs = filtered_qs.annotate(content_preview=Substr("content", 1, 100)).annotate(
+        thumbnail_image_url=Subquery(
+            QuestionImage.objects.filter(question=OuterRef("pk")).order_by("created_at").values("img_url")[:1]
+        )
     )
-    qs: QuerySet[Question] = qs.annotate(thumbnail_image_url=Subquery(thumbnail_subquery)) # type: ignore[misc]
 
-    paginator = Paginator(qs, page_size)
-    page_obj = paginator.get_page(page)
+    # pagination
+    paginator = Paginator(annotated_qs, page_size)
 
     if paginator.count == 0:
         raise QuestionListEmptyError()
 
-    return page_obj.object_list, {
+    page_obj = paginator.page(page)
+
+    return list(page_obj.object_list), {
         "page": page,
         "page_size": page_size,
         "total_pages": paginator.num_pages,

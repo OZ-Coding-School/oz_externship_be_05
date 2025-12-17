@@ -1,8 +1,11 @@
+from typing import cast
+
 from django.test import TestCase
 from django.utils import timezone
 
 from apps.qna.exceptions.question_exceptions import QuestionListEmptyError
 from apps.qna.models import Question, QuestionCategory, QuestionImage
+from apps.qna.models.question.question_base import QuestionAnnotated
 from apps.qna.services.question.question_list.service import get_question_list
 from apps.user.models.user import RoleChoices, User
 
@@ -136,7 +139,10 @@ class QuestionListServiceTests(TestCase):
             page_size=10,
         )
 
+        # mypy만족을 위해 추가
+        annotated_question = cast(QuestionAnnotated, questions[0])
+
         self.assertEqual(
-            questions[0].thumbnail_image_url,
+            annotated_question.thumbnail_image_url,
             "https://example.com/image1.png",
         )

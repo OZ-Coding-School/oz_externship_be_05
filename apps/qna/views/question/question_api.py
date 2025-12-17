@@ -1,4 +1,7 @@
+from typing import cast
+
 from rest_framework import status
+from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -16,12 +19,13 @@ from apps.qna.services.question.question_create_service import (
     get_category_or_raise,
 )
 from apps.qna.services.question.question_list.service import get_question_list
+from apps.user.models import User
 
 
 class QuestionAPIView(APIView):
     authentication_classes = []
 
-    def get_permissions(self):
+    def get_permissions(self) -> list[BasePermission]:
         # GET: 모두 허용
         if self.request.method == "GET":
             return []
@@ -56,8 +60,10 @@ class QuestionAPIView(APIView):
 
         category = get_category_or_raise(serializer.validated_data["category"])
 
+        user = cast(User, request.user)
+
         question = create_question(
-            author=request.user,
+            author=user,
             category=category,
             validated_data=serializer.validated_data,
         )

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import TypedDict
 
 from apps.qna.models import QuestionCategory
 
@@ -17,16 +17,20 @@ def get_descendant_category_ids(category_id: int) -> list[int]:
     return ids
 
 
-def build_category_path(category: QuestionCategory) -> dict:
+class CategoryPath(TypedDict):
+    id: int
+    path: str
+
+
+def build_category_path(category: QuestionCategory) -> CategoryPath:
     names: list[str] = []
 
-    current = category
-    while current:
+    current: QuestionCategory | None = category
+    while current is not None:
         names.append(current.name)
-        current = current.parent  # parent=None이면 자연스럽게 종료
+        current = current.parent
 
     return {
         "id": category.id,
         "path": " > ".join(reversed(names)),
     }
-

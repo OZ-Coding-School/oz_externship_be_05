@@ -80,4 +80,3 @@ class QuestionListAPITests(APITestCase):
 
         self.assertEqual(len(response.data["results"]), 1)
         self.assertEqual(response.data["results"][0]["answer_count"], 0)
-

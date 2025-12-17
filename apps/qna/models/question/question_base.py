@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING, Any, Protocol
+
 from django.conf import settings
 from django.db import models
 
@@ -20,3 +22,14 @@ class Question(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.title
+
+
+class QuestionAnnotated(Protocol):
+    thumbnail_image_url: Any
+    content_preview: Any
+
+
+if TYPE_CHECKING:
+
+    class _QuestionTypeHints:
+        answers: Any
