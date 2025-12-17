@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.community.models.post import Post
 from apps.community.models.post_comment import PostComment
 from apps.community.serializers.post_comment import PostCommentSerializer
 from apps.community.serializers.post_comment_tags import PostCommentTagsSerializer
@@ -19,8 +20,13 @@ class PostCommentListCreateAPIView(APIView):
     def get(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         post_id = kwargs.get("post_id")
 
-        if not post_id:
-            return Response({"error_detail": "해당 게시글을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            post = Post.objects.get(id=post_id)
+        except Post.DoesNotExist:
+            return Response(
+                {"error_detail": "해당 게시글을 찾을 수 없습니다."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
         qs = PostComment.objects.filter(post_id=post_id).select_related("author").order_by("-created_at")
 
@@ -31,8 +37,13 @@ class PostCommentListCreateAPIView(APIView):
     def post(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         post_id = kwargs.get("post_id")
 
-        if not post_id:
-            return Response({"error_detail": "해당 게시글을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            post = Post.objects.get(id=post_id)
+        except Post.DoesNotExist:
+            return Response(
+                {"error_detail": "해당 게시글을 찾을 수 없습니다."},
+                status=status.HTTP_404_NOT_FOUND
+            )
 
         serializer = PostCommentSerializer(data=request.data)
 
@@ -51,13 +62,10 @@ class PostCommentUpdateDestroyAPIView(APIView):
     def put(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         comment_id = kwargs.get("comment_id")
 
-        if not comment_id:
-            return Response({"error_detail": "해당 댓글을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-
         try:
             comment = PostComment.objects.get(id=comment_id)
         except PostComment.DoesNotExist:
-            return Response({"content": "이 필드는 필수 항목입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error_detail": "해당 댓글을 찾을 수 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
 
         if comment.author != request.user:
             return Response({"error_detail": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
@@ -73,9 +81,6 @@ class PostCommentUpdateDestroyAPIView(APIView):
 
     def delete(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         comment_id = kwargs.get("comment_id")
-
-        if not comment_id:
-            return Response({"error_detail": "해당 댓글을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
 
         try:
             comment = PostComment.objects.get(id=comment_id)
