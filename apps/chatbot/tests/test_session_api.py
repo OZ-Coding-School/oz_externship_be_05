@@ -1,7 +1,6 @@
 import datetime
 from typing import Any
 
-from django.contrib.auth import get_user_model
 from django.http import HttpRequest
 from django.test import TestCase
 from django.urls import reverse
@@ -25,8 +24,10 @@ class SessionCreateAPITests(APITestCase):
 
     @classmethod
     def setUpTestData(cls) -> None:
-        cls.user = User.objects.create(
-            email="api_tester@example.com", password="password1234", birthday=datetime.date(2000, 1, 1)
+
+        cls.password = "password1234" # 해싱용 password 설정
+        cls.user = User.objects.create_user(
+            email="api_tester@example.com", password=cls.password, birthday=datetime.date(2000, 1, 1)
         )
 
         cls.question_category = QuestionCategory.objects.create(
@@ -112,12 +113,11 @@ class SessionCreateAPITests(APITestCase):
         self.assertIn(response.status_code, {status.HTTP_400_BAD_REQUEST, status.HTTP_404_NOT_FOUND})
 
 
-# 세션 목록 조회 api 테스트
+# 세션 목록 조회 api 테스트: 인증된 유저에 대해 본인 세션'만' 반환/인증X 경우 적절한 반환
 class SessionListAPITests(APITestCase):
-    """Session 목록 조회 API 테스트"""
 
-    user: "User"
-    other_user: "User"
+    user: User
+    other_user: User
     question_category: QuestionCategory
     question: Question
     question2: Question
@@ -126,17 +126,20 @@ class SessionListAPITests(APITestCase):
 
     @classmethod
     def setUpTestData(cls) -> None:
-        cls.user = User.objects.create(
+
+        cls.password = "pass"  # 해싱용 password 설정
+        cls.user = User.objects.create_user(
             email="test@example.com",
-            password="pass",
+            password= cls.password,
             name="mainuser",
             nickname="mainuser",
             birthday=datetime.date(2000, 1, 1),
         )
 
-        cls.other_user = User.objects.create(
+        cls.password2 = "pass"  # 해싱용 password 설정
+        cls.other_user = User.objects.create_user(
             email="other@example.com",
-            password="pass",
+            password=cls.password2,
             name="otheruser",
             nickname="otheruser",
             birthday=datetime.date(2000, 1, 1),
@@ -170,16 +173,15 @@ class SessionListAPITests(APITestCase):
         self.client.force_authenticate(self.user)
 
     def test_list_returns_only_own_sessions(self) -> None:
-        """✅ 본인 세션만 반환되는지 테스트"""
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 2)  # 본인 것만
 
-    def test_list_pagination_works(self) -> None:
-        """✅ page_size 파라미터가 작동하는지 테스트"""
-        response = self.client.get(self.url, {"page_size": 1})
+    # 인증 X → 세션목록 조회 X
+    def test_list_authentication_false(self) -> None:
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1)
-        self.assertIsNotNone(response.data["next"])  # 다음 페이지 존재
+        self.client.force_authenticate(user=None) # 인증 해제!
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertIn("detail", response.data)

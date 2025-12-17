@@ -27,10 +27,14 @@ class SessionCreateSerializerTests(TestCase):
 
     @classmethod
     def setUpTestData(cls) -> None:
-        UserModel = get_user_model()
+        cls.password = "00000000"   # 해싱용 password 설정, 로그인 대비
         # 유저 생성
-        cls.user = UserModel.objects.create(
-            email="test@example.com", password="00000000", birthday=datetime.date(2000, 1, 1)
+        cls.user = User.objects.create_user(
+            email="test@example.com",
+            password=cls.password,
+            name="testuser",
+            nickname="testuser",
+            birthday=datetime.date(2000, 1, 1),
         )
 
         cls.question_category = QuestionCategory.objects.create(
