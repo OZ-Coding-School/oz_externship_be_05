@@ -28,3 +28,22 @@ class PostCommentSerializer(serializers.ModelSerializer[PostComment]):
             PostCommentTag.objects.create(comment=comment, tagged_user=tag_data["tagged_user"])
 
         return comment
+
+    def update(self, comment: PostComment, validated_data: Dict[str, Any]) -> PostComment:
+        tags_data = validated_data.pop("tags", None)
+
+        for content, data in validated_data.items():
+            setattr(comment, content, data)
+
+        comment.save()
+
+        if tags_data is not None:
+            PostCommentTag.objects.filter(comment=comment).delete()
+
+            for tag_data in tags_data:
+                PostCommentTag.objects.create(comment=comment, tagged_user=tag_data["tagged_user"])
+
+        else:
+            pass
+
+        return comment
