@@ -25,6 +25,7 @@ from apps.user.models import User
 
 class ExamSubmitServiceAndSerializerTest(TestCase):
     # service / serializer 유닛 테스트
+    deployment: ExamDeployment
 
     def setUp(self) -> None:
         # 유저 생성
@@ -245,7 +246,7 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
 
     def _make_serializer(self, data: dict[str, Any]) -> ExamSubmissionCreateSerializer:
         # ExamSubmissionCreateSerializer 를 테스트하기 위해
-        # fake request + context(deployment) 를 만들어주는 helper 메서드
+        # fake request + context(submission) 를 만들어주는 helper 메서드
         req = self.rf.post("/fake-url/", data, content_type="application/json")
         req.user = self.user
         return ExamSubmissionCreateSerializer(
@@ -264,11 +265,11 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         serializer = self._make_serializer(payload)
         self.assertTrue(serializer.is_valid(), msg=serializer.errors)
 
-        submission = serializer.save(submitter=self.user, deployment=self.deployment)
+        submission = serializer.save(submitter=self.user, submission=self.deployment)
         self.assertIsInstance(submission, ExamSubmission)
 
     def test_serializer_block_third_submission(self) -> None:
-        # 같은 유저 / 같은 deployment 에 대해
+        # 같은 유저 / 같은 submission 에 대해
         # 2회까지는 통과, 3회차에서 ValidationError 가 발생해야 한다.
         payload: dict[str, Any] = {
             "started_at": (timezone.now() - timedelta(seconds=10)).isoformat(),
@@ -279,12 +280,12 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         # 1회차
         s1 = self._make_serializer(payload)
         self.assertTrue(s1.is_valid(), msg=s1.errors)
-        s1.save(submitter=self.user, deployment=self.deployment)
+        s1.save(submitter=self.user, submission=self.deployment)
 
         # 2회차
         s2 = self._make_serializer(payload)
         self.assertTrue(s2.is_valid(), msg=s2.errors)
-        s2.save(submitter=self.user, deployment=self.deployment)
+        s2.save(submitter=self.user, submission=self.deployment)
 
         # 3회차 → 실패해야 함
         s3 = self._make_serializer(payload)
@@ -324,7 +325,7 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
 
         serializer = self._make_serializer(payload)
         self.assertFalse(serializer.is_valid())
-        self.assertIn("시험 제한 시간이 초과되어 제출할 수 없습니다", str(serializer.errors))
+        self.assertIn("시험 제한 시간이 초과되어 자동제출되었습니다", str(serializer.errors))
 
     def test_serializer_to_representation(self) -> None:
         # to_representation 이 채점 결과 페이지에 필요한 필드를 모두 포함하는지 확인
@@ -346,7 +347,7 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         data = serializer.to_representation(submission)
 
         self.assertEqual(data["id"], submission.pk)
-        self.assertEqual(data["deployment_id"], self.deployment.pk)
+        self.assertEqual(data["submission_id"], self.deployment.pk)
 
 
 class ExamSubmissionViewTest(APITestCase):
@@ -501,7 +502,7 @@ class ExamSubmissionViewTest(APITestCase):
         )
 
     def test_exam_submission_view(self) -> None:
-        url = reverse("exam_submit", kwargs={"deployment_pk": self.deployment.pk})
+        url = reverse("exam_submit")
         self.client.force_authenticate(user=self.user)
         data = {
             "started_at": (timezone.now() - timedelta(minutes=50)).isoformat(),

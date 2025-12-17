@@ -47,7 +47,7 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
 
         # started_at 미래인 경우 오류
         if elapsed < 0:
-            raise serializers.ValidationError({"started_at": "시작시간은 현재 시간보다 빨라야합니다."})
+            raise serializers.ValidationError({"started_at": "시작시간은 현재 시간보다 빨라야합니다."})  # TODO 400
 
         # 시간 제한 검증
         duration_time = getattr(deployment, "duration_time", None)
@@ -55,7 +55,7 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
         # 시간초과 여부 > 즉시실패
         is_time_over = False
         if duration_time is not None and elapsed > duration_time:
-            raise serializers.ValidationError("시험 제한 시간이 초과되어 제출할 수 없습니다")
+            raise serializers.ValidationError("시험 제한 시간이 초과되어 자동제출되었습니다")  # TODO 408 에러로 바꾸기
         attrs["elapsed_seconds"] = int(elapsed)
         return attrs
 
@@ -75,5 +75,5 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
         # 응답은 채점 결과 확인 페이지로 이동할 때 필요한 최소 정보만 내려주기
         return {
             "id": instance.pk,
-            "deployment_id": instance.deployment_id,
+            "submission_id": instance.deployment_id,
         }
