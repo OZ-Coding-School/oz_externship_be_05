@@ -1,3 +1,5 @@
+from typing import Any
+
 from rest_framework import serializers
 
 from apps.chatbot.models.chatbot_completions import ChatbotCompletion
@@ -11,9 +13,9 @@ class CompletionSerializer(serializers.ModelSerializer[ChatbotCompletion]):
         read_only_fields = fields
 
 
-# completion 생성 (요청 - Request)
+# completion 생성: POST
 class CompletionCreateSerializer(serializers.ModelSerializer[ChatbotCompletion]):
-    message = serializers.CharField(required=False, allow_blank=True)
+    message = serializers.CharField(required=True, allow_blank=False)
 
     class Meta:
         model = ChatbotCompletion
@@ -25,3 +27,19 @@ class CompletionCreateSerializer(serializers.ModelSerializer[ChatbotCompletion])
             "created_at": {"read_only": True},
             "updated_at": {"read_only": True},
         }
+
+    def validate_message(self, value: str) -> str:
+        if not value.strip():
+            raise serializers.ValidationError("Message cannot be empty")
+        return value
+
+    def create(self, validated_data: dict[str, Any]) -> ChatbotCompletion:
+        session = self.context["session"]
+        message = validated_data["message"]
+
+        completion: ChatbotCompletion = ChatbotCompletion.objects.create(
+            session=session,
+            message=message,
+            role="user",
+        )
+        return completion
