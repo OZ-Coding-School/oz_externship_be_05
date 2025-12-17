@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime
-from json import JSONDecodeError
-from typing import Any, Dict, List, Tuple, cast
+from typing import Any, Dict, List, Tuple
 
 from django.db import transaction
 from rest_framework import serializers
@@ -27,7 +25,7 @@ def validate_exam_submission_limit(
     ).count()
 
     if existing_count >= 2:
-        raise serializers.ValidationError({"detail": "해당 쪽지시험은 최대 2회까지만 제출할 수 있습니다."})
+        raise serializers.ValidationError({"error_detail": "해당 쪽지시험은 최대 2회까지만 제출할 수 있습니다."})
 
 
 def _snapshot_questions(deployment: ExamDeployment) -> List[Dict[str, Any]]:
@@ -119,6 +117,8 @@ def create_exam_submission(
     cheating_count: int,
     raw_answers: Dict[str, Any],
 ) -> ExamSubmission:
+    validate_exam_submission_limit(deployment=deployment, submitter=submitter)
+
     normalized_answers = normalize_answers(deployment, raw_answers)
     score, correct_answer_count = evaluate_submission(deployment, normalized_answers)
 
