@@ -5,7 +5,8 @@ from django.contrib.auth import get_user_model
 from django.http import HttpRequest
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APIRequestFactory, APITestCase
+from rest_framework.test import APIRequestFactory
+from django.test import TestCase
 
 from apps.chatbot.models.chatbot_sessions import ChatbotSession, ChatModel
 from apps.chatbot.serializers.session_serializers import SessionCreateSerializer
@@ -18,8 +19,8 @@ from apps.user.models import User
 """
 
 
-class SessionCreateSerializerTests(APITestCase):
-    user: "User"
+class SessionCreateSerializerTests(TestCase):
+    user: User
     question_category: QuestionCategory
     question: Question
     factory: APIRequestFactory
@@ -64,7 +65,7 @@ class SessionCreateSerializerTests(APITestCase):
 
         request = self._make_request_with_user()
         serializer = SessionCreateSerializer(data=data, context={"request": request})
-        self.assertTrue(serializer.is_valid())
+        self.assertTrue(serializer.is_valid(), serializer.errors)
         session = serializer.save()
 
         # DB에 1개가 생성되었나요?
