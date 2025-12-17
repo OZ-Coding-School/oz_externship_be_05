@@ -48,8 +48,6 @@ class TestPostCommentListCreateAPIView(APITestCase):
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data["error_detail"], "해당 게시글을 찾을 수 없습니다.")
 
-
-
     def test_create_comment(self) -> None:
         user = User.objects.first()
         self.client.force_authenticate(user=user)
@@ -128,7 +126,6 @@ class TestPostCommentUpdateDestroyAPIView(APITestCase):
 
         data = {"content": "수정 시도"}
         response = self.client.put(f"/api/v1/posts/{self.post.id}/comments/999", data)
-
 
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.data["error_detail"], "해당 댓글을 찾을 수 없습니다.")
