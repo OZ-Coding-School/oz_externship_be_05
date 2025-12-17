@@ -63,6 +63,26 @@ class QuestionListServiceTests(TestCase):
         self.assertEqual(len(questions), 1)
         self.assertEqual(page_info["total_count"], 1)
 
+    # answered 필터(True/False)
+    def test_filter_by_answered_true(self) -> None:
+        question = self.create_question(
+            title="답변 질문",
+            category=self.child_category,
+        )
+
+        question.answers.create(
+            author=self.user,
+            content="답변",
+        )
+
+        questions, _ = get_question_list(
+            answered=True,
+            page=1,
+            page_size=10,
+        )
+
+        self.assertEqual(len(questions), 1)
+
     # category 필터 (부모 선택 시 자식 포함)
     def test_filter_by_category_include_children(self) -> None:
         self.create_question(
@@ -82,7 +102,7 @@ class QuestionListServiceTests(TestCase):
     # 검색 필터
     def test_filter_by_search(self) -> None:
         self.create_question(
-            title="Django ORM 질문",
+            title="Django 질문",
             category=self.child_category,
         )
         self.create_question(
@@ -91,13 +111,13 @@ class QuestionListServiceTests(TestCase):
         )
 
         questions, _ = get_question_list(
-            search="ORM",
+            search="Django",
             page=1,
             page_size=10,
         )
 
         self.assertEqual(len(questions), 1)
-        self.assertIn("ORM", questions[0].title)
+        self.assertIn("Django", questions[0].title)
 
     # thumbnail_image_url 서브쿼리
     def test_thumbnail_image_annotation(self) -> None:

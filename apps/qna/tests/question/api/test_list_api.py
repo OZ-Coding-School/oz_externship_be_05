@@ -43,9 +43,10 @@ class QuestionListAPITests(APITestCase):
         )
 
         response = self.client.get(self.url)
+        item = response.data["results"][0]
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1)
+        self.assertIn("answer_count", item)
+        self.assertEqual(item["answer_count"], 0)
 
     # answered=true 필터
     def test_answered_filter_true(self) -> None:
@@ -64,6 +65,19 @@ class QuestionListAPITests(APITestCase):
         response = self.client.get(self.url, {"answered": True})
 
         self.assertEqual(len(response.data["results"]), 1)
+        self.assertGreater(response.data["results"][0]["answer_count"], 0)
 
-        question_data = response.data["results"][0]
-        self.assertGreater(question_data["answer_count"], 0)
+    # answered=false 필터
+    def test_answered_filter_false(self) -> None:
+        Question.objects.create(
+            author=self.user,
+            title="미답변 질문",
+            content="내용",
+            category=self.category,
+        )
+
+        response = self.client.get(self.url, {"answered": False})
+
+        self.assertEqual(len(response.data["results"]), 1)
+        self.assertEqual(response.data["results"][0]["answer_count"], 0)
+

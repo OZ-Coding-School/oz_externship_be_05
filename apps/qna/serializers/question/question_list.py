@@ -15,7 +15,6 @@ class QuestionListSerializer(serializers.ModelSerializer): # type: ignore[type-a
 
     content_preview = serializers.CharField()
     answer_count = serializers.IntegerField()
-    is_answered = serializers.BooleanField()
 
     thumbnail_image_url = serializers.URLField(allow_null=True)
 

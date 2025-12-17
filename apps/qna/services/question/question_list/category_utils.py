@@ -17,16 +17,16 @@ def get_descendant_category_ids(category_id: int) -> list[int]:
     return ids
 
 
-def build_category_path(category: QuestionCategory) -> dict[str, Any]:
+def build_category_path(category: QuestionCategory) -> dict:
     names: list[str] = []
 
     current = category
     while current:
         names.append(current.name)
-        assert current.parent is not None
-        current = current.parent
+        current = current.parent  # parent=None이면 자연스럽게 종료
 
     return {
         "id": category.id,
         "path": " > ".join(reversed(names)),
     }
+
