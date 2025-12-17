@@ -1,8 +1,10 @@
 from typing import Any
 
 from django.contrib.admin import ModelAdmin, SimpleListFilter
-from django.db.models import Count, Q, QuerySet
+from django.db.models import Count, F, Q, QuerySet, Sum
 from django.http import HttpRequest
+
+from apps.courses.models.cohorts_models import CohortStatusChoices
 
 # 정렬
 
@@ -28,9 +30,34 @@ class TimeOrderingFilter(SimpleListFilter):
         return queryset  # ordering 작동
 
 
+class CourseOrderingFilter(TimeOrderingFilter):
+    title = "정렬 기준"
+    parameter_name = "courses_order_by"
+
+    def lookups(self, request: Any, model_admin: Any) -> list[tuple[str, str]]:
+        time_options = super().lookups(request, model_admin)
+
+        course_options = [("most_student", "학생 많은 순"), ("most_cohorts", "기수 많은 순")]
+
+        return time_options + course_options
+
+    def queryset(self, request: Any, queryset: Any) -> Any:
+
+        if self.value() == "most_student":
+            return queryset.order_by(F("_total_students").desc(nulls_last=True))
+
+        if self.value() == "most_cohorts":
+            return queryset.annotate(
+                _operating_cohorts_count=Count(
+                    "cohorts", filter=Q(cohorts__status=CohortStatusChoices.IN_PROGRESS), distinct=True
+                )
+            ).order_by(F("_operating_cohorts_count").desc(nulls_last=True))
+        return super().queryset(request, queryset)
+
+
 class PostOrderingFilter(TimeOrderingFilter):
     title = "정렬 기준"
-    parameter_name = "order_by"
+    parameter_name = "post_order_by"
 
     def lookups(self, request: Any, model_admin: Any) -> list[tuple[str, str]]:
         time_options = super().lookups(request, model_admin)
@@ -48,7 +75,7 @@ class PostOrderingFilter(TimeOrderingFilter):
             return queryset.order_by("-view_count")
 
         if self.value() == "most_likes":
-            return queryset.annotate(like_count=Count("post_likes")).order_by("-like_count")
+            return queryset.order_by("-_likes_count")
 
         return super().queryset(request, queryset)  # ordering 작동
 
