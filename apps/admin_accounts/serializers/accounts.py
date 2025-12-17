@@ -1,4 +1,3 @@
-# apps/admin_accounts/serializers/accounts.py
 from rest_framework import serializers
 from apps.user.models import User
 from apps.admin_accounts.serializers.common import CourseMiniSerializer, CohortMiniSerializer
