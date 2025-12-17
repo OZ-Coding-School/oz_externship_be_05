@@ -67,7 +67,7 @@ class SessionCreateListAPIView(APIView):
 
     @extend_schema(
         tags=["Session"],
-        summary="세션 생성 API (Spec)",
+        summary="세션 생성 API",
         request=SessionCreateSerializer,
         responses={
             "201": SessionCreateSerializer,
@@ -86,7 +86,7 @@ class SessionCreateListAPIView(APIView):
 
     @extend_schema(
         tags=["Session"],
-        summary="세션 리스트 확인 API (Spec)",
+        summary="세션 리스트 확인 API",
         # responses={
         #     "400": {"object": "object", "example": {"error": "Bad Request"}},
         # },
@@ -118,7 +118,7 @@ class SessionDeleteView(APIView):
 
     @extend_schema(
         tags=["Session Delete"],
-        summary="",
+        summary="세션 삭제 API",
         request=SessionSerializer,
         responses={
             "204": None,
