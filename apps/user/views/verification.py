@@ -23,7 +23,7 @@ class SignupSendEmailAPIView(APIView):
         serializer = SignupEmailRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         EmailSender().send(serializer.validated_data["email"])
-        return Response({"detail": "Verification code sent to email."}, status=status.HTTP_200_OK)
+        return Response({"detail": "회원가입을 위한 이메일 인증 코드가 전송되었습니다."}, status=status.HTTP_200_OK)
 
 
 class SignupVerifyEmailAPIView(APIView):
@@ -36,7 +36,7 @@ class SignupVerifyEmailAPIView(APIView):
             serializer.validated_data["email"],
             serializer.validated_data["verify_code"],
         )
-        return Response({"email_token": token}, status=status.HTTP_200_OK)
+        return Response({"detail": "이메일 인증에 성공하였습니다.", "email_token": token}, status=status.HTTP_200_OK)
 
 
 class SendSMSVerificationAPIView(APIView):
@@ -50,7 +50,7 @@ class SendSMSVerificationAPIView(APIView):
         except RuntimeError as exc:
             raise ValidationError(str(exc)) from exc
         sender.send(serializer.validated_data["phone_number"])
-        return Response({"detail": "Verification code sent via SMS."}, status=status.HTTP_200_OK)
+        return Response({"detail": "SMS 인증 코드가 전송되었습니다."}, status=status.HTTP_200_OK)
 
 
 class VerifySMSAPIView(APIView):
@@ -67,4 +67,4 @@ class VerifySMSAPIView(APIView):
             serializer.validated_data["phone_number"],
             serializer.validated_data["verify_code"],
         )
-        return Response({"sms_token": token}, status=status.HTTP_200_OK)
+        return Response({"detail": "SMS 인증에 성공하였습니다.", "phone_token": token}, status=status.HTTP_200_OK)

@@ -12,7 +12,7 @@ from apps.user.serializers.base import BaseMixin
 from apps.user.serializers.mixins import AllTokensMixin, SMSTokenMixin, SenderTokenMixin
 
 
-class SignupSerializer(SenderTokenMixin, AllTokensMixin, serializers.ModelSerializer):
+class SignupSerializer(SenderTokenMixin, AllTokensMixin, serializers.ModelSerializer[Any]):
     password = BaseMixin.get_password_field(write_only=True)
 
     class Meta:
@@ -32,7 +32,7 @@ class SignupSerializer(SenderTokenMixin, AllTokensMixin, serializers.ModelSerial
             "profile_image_url": {"required": False, "allow_blank": True, "allow_null": True},
         }
 
-    def validate_password(self, value: str) -> str:  # noqa: D401
+    def validate_password(self, value: str) -> str:
         return BaseMixin.validate_password(self, value)
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
@@ -45,17 +45,18 @@ class SignupSerializer(SenderTokenMixin, AllTokensMixin, serializers.ModelSerial
             raise serializers.ValidationError("이미 사용중인 휴대폰 번호입니다.")
 
         attrs["phone_number"] = phone_identifier
+        attrs.pop("sms_token", None)
         attrs["email"] = email_identifier
+        attrs.pop("email_token", None)
         return attrs
 
     def create(self, validated_data: dict[str, Any]) -> User:
-        validated_data.pop("sms_token", None)
-        validated_data.pop("email_token", None)
+
         password = validated_data.pop("password")
         return User.objects.create_user(password=password, **validated_data)
 
 
-class LoginSerializer(serializers.Serializer, BaseMixin):
+class LoginSerializer(serializers.Serializer[Any], BaseMixin):
     email = BaseMixin.get_email_field()
     password = BaseMixin.get_password_field(write_only=True)
 
@@ -70,20 +71,20 @@ class LoginSerializer(serializers.Serializer, BaseMixin):
         return attrs
 
 
-class TokenRefreshSerializer(serializers.Serializer):
-    refresh = serializers.CharField()
-    access = serializers.CharField(read_only=True)
+class TokenRefreshSerializer(serializers.Serializer[Any]):
+    refresh_token = serializers.CharField()
+    access_token = serializers.CharField(read_only=True)
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         try:
-            token = RefreshToken(attrs["refresh"])
+            token = RefreshToken(attrs["refresh_token"])
         except TokenError as exc:
             raise serializers.ValidationError("로그인이 유효하지 않습니다.") from exc
-        attrs["access"] = str(token.access_token)
+        attrs["access_token"] = str(token.access_token)
         return attrs
 
 
-class UserProfileSerializer(serializers.ModelSerializer):
+class UserProfileSerializer(serializers.ModelSerializer[Any]):
     class Meta:
         model = User
         fields = [
@@ -103,7 +104,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = ["email", "role", "is_active", "created_at", "updated_at"]
 
 
-class UserUpdateSerializer(serializers.ModelSerializer, BaseMixin):
+class UserUpdateSerializer(serializers.ModelSerializer[Any], BaseMixin):
     class Meta:
         model = User
         fields = ["name", "nickname", "profile_image_url", "gender", "birthday"]
@@ -116,27 +117,27 @@ class UserUpdateSerializer(serializers.ModelSerializer, BaseMixin):
         }
 
 
-class NicknameCheckSerializer(serializers.Serializer):
+class NicknameCheckSerializer(serializers.Serializer[Any]):
     nickname = serializers.CharField(max_length=15)
 
 
-class ChangePasswordSerializer(serializers.Serializer, BaseMixin):
+class ChangePasswordSerializer(serializers.Serializer[Any], BaseMixin):
     current_password = BaseMixin.get_password_field(write_only=True)
     new_password = BaseMixin.get_password_field(write_only=True)
 
-    def validate_new_password(self, value: str) -> str:  # noqa: D401
+    def validate_new_password(self, value: str) -> str:
         return BaseMixin.validate_password(self, value)
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        if attrs["current_password"] == attrs["new_password"]:
+            raise serializers.ValidationError("새 비밀번호는 기존 비밀번호와 달라야 합니다.")
         user: User = self.context["request"].user
         if not user.check_password(attrs["current_password"]):
             raise serializers.ValidationError("현재 비밀번호가 올바르지 않습니다.")
-        if attrs["current_password"] == attrs["new_password"]:
-            raise serializers.ValidationError("새 비밀번호는 기존 비밀번호와 달라야 합니다.")
         return attrs
 
 
-class ChangePhoneSerializer(SenderTokenMixin, SMSTokenMixin, serializers.Serializer):
+class ChangePhoneSerializer(SenderTokenMixin, SMSTokenMixin, serializers.Serializer[Any]):
     def update(self, instance: User, validated_data: dict[str, Any]) -> User:
         phone_number = self.verify_sms_token(validated_data["sms_token"])
         if User.objects.exclude(pk=instance.pk).filter(phone_number=phone_number).exists():

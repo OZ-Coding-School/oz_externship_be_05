@@ -30,9 +30,8 @@ class SignupAPIView(APIView):
     def post(self, request: Request) -> Response:
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = serializer.save()
-        tokens = issue_token_pair(user)
-        return Response({"detail": "회원가입이 완료되었습니다.", "tokens": tokens, "user": UserProfileSerializer(user).data}, status=status.HTTP_201_CREATED)
+        serializer.save()
+        return Response({"detail": "회원가입이 완료되었습니다."}, status=status.HTTP_201_CREATED)
 
 
 class LoginAPIView(APIView):
@@ -42,8 +41,7 @@ class LoginAPIView(APIView):
         serializer = LoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         user: User = serializer.validated_data["user"]
-        tokens = issue_token_pair(user)
-        return Response({"tokens": tokens, "user": UserProfileSerializer(user).data}, status=status.HTTP_200_OK)
+        return Response(issue_token_pair(user), status=status.HTTP_200_OK)
 
 
 class RefreshAPIView(APIView):
@@ -53,10 +51,7 @@ class RefreshAPIView(APIView):
         serializer = TokenRefreshSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return Response(
-            {
-                "refresh": serializer.validated_data["refresh"],
-                "access": serializer.validated_data["access"],
-            },
+            {serializer.validated_data},
             status=status.HTTP_200_OK,
         )
 
@@ -65,20 +60,23 @@ class MeAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
+        assert isinstance(request.user, User)
         return Response(UserProfileSerializer(request.user).data, status=status.HTTP_200_OK)
 
     def patch(self, request: Request) -> Response:
+        assert isinstance(request.user, User)
         serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(UserProfileSerializer(request.user).data, status=status.HTTP_200_OK)
 
     def delete(self, request: Request) -> Response:
+        assert isinstance(request.user, User)
         payload = request.data
         reason_value = payload.get("reason") or WithdrawalReason.OTHER
         if reason_value not in WithdrawalReason.values:
             reason_value = WithdrawalReason.OTHER
-        detail = payload.get("reason_detail") or "회원 탈퇴를 요청했습니다."
+        detail = payload.get("reason_detail") or ""
         grace_days = getattr(settings, "WITHDRAWAL_GRACE_DAYS", 14)
         due_date = timezone.now().date() + timedelta(days=grace_days)
 
@@ -106,11 +104,11 @@ class ChangePasswordAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request: Request) -> Response:
+        assert isinstance(request.user, User)
         serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        user: User = request.user
-        user.set_password(serializer.validated_data["new_password"])
-        user.save(update_fields=["password", "updated_at"])
+        request.user.set_password(serializer.validated_data["new_password"])
+        request.user.save(update_fields=["password", "updated_at"])
         return Response({"detail": "비밀번호가 변경되었습니다."}, status=status.HTTP_200_OK)
 
 
@@ -118,7 +116,8 @@ class ChangePhoneAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request: Request) -> Response:
+        assert isinstance(request.user, User)
         serializer = ChangePhoneSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         serializer.update(request.user, serializer.validated_data)
-        return Response({"phone_number": request.user.phone_number}, status=status.HTTP_200_OK)
+        return Response({"detail": "휴대폰 번호가 변경되었습니다."}, status=status.HTTP_200_OK)

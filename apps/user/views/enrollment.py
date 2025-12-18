@@ -6,7 +6,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.user.models import CohortStudent
+from apps.user.models import CohortStudent, User
 from apps.user.serializers.enrollment import EnrolledCourseSerializer, EnrollmentRequestSerializer
 
 
@@ -32,10 +32,9 @@ class EnrolledCoursesAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
+        assert isinstance(request.user, User)
         entries = (
-            CohortStudent.objects.select_related("cohort__course")
-            .filter(user=request.user)
-            .order_by("-created_at")
+            CohortStudent.objects.select_related("cohort__course").filter(user=request.user).order_by("-created_at")
         )
         data = [
             {

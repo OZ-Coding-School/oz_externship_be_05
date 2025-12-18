@@ -37,7 +37,7 @@ class SenderTokenMixin:
         except RuntimeError as exc:
             raise serializers.ValidationError(str(exc)) from exc
         except Exception as exc:  # pragma: no cover - unexpected path
-            raise serializers.ValidationError("SMS 토큰 검증에 실패했습니다.") from exc
+            raise serializers.ValidationError("회원가입 세션이 만료되었습니다.") from exc
 
     def verify_email_token(self, token: str) -> str:
         try:
@@ -45,4 +45,4 @@ class SenderTokenMixin:
         except ValidationError:
             raise
         except Exception as exc:  # pragma: no cover - unexpected path
-            raise serializers.ValidationError("이메일 토큰 검증에 실패했습니다.") from exc
+            raise serializers.ValidationError("회원가입 세션이 만료되었습니다.") from exc

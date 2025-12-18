@@ -10,7 +10,7 @@ from apps.user.serializers.mixins import EmailTokenMixin, SMSTokenMixin, SenderT
 from apps.user.serializers.verification import EmailRequestSerializer
 
 
-class FindEmailSerializer(SenderTokenMixin, SMSTokenMixin, serializers.Serializer):
+class FindEmailSerializer(SenderTokenMixin, SMSTokenMixin, serializers.Serializer[Any]):
 
     name = serializers.CharField(max_length=30)
     emails = serializers.ListField(child=serializers.CharField(), read_only=True)
@@ -25,16 +25,16 @@ class FindEmailSerializer(SenderTokenMixin, SMSTokenMixin, serializers.Serialize
 
 
 class PasswordResetRequestSerializer(EmailRequestSerializer):
-    def validate_email(self, value: str) -> str:  # noqa: D401
+    def validate_email(self, value: str) -> str:
         if not User.objects.filter(email=value).exists():
             raise serializers.ValidationError("해당 이메일로 가입된 계정이 없습니다.")
         return value
 
 
-class PasswordResetSerializer(SenderTokenMixin, EmailTokenMixin, serializers.Serializer):
+class PasswordResetSerializer(SenderTokenMixin, EmailTokenMixin, serializers.Serializer[Any]):
     new_password = BaseMixin.get_password_field(write_only=True)
 
-    def validate_new_password(self, value: str) -> str:  # noqa: D401
+    def validate_new_password(self, value: str) -> str:
         return BaseMixin.validate_password(self, value)
 
     def save(self, **kwargs: Any) -> User:
@@ -48,7 +48,7 @@ class PasswordResetSerializer(SenderTokenMixin, EmailTokenMixin, serializers.Ser
         return user
 
 
-class RestoreSerializer(SenderTokenMixin, EmailTokenMixin, serializers.Serializer):
+class RestoreSerializer(SenderTokenMixin, EmailTokenMixin, serializers.Serializer[Any]):
     def save(self, **kwargs: Any) -> User:
         email = self.verify_email_token(self.validated_data["email_token"])
         try:

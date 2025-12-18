@@ -8,7 +8,7 @@ from apps.courses.models.cohorts_models import Cohort
 from apps.user.models import CohortStudent, StudentEnrollmentRequest, User
 
 
-class EnrollmentRequestSerializer(serializers.Serializer):
+class EnrollmentRequestSerializer(serializers.Serializer[Any]):
     cohort_id = serializers.IntegerField(min_value=1)
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
@@ -19,7 +19,7 @@ class EnrollmentRequestSerializer(serializers.Serializer):
             raise serializers.ValidationError("해당 기수를 찾을 수 없습니다.") from exc
 
         if CohortStudent.objects.filter(cohort=cohort, user=user).exists():
-            raise serializers.ValidationError("이미 수강 중인 코호트입니다.")
+            raise serializers.ValidationError("이미 수강 중 입니다.")
         if StudentEnrollmentRequest.objects.filter(cohort=cohort, user=user).exists():
             raise serializers.ValidationError("이미 수강 신청이 존재합니다.")
 
@@ -35,7 +35,7 @@ class EnrollmentRequestSerializer(serializers.Serializer):
         )
 
 
-class CohortInfoSerializer(serializers.Serializer):
+class CohortInfoSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     number = serializers.IntegerField()
     start_date = serializers.DateField()
@@ -43,13 +43,13 @@ class CohortInfoSerializer(serializers.Serializer):
     status = serializers.CharField()
 
 
-class CourseInfoSerializer(serializers.Serializer):
+class CourseInfoSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     name = serializers.CharField()
     tag = serializers.CharField()
     thumbnail_img_url = serializers.CharField(allow_null=True, allow_blank=True)
 
 
-class EnrolledCourseSerializer(serializers.Serializer):
+class EnrolledCourseSerializer(serializers.Serializer[Any]):
     cohort = CohortInfoSerializer()
     course = CourseInfoSerializer()
