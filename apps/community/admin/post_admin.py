@@ -22,6 +22,18 @@ else:
 
 @admin.register(Post)
 class PostAdmin(BaseAdmin):
+    fields = (
+        "id",
+        "title",
+        "category",
+        "content",
+        "view_count",
+        "likes_count",
+        "is_visible",
+        "is_notice",
+        "created_at",
+        "updated_at",
+    )
     list_display = (
         "id",
         "title",

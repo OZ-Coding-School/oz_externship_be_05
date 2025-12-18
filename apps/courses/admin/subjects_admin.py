@@ -1,8 +1,6 @@
 from typing import TYPE_CHECKING, Any, Union
 
 from django.contrib import admin
-from django.db.models import QuerySet
-from django.http import HttpRequest
 from django.utils.safestring import SafeString, mark_safe
 
 from apps.courses.models import Subject
