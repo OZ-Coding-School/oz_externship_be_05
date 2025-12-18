@@ -3,13 +3,14 @@ from typing import Any
 from rest_framework import serializers
 
 from apps.user.models.withdraw import Withdrawal
-
-from .common import (
+from apps.user.serializers.admin.common import (
     CohortMiniSerializer,
     CourseMiniSerializer,
     UserWithdrawalDetailMiniSerializer,
     UserWithdrawalMiniSerializer,
 )
+
+# 네스티드 시리얼라이저
 
 
 class AdminAccountWithdrawalListSerializer(serializers.ModelSerializer[Withdrawal]):
@@ -22,11 +23,21 @@ class AdminAccountWithdrawalListSerializer(serializers.ModelSerializer[Withdrawa
         fields = ("id", "user", "reason", "reason_display", "withdrawn_at")
 
 
+class CohortStudentAssignedSerializer(serializers.Serializer[dict[str, Any]]):
+    cohort: CohortMiniSerializer = CohortMiniSerializer(read_only=True)
+    course: CourseMiniSerializer = CourseMiniSerializer(source="cohort.course", read_only=True)
+
+
 class AdminAccountWithdrawalRetrieveSerializer(serializers.ModelSerializer[Withdrawal]):
-    user = UserWithdrawalDetailMiniSerializer(read_only=True)
-    reason_display = serializers.CharField(source="get_reason_display", read_only=True)
-    withdrawn_at = serializers.DateTimeField(source="created_at", read_only=True)
-    assigned_courses = serializers.SerializerMethodField()
+    user: UserWithdrawalDetailMiniSerializer = UserWithdrawalDetailMiniSerializer(read_only=True)
+    reason_display: serializers.CharField = serializers.CharField(source="get_reason_display", read_only=True)
+    withdrawn_at: serializers.DateTimeField = serializers.DateTimeField(source="created_at", read_only=True)
+
+    assigned_courses: CohortStudentAssignedSerializer = CohortStudentAssignedSerializer(
+        source="user.cohortstudent_set",
+        many=True,
+        read_only=True,
+    )
 
     class Meta:
         model = Withdrawal
@@ -40,17 +51,3 @@ class AdminAccountWithdrawalRetrieveSerializer(serializers.ModelSerializer[Withd
             "due_date",
             "withdrawn_at",
         )
-
-    def get_assigned_courses(self, obj: Withdrawal) -> list[dict[str, Any]]:
-        result = []
-        for cs in obj.user.cohortstudent_set.select_related("cohort__course").all():
-            cohort = cs.cohort
-            if not cohort:
-                continue
-            result.append(
-                {
-                    "course": CourseMiniSerializer(cohort.course).data,
-                    "cohort": CohortMiniSerializer(cohort).data,
-                }
-            )
-        return result

@@ -2,12 +2,13 @@ from typing import Any
 
 from rest_framework import serializers
 
-from apps.admin_accounts.serializers.common import (
+from apps.user.models import User
+from apps.user.models.user import RoleChoices
+from apps.user.serializers.admin.common import (
     CohortMiniSerializer,
     CourseMiniSerializer,
     StatusMixin,
 )
-from apps.user.models import User, Withdrawal
 
 ROLE_USER = {"U", "AD"}
 ROLE_COHORT = {"TA", "ST"}
@@ -22,8 +23,16 @@ class AdminAccountListSerializer(StatusMixin, serializers.ModelSerializer[User])
 
 
 # 계정 상세 조회 시리얼라이저
+class CohortStudentAssignedSerializer(serializers.Serializer[dict[str, Any]]):
+    cohort = CohortMiniSerializer(read_only=True)
+    course = CourseMiniSerializer(source="cohort.course", read_only=True)
+
 class AdminAccountRetrieveSerializer(StatusMixin, serializers.ModelSerializer[User]):
-    assigned_courses = serializers.SerializerMethodField()
+    assigned_courses = CohortStudentAssignedSerializer(
+        source="cohortstudent_set",
+        many=True,
+        read_only=True,
+    )
 
     class Meta:
         model = User
@@ -41,20 +50,6 @@ class AdminAccountRetrieveSerializer(StatusMixin, serializers.ModelSerializer[Us
             "assigned_courses",
             "created_at",
         )
-
-    def get_assigned_courses(self, obj: User) -> list[dict[str, Any]]:
-        result = []
-        for cs in obj.cohortstudent_set.all():
-            cohort = cs.cohort
-            if not cohort:
-                continue
-            result.append(
-                {
-                    "course": CourseMiniSerializer(cohort.course).data,
-                    "cohort": CohortMiniSerializer(cohort).data,
-                }
-            )
-        return result
 
 
 # 회원 정보 수정 요청 시리얼라이저

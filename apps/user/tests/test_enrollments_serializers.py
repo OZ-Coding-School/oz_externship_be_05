@@ -2,22 +2,22 @@ from typing import ClassVar
 
 from django.test import TestCase
 
-from apps.admin_accounts.serializers.enrollments import (
+from apps.courses.models.cohorts_models import Cohort
+from apps.courses.models.courses_models import Course
+from apps.user.models import User
+from apps.user.models.enrollment import StudentEnrollmentRequest
+from apps.user.serializers.admin.enrollments import (
     AdminAccountStudentEnrollAcceptSerializer,
     AdminAccountStudentEnrollRejectRequestSerializer,
     AdminAccountStudentEnrollRejectResponseSerializer,
     AdminAccountStudentEnrollSerializer,
     AdminAccountStudentSerializer,
 )
-from apps.admin_accounts.tests.utils.factories import (
+from apps.user.tests.utils.factories import (
     make_cohort,
     make_course,
     make_user,
 )
-from apps.courses.models.cohorts_models import Cohort
-from apps.courses.models.courses_models import Course
-from apps.user.models import User
-from apps.user.models.enrollment import StudentEnrollmentRequest
 
 
 class EnrollmentSerializersTests(TestCase):
