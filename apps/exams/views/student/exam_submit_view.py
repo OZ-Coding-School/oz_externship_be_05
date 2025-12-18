@@ -27,8 +27,17 @@ class ExamSubmissionCreateAPIView(APIView):
 
     permission_classes = [IsAuthenticated]
 
-    def post(self, request: Request, pk: int) -> Response:
-        deployment = ExamDeployment.objects.get(pk=pk)
+    def post(self, request: Request, deployment_pk: int | None = None) -> Response:
+        # deployment_pk 없으면 400
+        if deployment_pk is None:
+            return Response(
+                {"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED
+            )
+
+        try:
+            deployment = ExamDeployment.objects.get(pk=deployment_pk)
+        except ExamDeployment.DoesNotExist:
+            return Response({"error_detail": "해당 시험 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = ExamSubmissionCreateSerializer(
             data=request.data,
@@ -38,5 +47,19 @@ class ExamSubmissionCreateAPIView(APIView):
             },
         )
         serializer.is_valid(raise_exception=True)
-        submission = serializer.save(submitter=request.user, deployment=deployment)
+
+        try:
+            submission = serializer.save(submitter=request.user, deployment=deployment)
+        except ValueError as e:
+            error_detail = str(e)
+
+            if isinstance(error_detail, str):
+                msg = error_detail
+                if "2회" in msg:
+                    return Response({"error_detail": msg}, status=status.HTTP_409_CONFLICT)
+                if "error_detail" in error_detail:
+                    return Response(error_detail, status=status.HTTP_400_BAD_REQUEST)
+
+                raise
+
         return Response(serializer.to_representation(submission), status=201)

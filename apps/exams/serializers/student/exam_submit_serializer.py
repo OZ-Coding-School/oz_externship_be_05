@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+from django.core.exceptions import BadRequest
 from django.utils import timezone
-from rest_framework import serializers
+from rest_framework import serializers, status
+from rest_framework.exceptions import APIException, NotFound
 
 from apps.exams.models.exam_deployment import ExamDeployment
 from apps.exams.models.exam_submission import ExamSubmission
@@ -34,8 +36,13 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
     )
 
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
-        deployment: ExamDeployment = self.context["deployment"]
-        submitter: Any = self.context["request"].user
+        request = self.context["request"]
+
+        attrs["submitter"] = request.user
+        attrs["deployment"] = self.context["deployment"]
+
+        deployment: ExamDeployment = attrs["deployment"]
+        submitter = attrs["submitter"]
 
         # 제출 횟수 제한 검증(Service)
         validate_exam_submission_limit(deployment=deployment, submitter=submitter)
@@ -46,21 +53,26 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
         elapsed = (now - started_at).total_seconds()
 
         # started_at 미래인 경우 오류
-        if elapsed < 0:
-            raise serializers.ValidationError({"started_at": "시작시간은 현재 시간보다 빨라야합니다."})
+        if started_at > now:
+            exc = APIException("시작시간은 현재 시간보다 빨라야합니다.")
+            exc.status_code = status.HTTP_400_BAD_REQUEST
+            raise exc
 
         # 시간 제한 검증
-        duration_time = getattr(deployment, "duration_time", None)
+        duration_time = deployment.duration_time
 
-        # 시간초과 여부 > 즉시실패
-        is_time_over = False
-        if duration_time is not None and elapsed > duration_time:
-            raise serializers.ValidationError("시험 제한 시간이 초과되어 제출할 수 없습니다")
-        attrs["elapsed_seconds"] = int(elapsed)
+        # 시간초과 여부 > 즉시제출
+        elapsed_seconds = int((now - started_at).total_seconds())
+
+        if elapsed_seconds > deployment.duration_time:
+            exc = APIException("시험 제한 시간이 초과되어 제출할 수 없습니다")
+            exc.status_code = status.HTTP_400_BAD_REQUEST
+            raise exc
+
         return attrs
 
     def create(self, validated_data: Dict[str, Any]) -> ExamSubmission:
-        deployment: ExamDeployment = self.context["deployment"]
+        deployment: ExamDeployment = validated_data["deployment"]
         submitter = validated_data["submitter"]
 
         return create_exam_submission(
@@ -75,5 +87,5 @@ class ExamSubmissionCreateSerializer(serializers.Serializer):  # type: ignore[ty
         # 응답은 채점 결과 확인 페이지로 이동할 때 필요한 최소 정보만 내려주기
         return {
             "id": instance.pk,
-            "deployment_id": instance.deployment_id,
+            "submission_id": instance.deployment_id,
         }

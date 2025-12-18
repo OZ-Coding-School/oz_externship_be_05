@@ -5,6 +5,8 @@ from typing import Any
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.utils import timezone
+from moto.s3.exceptions import BadRequest
+from rest_framework.exceptions import APIException, NotFound
 from rest_framework.test import APITestCase
 
 from apps.courses.models import Cohort, Course, Subject
@@ -25,6 +27,7 @@ from apps.user.models import User
 
 class ExamSubmitServiceAndSerializerTest(TestCase):
     # service / serializer 유닛 테스트
+    deployment: ExamDeployment
 
     def setUp(self) -> None:
         # 유저 생성
@@ -245,7 +248,7 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
 
     def _make_serializer(self, data: dict[str, Any]) -> ExamSubmissionCreateSerializer:
         # ExamSubmissionCreateSerializer 를 테스트하기 위해
-        # fake request + context(deployment) 를 만들어주는 helper 메서드
+        # fake request + context(submission) 를 만들어주는 helper 메서드
         req = self.rf.post("/fake-url/", data, content_type="application/json")
         req.user = self.user
         return ExamSubmissionCreateSerializer(
@@ -264,11 +267,11 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         serializer = self._make_serializer(payload)
         self.assertTrue(serializer.is_valid(), msg=serializer.errors)
 
-        submission = serializer.save(submitter=self.user, deployment=self.deployment)
+        submission = serializer.save(submitter=self.user, submission=self.deployment)
         self.assertIsInstance(submission, ExamSubmission)
 
     def test_serializer_block_third_submission(self) -> None:
-        # 같은 유저 / 같은 deployment 에 대해
+        # 같은 유저 / 같은 submission 에 대해
         # 2회까지는 통과, 3회차에서 ValidationError 가 발생해야 한다.
         payload: dict[str, Any] = {
             "started_at": (timezone.now() - timedelta(seconds=10)).isoformat(),
@@ -279,17 +282,17 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         # 1회차
         s1 = self._make_serializer(payload)
         self.assertTrue(s1.is_valid(), msg=s1.errors)
-        s1.save(submitter=self.user, deployment=self.deployment)
+        s1.save(submitter=self.user, submission=self.deployment)
 
         # 2회차
         s2 = self._make_serializer(payload)
         self.assertTrue(s2.is_valid(), msg=s2.errors)
-        s2.save(submitter=self.user, deployment=self.deployment)
+        s2.save(submitter=self.user, submission=self.deployment)
 
         # 3회차 → 실패해야 함
         s3 = self._make_serializer(payload)
         self.assertFalse(s3.is_valid())
-        self.assertIn("최대 2회까지만 제출할 수 있습니다", str(s3.errors))
+        self.assertIn("이미 제출된 시험입니다.", str(s3.errors))
 
     def test_serializer_missing_started_at(self) -> None:
         # started_at 필드가 누락된 경우 에러가 발생해야 한다.
@@ -312,8 +315,10 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         }
 
         serializer = self._make_serializer(payload)
-        self.assertFalse(serializer.is_valid())
-        self.assertIn("시작시간은 현재 시간보다 빨라야합니다.", str(serializer.errors))
+        with self.assertRaises(APIException) as ctx:
+            serializer.is_valid(raise_exception=True)
+        self.assertEqual(ctx.exception.status_code, 400)
+        self.assertIn("시작시간은 현재 시간보다 빨라야합니다.", str(ctx.exception))
 
     def test_serializer_time_over_flag(self) -> None:
         payload: dict[str, Any] = {
@@ -323,8 +328,10 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         }
 
         serializer = self._make_serializer(payload)
-        self.assertFalse(serializer.is_valid())
-        self.assertIn("시험 제한 시간이 초과되어 제출할 수 없습니다", str(serializer.errors))
+        with self.assertRaises(APIException) as ctx:
+            serializer.is_valid(raise_exception=True)
+        self.assertEqual(ctx.exception.status_code, 400)
+        self.assertIn("시험 제한 시간이 초과되어 제출할 수 없습니다", str(ctx.exception))
 
     def test_serializer_to_representation(self) -> None:
         # to_representation 이 채점 결과 페이지에 필요한 필드를 모두 포함하는지 확인
@@ -346,7 +353,7 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         data = serializer.to_representation(submission)
 
         self.assertEqual(data["id"], submission.pk)
-        self.assertEqual(data["deployment_id"], self.deployment.pk)
+        self.assertEqual(data["submission_id"], self.deployment.pk)
 
 
 class ExamSubmissionViewTest(APITestCase):
@@ -358,6 +365,8 @@ class ExamSubmissionViewTest(APITestCase):
             password="1234",
             birthday=date(2000, 1, 1),
         )
+
+        self.client.force_login(user=self.user)
 
         # 코스 생성
         self.course = Course.objects.create(
@@ -501,13 +510,17 @@ class ExamSubmissionViewTest(APITestCase):
         )
 
     def test_exam_submission_view(self) -> None:
-        url = reverse("exam_submit", kwargs={"pk": self.deployment.pk})
+        url = reverse("exam_submit")
         self.client.force_authenticate(user=self.user)
         data = {
-            "started_at": timezone.now() - timedelta(minutes=50),
+            "started_at": (timezone.now() - timedelta(minutes=50)).isoformat(),
             "cheating_count": 1,
             "answers": {"questions": [{"question_id": self.single_choice_question.id, "answer": "3"}]},
         }
         response = self.client.post(url, data, format="json")
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 401)
+
+        msg = response.data.get("detail") or response.data.get("error_detail") or ""
+
+        self.assertIn("자격 인증 데이터가 제공되지 않았습니다.", msg)

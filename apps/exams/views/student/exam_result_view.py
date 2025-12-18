@@ -1,0 +1,2 @@
+class ExamResultView:
+    pass
