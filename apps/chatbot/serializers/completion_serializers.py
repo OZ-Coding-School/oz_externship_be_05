@@ -28,20 +28,3 @@ class CompletionCreateSerializer(serializers.ModelSerializer[ChatbotCompletion])
             "updated_at": {"read_only": True},
         }
 
-    def validate_message(self, value: str) -> str:
-        if not value.strip():
-            raise serializers.ValidationError("Message cannot be empty")
-        return value
-
-    def create(self, validated_data: dict[str, Any]) -> ChatbotCompletion:
-        session = self.context["session"]
-        message = validated_data["message"]
-        completion: ChatbotCompletion = ChatbotCompletion.objects.create(
-            session=session,
-            message=message,
-            role="user",
-        )
-        return completion
-
-
-# delete용 Serializer
