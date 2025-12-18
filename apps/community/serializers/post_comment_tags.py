@@ -8,7 +8,10 @@ class PostCommentTagsSerializer(serializers.ModelSerializer[PostCommentTag]):
     class Meta:
         model = PostCommentTag
         fields = [
+            "id",
             "tagged_user",
             "comment",
+            "created_at",
+            "updated_at"
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "comment", "created_at", "updated_at"]
