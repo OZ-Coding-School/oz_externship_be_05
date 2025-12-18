@@ -10,6 +10,7 @@ from apps.core.utils.base62 import Base62
 from apps.courses.models import Cohort
 from apps.exams.models import Exam, ExamDeployment, ExamQuestion
 from apps.exams.models.exam_deployment import DeploymentStatus
+from apps.exams.services.admin.dtos import DeploymentDetailDTO, QuestionSnapshotDTO
 from apps.exams.services.admin.validators.deployment_validator import (
     DeploymentValidator,
 )
@@ -51,32 +52,63 @@ def list_admin_deployments(
 
 
 # 단일 시험 배포 상세 조회 ---------------------------------------------------
-def get_admin_deployment_detail(*, deployment_id: int) -> ExamDeployment:
+def get_admin_deployment_detail(*, deployment_id: int) -> DeploymentDetailDTO:
     try:
         deployment = (
-            ExamDeployment.objects.select_related("exam", "cohort", "exam__subject")
+            ExamDeployment.objects.select_related(
+                "exam",
+                "exam__subject",
+                "cohort",
+                "cohort__course",
+            )
             .annotate(
                 submit_count=Count("submissions__submitter", distinct=True),
                 total_target_count=Count("cohort__cohortstudent", distinct=True),
             )
             .get(pk=deployment_id)
         )
+
     except ExamDeployment.DoesNotExist as exc:
         raise ValidationError({"deployment_id": "해당 배포 정보를 찾을 수 없습니다."}) from exc
 
-    # 시험 문항 조회 - 배포 시점 스냅샷 사용
-    questions = deployment.questions_snapshot
+    submit_count: int = getattr(deployment, "submit_count", 0)
+    total_target_count: int = getattr(deployment, "total_target_count", 0)
 
     # 미응시자수
     not_submitted_count = max(
-        deployment.total_target_count - deployment.submit_count,
+        total_target_count - submit_count,
         0,
     )
 
-    setattr(deployment, "questions", questions)
-    setattr(deployment, "not_submitted_count", not_submitted_count)
+    # 시험 문항 조회 - 배포 시점 스냅샷 사용
+    questions = [
+        QuestionSnapshotDTO(
+            question_id=q["id"],
+            type=q["type"],
+            question=q["question"],
+            point=q["point"],
+        )
+        for q in deployment.questions_snapshot
+    ]
 
-    return deployment
+    return DeploymentDetailDTO(
+        # Exam
+        exam_id=deployment.exam.id,
+        exam_title=deployment.exam.title,
+        subject_name=deployment.exam.subject.title,
+        questions=questions,
+        # Deployment
+        deployment_id=deployment.id,
+        access_code=deployment.access_code,
+        course_name=deployment.cohort.course.name,
+        cohort_number=deployment.cohort.number,
+        submit_count=submit_count,
+        not_submitted_count=not_submitted_count,
+        duration_time=deployment.duration_time,
+        open_at=deployment.open_at,
+        close_at=deployment.close_at,
+        created_at=deployment.created_at,
+    )
 
 
 # 새 시험 배포 생성 --------------------------------------------------------
