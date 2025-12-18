@@ -16,17 +16,17 @@ from apps.user.serializers.verification import (
 from apps.user.utils.sender import EmailSender, SMSSender
 
 
-class SignupSendEmailAPIView(APIView):
+class SendEmailAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request: Request) -> Response:
         serializer = SignupEmailRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         EmailSender().send(serializer.validated_data["email"])
-        return Response({"detail": "회원가입을 위한 이메일 인증 코드가 전송되었습니다."}, status=status.HTTP_200_OK)
+        return Response({"detail": "이메일 인증 코드가 전송되었습니다."}, status=status.HTTP_200_OK)
 
 
-class SignupVerifyEmailAPIView(APIView):
+class VerifyEmailAPIView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request: Request) -> Response:
@@ -47,8 +47,8 @@ class SendSMSVerificationAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         try:
             sender = SMSSender()
-        except RuntimeError as exc:
-            raise ValidationError(str(exc)) from exc
+        except RuntimeError:
+            Response({"error_detail": "SMS 전송 중 문제가 발생했습니다."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         sender.send(serializer.validated_data["phone_number"])
         return Response({"detail": "SMS 인증 코드가 전송되었습니다."}, status=status.HTTP_200_OK)
 

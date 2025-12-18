@@ -24,9 +24,9 @@ class SMSRequestSerializer(Serializer[Any], BaseMixin):
 
 class EmailCodeSerializer(Serializer[Any], BaseMixin):
     email = BaseMixin.get_email_field()
-    verify_code = BaseMixin.get_verify_code_field()
+    email_code = BaseMixin.get_verify_code_field()
 
 
 class PhoneCodeSerializer(Serializer[Any], BaseMixin):
     phone_number = BaseMixin.get_phone_number_field()
-    verify_code = BaseMixin.get_verify_code_field()
+    sms_code = BaseMixin.get_verify_code_field()
