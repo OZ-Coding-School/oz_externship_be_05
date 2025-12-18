@@ -1,6 +1,8 @@
 from django.urls import URLPattern, URLResolver, path
 
 from ..views.student.exam_submit_view import ExamSubmissionCreateAPIView
+from ..views.student.exam_result_view import ExamResultView
+
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path(
@@ -8,5 +10,11 @@ urlpatterns: list[URLPattern | URLResolver] = [
         "submissions/",
         ExamSubmissionCreateAPIView.as_view(),
         name="exam_submit",
-    )
+    ),
+    # path(
+    #     # student/result
+    #     "/api/v1/exams/submissions/{submission_id}",
+    #     ExamResultView.as_view(),
+    #     name = "exam__result",
+    # )
 ]
