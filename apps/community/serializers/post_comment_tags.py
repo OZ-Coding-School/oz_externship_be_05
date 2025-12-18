@@ -7,11 +7,5 @@ from apps.community.models.post_comment_tags import PostCommentTag
 class PostCommentTagsSerializer(serializers.ModelSerializer[PostCommentTag]):
     class Meta:
         model = PostCommentTag
-        fields = [
-            "id",
-            "tagged_user",
-            "comment",
-            "created_at",
-            "updated_at"
-        ]
+        fields = ["id", "tagged_user", "comment", "created_at", "updated_at"]
         read_only_fields = ["id", "comment", "created_at", "updated_at"]
