@@ -7,3 +7,6 @@ STUDY_NOTE_IMAGE_UPLOAD_PATH = "uploads/images/study_notes/"
 # file upload paths
 RECRUITMENT_FILE_UPLOAD_PATH = "uploads/files/recruitments/"
 STUDY_NOTE_FILE_UPLOAD_PATH = "uploads/files/study_notes/"
+
+# default sort fields
+VALID_SORT_FIELDS = ["title", "created_at", "updated_at"]
