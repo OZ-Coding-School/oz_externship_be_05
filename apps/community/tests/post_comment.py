@@ -5,21 +5,23 @@ from django.db.models import QuerySet
 from django.test import TestCase
 from rest_framework.test import APITestCase
 
-from apps.community.models.post_comment_tags import PostCommentTag
 from apps.community.models.post import Post
 from apps.community.models.post_category import PostCategory
 from apps.community.models.post_comment import PostComment
+from apps.community.models.post_comment_tags import PostCommentTag
 from apps.user.models import User
+
 
 class APITestCaseBase(APITestCase):
 
-    def check_response(self, response_data:Dict[str,Any], author_name:str, content:str)-> None:
+    def check_response(self, response_data: Dict[str, Any], author_name: str, content: str) -> None:
         self.assertIn("id", response_data)
         self.assertIn("content", response_data)
         self.assertIn("author", response_data)
 
         self.assertEqual(User.objects.get(id=response_data["author"]).name, author_name)
         self.assertEqual(response_data["content"], content)
+
 
 class TestPostCommentListCreateAPIView(APITestCaseBase):
 
@@ -47,7 +49,6 @@ class TestPostCommentListCreateAPIView(APITestCaseBase):
         self.post_url = f"/api/v1/posts/{self.post.id}/comments"
 
         self.client.force_authenticate(user=self.test_user)
-
 
     def test_get_comments(self) -> None:
 
@@ -158,7 +159,6 @@ class TestPostCommentUpdateDestroyAPIView(APITestCaseBase):
         self.comment_url = f"/api/v1/posts/{self.post.id}/comments/{self.comment.id}"
 
         self.client.force_authenticate(user=self.test_user)
-
 
     def test_update_comment(self) -> None:
         data = {"content": "수정 댓글", "tagged_user": [{"tagged_user": self.tagged_user.id}]}
