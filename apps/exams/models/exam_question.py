@@ -1,6 +1,6 @@
 from django.db import models
 
-from ...core.models import TimeStampedModel
+from apps.core.models import TimeStampedModel
 
 
 class QuestionType(models.TextChoices):
@@ -62,11 +62,7 @@ class ExamQuestion(TimeStampedModel):
     point = models.PositiveSmallIntegerField()
 
     # ERD: explanation text [not null] // 해설
-    # 해설을 옵션으로 둘 수도 있어서 blank 허용
-    explanation = models.TextField(
-        blank=True,
-        null=True,
-    )
+    explanation = models.TextField()
 
     class Meta:
         db_table = "exam_questions"
