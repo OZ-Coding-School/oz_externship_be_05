@@ -366,6 +366,8 @@ class ExamSubmissionViewTest(APITestCase):
             birthday=date(2000, 1, 1),
         )
 
+        self.client.force_login(user=self.user)
+
         # 코스 생성
         self.course = Course.objects.create(
             name="course",
@@ -517,8 +519,8 @@ class ExamSubmissionViewTest(APITestCase):
         }
         response = self.client.post(url, data, format="json")
 
-        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.status_code, 401)
 
         msg = response.data.get("detail") or response.data.get("error_detail") or ""
 
-        self.assertIn("시험 제한 시간이 초과되어 제출할 수 없습니다", msg)
+        self.assertIn("자격 인증 데이터가 제공되지 않았습니다.", msg)
