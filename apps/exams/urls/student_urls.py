@@ -5,7 +5,7 @@ from ..views.student.exam_submit_view import ExamSubmissionCreateAPIView
 urlpatterns: list[URLPattern | URLResolver] = [
     path(
         # student/submit
-        "/submissions/",
+        "submissions/",
         ExamSubmissionCreateAPIView.as_view(),
         name="exam_submit",
     )
