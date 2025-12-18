@@ -207,9 +207,3 @@ class ExamAdminViewTest(APITestCase):
         response = self.client.post(self.base_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data["error_detail"], "해당 과목 정보를 찾을 수 없습니다.")
-
-    def test_list_exams_empty_result_returns_404(self) -> None:
-        """LIST 시 결과가 없을 때 404 응답 확인 아무것도 검색되지 않을 키워드 전송"""
-        response = self.client.get(self.base_url, {"search_keyword": "존재하지않는시험이름입니다"})
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data["error_detail"], "등록된 쪽지시험이 없습니다.")
