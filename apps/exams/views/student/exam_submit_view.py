@@ -45,14 +45,14 @@ class ExamSubmissionCreateAPIView(APIView):
         try:
             submission = serializer.save(submitter=request.user, deployment=deployment)
         except ValueError as e:
-            detail = str(e)
+            error_detail = str(e)
 
-            if isinstance(detail, str):
-                msg = detail
+            if isinstance(error_detail, str):
+                msg = error_detail
                 if "2회" in msg:
                     return Response({"error_detail": msg}, status=status.HTTP_409_CONFLICT)
-                if "error_detail" in detail:
-                    return Response(detail, status=status.HTTP_400_BAD_REQUEST)
+                if "error_detail" in error_detail:
+                    return Response(error_detail, status=status.HTTP_400_BAD_REQUEST)
 
                 raise
 
