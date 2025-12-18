@@ -29,7 +29,7 @@ class PostCommentListCreateAPIView(APIView):
 
         self.check_post(post_id)
 
-        qs = PostComment.objects.filter(post_id=post_id).select_related("author").order_by("-created_at")
+        qs = PostComment.objects.filter(post_id=post_id).select_related("author")
 
         serializer = PostCommentSerializer(qs, many=True)
 
@@ -47,7 +47,7 @@ class PostCommentListCreateAPIView(APIView):
 
         serializer.save(author=request.user, post_id=post_id)
 
-        return Response({"detail": "댓글이 등록되었습니다."}, status=status.HTTP_201_CREATED)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class PostCommentUpdateDestroyAPIView(APIView):
