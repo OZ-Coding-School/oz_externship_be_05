@@ -1,3 +1,5 @@
+from typing import Any
+
 from rest_framework import serializers
 
 from apps.chatbot.models.chatbot_completions import ChatbotCompletion
@@ -11,9 +13,9 @@ class CompletionSerializer(serializers.ModelSerializer[ChatbotCompletion]):
         read_only_fields = fields
 
 
-# completion 생성 (요청 - Request)
+# completion 생성: POST
 class CompletionCreateSerializer(serializers.ModelSerializer[ChatbotCompletion]):
-    message = serializers.CharField(required=False, allow_blank=True)
+    message = serializers.CharField(required=True, allow_blank=False)
 
     class Meta:
         model = ChatbotCompletion
