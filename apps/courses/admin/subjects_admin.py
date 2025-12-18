@@ -40,20 +40,11 @@ class SubjectAdmin(BaseAdmin):
         "updated_at",
     )
 
-    readonly_fields = (
-        "id",
-        "course",
-        "created_at",
-        "updated_at"
-    )
+    readonly_fields = ("id", "course", "created_at", "updated_at")
 
-    search_fields = (
-        "title",
-    )
+    search_fields = ("title",)
 
-    list_display_links = (
-        "title",
-    )
+    list_display_links = ("title",)
 
     list_filter = (
         TimeOrderingFilter,
