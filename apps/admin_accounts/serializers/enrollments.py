@@ -2,15 +2,14 @@ from typing import Any
 
 from rest_framework import serializers
 
+from apps.admin_accounts.serializers.common import (
+    CohortSimpleSerializer,
+    CourseMiniSerializer,
+    StatusMixin,
+    UserMiniSerializer,
+)
 from apps.user.models import User
 from apps.user.models.enrollment import StudentEnrollmentRequest
-
-from apps.admin_accounts.serializers.common import (
-    CohortSimpleSerializer, 
-    CourseMiniSerializer, 
-    UserMiniSerializer,
-    StatusMixin
-    )
 
 
 # 수강생 목록 조회 시리얼라이저
