@@ -1,8 +1,7 @@
 from django.urls import URLPattern, URLResolver, path
 
-from ..views.student.exam_submit_view import ExamSubmissionCreateAPIView
 from ..views.student.exam_result_view import ExamResultView
-
+from ..views.student.exam_submit_view import ExamSubmissionCreateAPIView
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path(
