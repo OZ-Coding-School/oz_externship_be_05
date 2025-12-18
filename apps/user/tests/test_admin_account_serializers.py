@@ -163,10 +163,8 @@ class AdminAccountUpdateSerializerTests(TestCase):
         s = AdminAccountUpdateSerializer(instance=self.user)
         self.assertEqual(
             set(s.fields.keys()),
-            {"nickname", "name", "phone_number", "birthday", "gender", "status", "profile_image_url"},
+            {"nickname", "name", "phone_number", "birthday", "gender", "profile_image_url"},
         )
-        self.assertTrue(s.fields["status"].write_only)
-        self.assertNotIn("status", s.data)
 
     def test_partial_update_success(self) -> None:
         payload = {"nickname": "newnick", "name": "newname"}
@@ -229,69 +227,24 @@ class AdminAccountResponseSerializerTests(TestCase):
 
 
 class AdminAccountRoleUpdateSerializerTests(TestCase):
-    user: ClassVar[User]
-
-    def test_user_role_only_ok(self) -> None:
+    def test_role_only_ok(self) -> None:
         s = AdminAccountRoleUpdateSerializer(data={"role": "U"})
         self.assertTrue(s.is_valid(), s.errors)
         self.assertEqual(s.validated_data["role"], "U")
 
-    def test_user_role_rejects_extra_fields(self) -> None:
-        s = AdminAccountRoleUpdateSerializer(data={"role": "AD", "cohort_id": 1})
+    def test_role_invalid_choice(self) -> None:
+        s = AdminAccountRoleUpdateSerializer(data={"role": "XXX"})
         self.assertFalse(s.is_valid())
-        self.assertEqual(str(s.errors["detail"][0]), "USER/ADMIN은 role만 변경 가능합니다.")
-        self.assertEqual([str(x) for x in s.errors["allowed_fields"]], ["role"])
+        self.assertIn("role", s.errors)
 
-        s2 = AdminAccountRoleUpdateSerializer(data={"role": "U", "assigned_courses": [1, 2]})
-        self.assertFalse(s2.is_valid())
-        self.assertEqual(str(s2.errors["detail"][0]), "USER/ADMIN은 role만 변경 가능합니다.")
-        self.assertEqual([str(x) for x in s2.errors["allowed_fields"]], ["role"])
-
-    def test_cohort_role_requires_cohort_id(self) -> None:
-        s = AdminAccountRoleUpdateSerializer(data={"role": "TA"})
-        self.assertFalse(s.is_valid())
-        self.assertEqual([str(x) for x in s.errors["cohort_id"]], ["학생/조교 권한으로 변경 시 필수 필드입니다."])
-
-        s2 = AdminAccountRoleUpdateSerializer(data={"role": "ST", "cohort_id": None})
-        self.assertFalse(s2.is_valid())
-        self.assertEqual([str(x) for x in s2.errors["cohort_id"]], ["학생/조교 권한으로 변경 시 필수 필드입니다."])
-
-    def test_cohort_role_rejects_assigned_courses(self) -> None:
-        s = AdminAccountRoleUpdateSerializer(data={"role": "TA", "cohort_id": 3, "assigned_courses": [1]})
-        self.assertFalse(s.is_valid())
-        self.assertEqual(
-            [str(x) for x in s.errors["assigned_courses"]], ["학생/조교 권한으로 변경할 수 없는 필드입니다."]
-        )
-
-    def test_cohort_role_ok(self) -> None:
-        s = AdminAccountRoleUpdateSerializer(data={"role": "ST", "cohort_id": 10})
-        self.assertTrue(s.is_valid(), s.errors)
-        self.assertEqual(s.validated_data["role"], "ST")
-        self.assertEqual(s.validated_data["cohort_id"], 10)
-
-    def test_course_role_requires_assigned_courses(self) -> None:
-        s = AdminAccountRoleUpdateSerializer(data={"role": "OM"})
-        self.assertFalse(s.is_valid())
-        self.assertEqual(
-            [str(x) for x in s.errors["assigned_courses"]],
-            ["러닝코치/운영매니저 권한으로 변경 시 필수 필드입니다."],
-        )
-
-    def test_course_role_rejects_cohort_id(self) -> None:
-        s = AdminAccountRoleUpdateSerializer(data={"role": "LC", "assigned_courses": [1], "cohort_id": 1})
-        self.assertFalse(s.is_valid())
-        self.assertEqual(
-            [str(x) for x in s.errors["cohort_id"]],
-            ["러닝코치/운영매니저 권한으로 변경할 수 없는 필드입니다."],
-        )
-
-    def test_course_role_disallows_empty_list_at_field_level(self) -> None:
+    def test_assigned_courses_disallows_empty_list_at_field_level(self) -> None:
         s = AdminAccountRoleUpdateSerializer(data={"role": "OM", "assigned_courses": []})
         self.assertFalse(s.is_valid())
         self.assertIn("assigned_courses", s.errors)
 
-    def test_course_role_ok(self) -> None:
-        s = AdminAccountRoleUpdateSerializer(data={"role": "LC", "assigned_courses": [10, 20]})
+    def test_extra_fields_are_not_rejected_by_serializer_anymore(self) -> None:
+        s = AdminAccountRoleUpdateSerializer(data={"role": "AD", "cohort_id": 1})
         self.assertTrue(s.is_valid(), s.errors)
-        self.assertEqual(s.validated_data["role"], "LC")
-        self.assertEqual(s.validated_data["assigned_courses"], [10, 20])
+
+        s2 = AdminAccountRoleUpdateSerializer(data={"role": "U", "assigned_courses": [1, 2]})
+        self.assertTrue(s2.is_valid(), s2.errors)
