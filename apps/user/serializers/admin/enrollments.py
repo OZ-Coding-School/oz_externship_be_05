@@ -41,9 +41,7 @@ class AdminAccountStudentSerializer(StatusMixin, serializers.ModelSerializer[Use
             cohort = cs.cohort
             if not cohort:
                 continue
-            return InProgressCourseSerializer(
-                {"cohort": cohort, "course": cohort.course}
-            ).data
+            return InProgressCourseSerializer({"cohort": cohort, "course": cohort.course}).data
         return {}
 
 
