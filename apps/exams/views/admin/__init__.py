@@ -1,9 +1,10 @@
-from .admin_exam_view import ExamAdminViewSet
+from apps.exams.views.admin.admin_exam_view import (
+    ExamAdminListCreateAPIView,
+    ExamAdminRetrieveUpdateDestroyAPIView,
+)
 
 # from .admin_deployment_view import
 # from .admin_question_view import
 # from .admin_submission_view import
 
-__all__ = [
-    "ExamAdminViewSet",
-]
+__all__ = ["ExamAdminListCreateAPIView", "ExamAdminRetrieveUpdateDestroyAPIView"]
