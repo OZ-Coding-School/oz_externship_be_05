@@ -4,18 +4,18 @@ from typing import ClassVar
 from django.test import TestCase
 from django.utils import timezone
 
-from apps.admin_accounts.serializers.withdrawals import (
+from apps.user.models.role import CohortStudent
+from apps.user.models.user import User
+from apps.user.models.withdraw import Withdrawal
+from apps.user.serializers.admin.withdrawals import (
     AdminAccountWithdrawalListSerializer,
     AdminAccountWithdrawalRetrieveSerializer,
 )
-from apps.admin_accounts.tests.utils.factories import (
+from apps.user.tests.utils.factories import (
     make_cohort,
     make_course,
     make_user,
 )
-from apps.user.models.role import CohortStudent
-from apps.user.models.user import User
-from apps.user.models.withdraw import Withdrawal
 
 
 class WithdrawalSerializersTests(TestCase):
