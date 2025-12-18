@@ -3,6 +3,7 @@ from typing import Any, Dict
 from rest_framework import serializers
 
 from apps.exams.models import ExamDeployment
+from apps.exams.models.exam_deployment import DeploymentStatus
 from apps.exams.services.admin.validators.deployment_validator import (
     DeploymentValidator,
 )
@@ -50,3 +51,31 @@ class AdminDeploymentSerializer(serializers.ModelSerializer[ExamDeployment]):
             )
 
         return attrs
+
+
+# ---------------
+# API용 시리얼라이저
+# ---------------
+
+
+class ErrorResponseSerializer(serializers.Serializer[dict[str, Any]]):
+    error_detail: serializers.CharField = serializers.CharField()
+
+
+class DeploymentListItemSerializer(serializers.Serializer[dict[str, Any]]):
+    deployment_id: serializers.IntegerField = serializers.IntegerField()
+    exam_title: serializers.CharField = serializers.CharField()
+    subject_name: serializers.CharField = serializers.CharField()
+    cohort_number: serializers.IntegerField = serializers.IntegerField()
+    course_name: serializers.CharField = serializers.CharField()
+    submit_count: serializers.IntegerField = serializers.IntegerField()
+    avg_score: serializers.FloatField = serializers.FloatField(allow_null=True)
+    status: serializers.ChoiceField = serializers.ChoiceField(choices=DeploymentStatus.choices)
+    created_at: serializers.DateTimeField = serializers.DateTimeField()
+
+
+class DeploymentListResponseSerializer(serializers.Serializer[dict[str, Any]]):
+    page: serializers.IntegerField = serializers.IntegerField()
+    size: serializers.IntegerField = serializers.IntegerField()
+    total_count: serializers.IntegerField = serializers.IntegerField()
+    deployments: serializers.ListSerializer[Any] = serializers.ListSerializer(child=DeploymentListItemSerializer())
