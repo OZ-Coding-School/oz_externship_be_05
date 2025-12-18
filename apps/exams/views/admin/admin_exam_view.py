@@ -83,9 +83,6 @@ class ExamAdminListCreateAPIView(APIView):
             # 필터링 및 정렬 적용
             queryset = exam_service.apply_filters_and_sorting(queryset, request.query_params)
 
-            if not queryset.exists():
-                return Response({"error_detail": "등록된 쪽지시험이 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-
             # 페이징
             paginator = self.pagination_class()
             page = paginator.paginate_queryset(queryset, request, view=self)
