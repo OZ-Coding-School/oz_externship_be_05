@@ -18,7 +18,7 @@ class CompletionCreateSerializerTests(TestCase):
         is_valid = serializer.is_valid()
         # 유효 케이스
         if expect_valid:
-            self.assertEqual(is_valid, serializer.errors)
+            self.assertEqual(is_valid, True)
         # 유효하지 않은 케이스
         else:
             self.assertFalse(is_valid)
