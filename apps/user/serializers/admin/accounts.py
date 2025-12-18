@@ -10,6 +10,7 @@ from apps.user.serializers.admin.common import (
     StatusMixin,
 )
 
+
 # 계정 목록 조회 시리얼라이저
 class AdminAccountListSerializer(StatusMixin, serializers.ModelSerializer[User]):
     class Meta:
@@ -21,6 +22,7 @@ class AdminAccountListSerializer(StatusMixin, serializers.ModelSerializer[User])
 class CohortStudentAssignedSerializer(serializers.Serializer[dict[str, Any]]):
     cohort = CohortMiniSerializer(read_only=True)
     course = CourseMiniSerializer(source="cohort.course", read_only=True)
+
 
 class AdminAccountRetrieveSerializer(StatusMixin, serializers.ModelSerializer[User]):
     assigned_courses = CohortStudentAssignedSerializer(

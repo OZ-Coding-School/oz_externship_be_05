@@ -3,13 +3,14 @@ from typing import Any
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
+from rest_framework.views import APIView
 
 from apps.user.models.user import RoleChoices
 
 
 class AdminAccountRoleUpdatePayloadPermission(BasePermission):
 
-    def has_permission(self, request: Request, view) -> bool:
+    def has_permission(self, request: Request, view: APIView) -> bool:
         data: dict[str, Any] = request.data
 
         role = data.get("role")
