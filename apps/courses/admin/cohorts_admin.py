@@ -77,7 +77,7 @@ class CohortAdmin(BaseAdmin):
 
     @admin.display(description="등록 학생")
     def display_students(self, obj: Cohort) -> str:
-        students_query = obj.cohortstudent.all()
+        students_query = obj.cohortstudent.select_related("user")
 
         if students_query:  # .exists 존재여부 체크
             student_names = [s.user.name for s in students_query if s.user.name]
