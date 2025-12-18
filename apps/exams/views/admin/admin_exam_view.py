@@ -2,14 +2,18 @@ from typing import Any, Type
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
-from django.db.models import Model, Prefetch, QuerySet
+from django.db.models import QuerySet
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.serializers import BaseSerializer, Serializer
+from rest_framework.serializers import BaseSerializer
+from rest_framework.views import APIView
 
-from apps.exams.models import Exam, ExamDeployment
-from apps.exams.permissions.admin_permission import AdminModelViewSet
+from apps.exams.models import Exam
+from apps.exams.permissions.admin_permission import AdminUserPermission
 from apps.exams.serializers.admin import ExamListSerializer, ExamSerializer
 from apps.exams.services.admin import ExamService
 
@@ -17,167 +21,219 @@ from apps.exams.services.admin import ExamService
 exam_service = ExamService()
 
 
-class ExamAdminViewSet(AdminModelViewSet):
+class ExamCustomPageNumberPagination(PageNumberPagination):
+    page_size_query_param = "size"
+    page_size = 10
+    max_page_size = 100
+
+
+# --------------------------------------------------------------------------
+# 쪽지시험 List 및 Create APIView
+# --------------------------------------------------------------------------
+
+
+def get_base_queryset() -> QuerySet[Exam]:
+    """기본 쿼리셋을 반환합니다."""
+    return exam_service.get_exam_list()
+
+
+class ExamAdminListCreateAPIView(APIView):
     """
-    쪽지시험(Exam) 엔티티에 대한 관리자 CRUD API ViewSet입니다.
+    쪽지시험(Exam) 엔티티에 대한 관리자 list APIView입니다.
+    GET: 쪽지시험 목록 조회
+    POST: 쪽지시험 생성
     """
 
-    http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
-
-    queryset = exam_service.get_exam_list()
+    permission_classes = AdminUserPermission.permission_classes
+    pagination_class = ExamCustomPageNumberPagination
     serializer_class: Type[BaseSerializer[Any]] = ExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
 
-    def get_queryset(self) -> QuerySet[Model, Model]:
+    @extend_schema(
+        summary="쪽지시험 목록 조회",
+        description="검색어, 과목 ID, 정렬 기능을 포함한 목록 조회 API입니다.",
+        parameters=[
+            OpenApiParameter(
+                name="search_keyword", description="시험 제목 검색어", required=False, type=OpenApiTypes.STR
+            ),
+            OpenApiParameter(name="subject_id", description="과목 ID 필터", required=False, type=OpenApiTypes.INT),
+            OpenApiParameter(
+                name="sort",
+                description="정렬 필드 (예: created_at, title)",
+                required=False,
+                type=OpenApiTypes.STR,
+                default="created_at",
+            ),
+            OpenApiParameter(
+                name="order", description="정렬 순서 (asc, desc)", required=False, type=OpenApiTypes.STR, default="desc"
+            ),
+            # 페이지네이션 파라미터도 필요한 경우 추가
+            OpenApiParameter(name="page", description="페이지 번호", required=False, type=OpenApiTypes.INT, default=1),
+            OpenApiParameter(
+                name="size", description="페이지당 개수", required=False, type=OpenApiTypes.INT, default=10
+            ),
+        ],
+        responses={200: ExamListSerializer(many=True)},
+    )
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """
-        목록 조회(list) 시에만 성능 최적화(Prefetch)를 적용합니다.
-        """
-        queryset = super().get_queryset()
-
-        if self.action == "list":
-            queryset = queryset.select_related("subject")
-            queryset = queryset.prefetch_related("questions")
-            queryset = queryset.prefetch_related(
-                Prefetch(
-                    "deployments",  # Exam 모델에 정의된 related_name="deployments" 사용
-                    queryset=ExamDeployment.objects.prefetch_related("submissions"),
-                )
-            )
-
-            # 필터링 서비스단으로 이동 검토.(추후 다른곳에서도 작업시)
-            query_params = self.request.query_params
-
-            search_keyword = query_params.get("search_keyword")
-            subject_id = query_params.get("subject_id")
-            sort_field = query_params.get("sort")
-            order = query_params.get("order", "desc")  # default 내림차순
-
-            # 키워드 필터
-            if search_keyword:
-                queryset = queryset.filter(
-                    title__icontains=search_keyword
-                )  # Exam 모델의 대소문자무시(i) search_keyword포함 제목 필터링
-            # 과정 필터
-            if subject_id and subject_id.isdigit():
-                queryset = queryset.filter(subject_id=subject_id)
-
-            # 명시되지 않은 필터 요청 Default값으로 처리
-            if sort_field is None or sort_field not in self.valid_sort_fields:
-                sort_field = "created_at"
-                order = "desc"
-
-            order_prefix: str = "-" if order == "desc" else ""  # desc: -, asc: default
-            queryset = queryset.order_by(f"{order_prefix}{sort_field}")
-
-        return queryset
-
-    def get_serializer_class(self) -> Type[BaseSerializer[Any]]:
-        """
-        요청 액션에 따라 다른 시리얼라이저를 사용합니다.
-        get_serializer -> get_serializer_class
-
-        * GET (목록): list
-        * GET (상세): retrieve
-        * POST: create
-        * PUT/PATCH: update(PATCH 막음)
-        * DELETE: destroy
-        """
-        if self.action == "list":
-            return ExamListSerializer
-
-        # POST, PUT, DELETE, GET 상세 조회
-        return self.serializer_class
-
-    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        """
-        커스텀 예외처리를 위하여 추가된 함수입니다.
+        GET: 시험 목록 조회 view
         """
         try:
-            queryset = self.filter_queryset(self.get_queryset())
+            queryset = get_base_queryset().select_related("subject")  # annotate가 적용된 쿼리셋을 가져옴
+            # 필터링 및 정렬 적용
+            queryset = exam_service.apply_filters_and_sorting(queryset, request.query_params)
 
-            if not queryset.exists():  # 필터링 후 결과가 없을 때
-                return Response({"detail": "등록된 쪽지시험이 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+            if not queryset.exists():
+                return Response({"error_detail": "등록된 쪽지시험이 없습니다."}, status=status.HTTP_404_NOT_FOUND)
 
-            # 3. Pagination 및 응답 생성
-            page = self.paginate_queryset(queryset)
-            if page is not None:
-                serializer = self.get_serializer(page, many=True)
-                return self.get_paginated_response(serializer.data)
+            # 페이징
+            paginator = self.pagination_class()
+            page = paginator.paginate_queryset(queryset, request, view=self)
 
-            serializer = self.get_serializer(queryset, many=True)
-            return Response(serializer.data)
+            # 목록 조회: ExamListSerializer
+            serializer = ExamListSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
 
         except ValueError:
-            return Response({"detail": "유효하지 않은 조회 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            # 유효하지 않은 쿼리 파라미터 (list 400)
+            return Response({"error_detail": "유효하지 않은 조회 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        """POST: 시험 생성 view"""
-        serializer = self.get_serializer(data=request.data)
+    @extend_schema(
+        summary="쪽지시험 생성",
+        description="새로운 쪽지시험을 생성합니다. 과목 ID, 시험 제목, 썸네일 URL을 입력받습니다.",
+        request=ExamSerializer,  # 요청 시 사용할 시리얼라이저
+        responses={
+            201: ExamSerializer,  # 성공 시 생성된 데이터 반환
+            400: OpenApiResponse(description="유효하지 않은 입력 데이터"),
+            404: OpenApiResponse(description="해당 과목 정보를 찾을 수 없음"),
+        },
+    )
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        """POST: 시험 생성 view (create)"""
+        serializer = ExamSerializer(data=request.data)
 
         try:
-            serializer.is_valid(raise_exception=True)
-
-            # 2. 서비스 호출 및 404, 409 처리
-            exam = exam_service.create_exam(serializer.validated_data)  # 서비스 호출 및 db저장
-
+            serializer.is_valid(raise_exception=True)  # 시리얼라이저로 유효성 검사
+            exam = exam_service.create_exam(serializer.validated_data)  # 서비스 호출
         except ObjectDoesNotExist:
-            return Response({"detail": "해당 과목 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error_detail": "해당 과목 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND
+            )  # subject_id
         except IntegrityError:
-            return Response({"detail": "동일한 이름의 시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT)
+            return Response({"error_detail": "동일한 이름의 시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT)
         except Exception as e:
+            # 시리얼라이저 is_valid(raise_exception=True)에서 발생된 Validation Error는
+            # DRF에서 자동으로 400을 반환하지만, 커스텀 메시지를 위해 예외를 잡아서 재처리
             if hasattr(e, "detail") and isinstance(e.detail, dict):
-                return Response({"detail": "유효하지 않은 시험 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {"error_detail": "유효하지 않은 시험 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST
+                )
             raise
 
-        exam_with_subject = Exam.objects.select_related("subject").get(pk=exam.pk)  # subject_title N+1 쿼리 방지
+        # subject_title N+1 쿼리 방지.
+        exam_with_subject = exam_service.get_exam_by_id(exam.pk)
         response_serializer = ExamSerializer(exam_with_subject)
 
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
-    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        """PUT/PATCH: 시험 수정 view"""
-        partial = kwargs.pop("partial", False)
+
+class ExamAdminRetrieveUpdateDestroyAPIView(APIView):
+    """
+    GET: 쪽지시험 상세 조회
+    PUT: 쪽지시험 수정
+    DELETE: 쪽지시험 삭제
+    """
+
+    permission_classes = AdminUserPermission.permission_classes
+    serializer_class: Type[BaseSerializer[Any]] = ExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
+
+    def get_object_for_detail(self, pk: str) -> Exam:
+        """
+        PK를 사용하여 Exam 객체를 가져옵니다.
+        subject_id의 title을 가져옵니다.
+        400 에러를 처리하기 위해 pk: str 처리합니다. (pk: int = 404)
+        """
         try:
-            exam_id_value = self.kwargs.get("pk")
-
-            if exam_id_value is None:  # 필수값 확인
-                raise ValueError("Primary key (pk) not provided.")
-            exam_id: int = int(exam_id_value)
-
-            instance = self.get_object()
-            serializer = self.get_serializer(instance, data=request.data, partial=partial)
-            serializer.is_valid(raise_exception=True)
-
-            updated_exam: Exam = exam_service.update_exam(exam_id, serializer.validated_data)
+            exam_id: int = int(pk)
+            return exam_service.get_exam_by_id(exam_id)
         except ValueError:
-            return Response({"detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            raise ValueError  # PK 포맷 오류 (호출단에 메시지 존재)
         except Exam.DoesNotExist:
-            return Response({"detail": "수정할 쪽지시험 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-        except IntegrityError:
-            return Response({"detail": "동일한 이름의 쪽지시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT)
-        except TypeError:
-            return Response({"detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            raise Exam.DoesNotExist  # 객체 미발견
 
-        updated_exam_with_subject = Exam.objects.select_related("subject").get(pk=updated_exam.pk)
-        response_serializer = ExamSerializer(updated_exam_with_subject)
-        return Response(response_serializer.data)
-
-    def destroy(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        """DELETE: 시험 삭제 view"""
+    @extend_schema(
+        summary="쪽지시험 상세 조회",
+        description="특정 ID의 쪽지시험 상세 정보와 집계 데이터(문제 수, 제출 수)를 조회합니다.",
+        responses={200: ExamListSerializer},
+    )
+    def get(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> Response:
+        """GET: 시험 상세 조회 view (retrieve)"""
         try:
-            exam_id_value = self.kwargs.get("pk")
+            exam = self.get_object_for_detail(pk)
 
-            if exam_id_value is None:
-                raise ValueError("Primary key (pk) not provided.")
-            exam_id: int = int(exam_id_value)
+            serializer = self.serializer_class(exam)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except ValueError:
+            return Response({"error_detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exam.DoesNotExist:
+            return Response(
+                {"error_detail": "수정할 쪽지시험 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND
+            )
+
+    @extend_schema(
+        summary="쪽지시험 수정",
+        description="시험 제목, 과목 ID, 썸네일 등을 수정합니다.",
+        request=ExamSerializer,
+        responses={200: ExamSerializer},
+    )
+    def put(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> Response:
+        """PUT: 시험 수정 view (update)"""
+        try:
+            instance = self.get_object_for_detail(pk)
+
+            serializer = self.serializer_class(instance, data=request.data, partial=kwargs.get("partial", False))
+            serializer.is_valid(raise_exception=True)
+            updated_exam: Exam = exam_service.update_exam(instance, serializer.validated_data)
+
+            response_serializer = self.serializer_class(updated_exam)
+            return Response(response_serializer.data)
+        except ValueError:
+            return Response({"error_detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
+        except Exam.DoesNotExist:
+            # get_object_for_detail 또는 update_exam 내부에서 발생
+            return Response(
+                {"error_detail": "수정할 쪽지시험 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND
+            )
+        except IntegrityError:
+            return Response(
+                {"error_detail": "동일한 이름의 쪽지시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT
+            )
+        except ObjectDoesNotExist:  # subject_id 미발견
+            return Response({"error_detail": "해당 과목 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            # 시리얼라이저 Validation Error (400)
+            if hasattr(e, "detail") and isinstance(e.detail, dict):
+                return Response(
+                    {"error_detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST
+                )
+            raise
+
+    @extend_schema(
+        summary="쪽지시험 삭제",
+        description="특정 쪽지시험을 삭제합니다. 관련 배포 정보 및 제출 내역에 영향을 줄 수 있습니다.",
+        responses={204: None},
+    )
+    def delete(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> Response:
+        """DELETE: 시험 삭제 view (destroy 대체)"""
+        try:
+            exam_id: int = int(pk)
 
             exam_service.delete_exam(exam_id)
         except ValueError:
-            return Response({"detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({"error_detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
         except Exam.DoesNotExist:
-            return Response({"detail": "수정할 쪽지시험 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-
-        except TypeError:
-            return Response({"detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error_detail": "수정할 쪽지시험 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND
+            )
 
         return Response(status=status.HTTP_204_NO_CONTENT)
