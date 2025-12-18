@@ -58,7 +58,6 @@ class CohortAdmin(BaseAdmin):
         "course",
     )
 
-
     @admin.display(description="기수", ordering="number")
     def display_number(self, obj: Cohort) -> str:
         return f"{obj.number}기"
