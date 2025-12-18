@@ -15,6 +15,13 @@ else:
 
 @admin.register(PostCategory)
 class PostCategoryAdmin(BaseAdmin):
+    fields = (
+        "id",
+        "name",
+        "status",
+        "created_at",
+        "updated_at",
+    )
     list_display = (
         "id",
         "name",

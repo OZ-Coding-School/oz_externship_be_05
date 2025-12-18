@@ -6,7 +6,7 @@ from django.db.models import Count, F, Q, QuerySet, Sum
 from django.http import HttpRequest
 from django.utils.safestring import SafeString, mark_safe
 
-from apps.community.admin.utils.filter import CourseOrderingFilter
+from apps.courses.admin.utils.filter import CourseOrderingFilter
 from apps.courses.models import Course
 from apps.courses.models.cohorts_models import CohortStatusChoices
 
@@ -20,6 +20,17 @@ else:
 
 @admin.register(Course)
 class CourseAdmin(BaseAdmin):
+    fields = (
+        "id",
+        "name",
+        "tag",
+        "description",
+        "currently_operating_cohorts",
+        "total_students",
+        "thumbnail_img_url",
+        "created_at",
+        "updated_at",
+    )
     list_display = (
         "id",
         "get_preview",
@@ -42,22 +53,23 @@ class CourseAdmin(BaseAdmin):
         "tag",
         "description",
     )
-    date_hierarchy = "created_at"
 
     list_display_links = ("name",)
 
     list_filter = (CourseOrderingFilter,)
 
+    date_hierarchy = "created_at"
+
     @admin.display(description="currently operating cohorts ")
     def currently_operating_cohorts(self, obj: Any) -> str:
         numbers = obj._currently_operating_cohorts
         if numbers:
-            return ", ".join(map(str, numbers))
+            return ", ".join(map(str, numbers)) + " 기"
         return "N/A"
 
     @admin.display(description="total students")
     def total_students(self, obj: Any) -> Any:
-        return obj._total_students
+        return f"{obj._total_students} 명"
 
     def get_queryset(self, request: HttpRequest) -> QuerySet[Course]:
         qs = super().get_queryset(request)
