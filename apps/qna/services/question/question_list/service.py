@@ -39,7 +39,7 @@ def get_question_list(
     # annotate 단계 (가짜 컬럼들)
     annotated_qs = filtered_qs.annotate(content_preview=Substr("content", 1, 100)).annotate(
         thumbnail_image_url=Subquery(
-            QuestionImage.objects.filter(question=OuterRef("pk")).order_by("created_at").values("img_url")[:1]
+            QuestionImage.objects.filter(question=OuterRef("pk")).order_by("created_at", "id").values("img_url")[:1]
         )
     )
 
