@@ -1,5 +1,5 @@
 import datetime
-from typing import ClassVar, Any
+from typing import Any, ClassVar
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
@@ -13,6 +13,7 @@ from apps.exams.services.admin import ExamService
 
 # 서비스 인스턴스 생성
 exam_service = ExamService()
+
 
 class ExamAdminViewTest(APITestCase):
     """ExamAdminViewSet에 대한 테스트 케이스"""
