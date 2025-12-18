@@ -73,7 +73,7 @@ class AdminAccountUpdateSerializer(serializers.ModelSerializer[User]):
 
 
 # 회원 정보 수정 응답 시리얼라이저
-class AdminAccountResponseSerializer(StatusMixin, serializers.ModelSerializer[User]):
+class AdminAccountResponseSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
         fields = (
@@ -84,7 +84,6 @@ class AdminAccountResponseSerializer(StatusMixin, serializers.ModelSerializer[Us
             "phone_number",
             "birthday",
             "gender",
-            "status",
             "profile_image_url",
             "updated_at",
         )
