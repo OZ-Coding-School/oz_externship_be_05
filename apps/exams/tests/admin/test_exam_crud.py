@@ -1,207 +1,72 @@
 import datetime
-from typing import Any, ClassVar, Optional, Type
+from typing import ClassVar
 from unittest.mock import MagicMock, patch
 
-from django.db.models import Model, Prefetch, QuerySet
-from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework.serializers import BaseSerializer
 from rest_framework.test import APITestCase
 
 from apps.courses.models import Course, Subject
-from apps.exams.models import Exam, ExamDeployment
-from apps.exams.permissions.admin_permission import AdminModelViewSet
-from apps.exams.serializers.admin import ExamListSerializer, ExamSerializer
+from apps.exams.models import Exam
 from apps.exams.services.admin import ExamService
-from apps.user.models import User
+from django.contrib.auth import get_user_model
 
 # 서비스 인스턴스 생성
 exam_service = ExamService()
 
 
-class ExamAdminViewSet(AdminModelViewSet):
-    """
-    쪽지시험(Exam) 엔티티에 대한 관리자 CRUD API ViewSet입니다.
-    """
-
-    http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
-
-    queryset = exam_service.get_exam_list()
-    serializer_class: Type[BaseSerializer[Any]] = ExamSerializer
-
-    def _get_exam_with_related_data(self, exam: Exam) -> Exam:
-        """
-        주어진 Exam 인스턴스의 ID를 사용하여 subject가 select된 인스턴스를 조회합니다.
-        """
-        return Exam.objects.select_related("subject").get(pk=exam.pk)
-
-    def get_queryset(self) -> QuerySet[Model, Model]:
-        """
-        목록 조회(list) 시에만 성능 최적화(Prefetch)를 적용합니다.
-        """
-        queryset = super().get_queryset()
-
-        if self.action == "list":
-            queryset = queryset.select_related("subject")
-            queryset = queryset.prefetch_related("questions")
-            queryset = queryset.prefetch_related(
-                Prefetch(
-                    "deployments",
-                    queryset=ExamDeployment.objects.prefetch_related("submissions"),
-                )
-            )
-
-            query_params: dict[str, Any] = self.request.query_params
-
-            search_keyword: Optional[str] = query_params.get("search_keyword")
-            subject_id_str: Optional[str] = query_params.get("subject_id")
-            sort_field: str = query_params.get("sort", "created_at")
-            order: str = query_params.get("order", "desc")
-
-            if search_keyword:
-                queryset = queryset.filter(title__icontains=search_keyword)
-
-            if subject_id_str and subject_id_str.isdigit():
-                queryset = queryset.filter(subject_id=subject_id_str)
-
-            # 정렬 오류 해결 로직 유지
-            if sort_field not in self.valid_sort_fields:
-                sort_field = "created_at"
-
-            order_prefix: str = "-" if order == "desc" else ""
-            queryset = queryset.order_by(f"{order_prefix}{sort_field}")
-
-        return queryset
-
-    def get_serializer_class(self) -> Type[BaseSerializer[Any]]:
-        if self.action == "list":
-            return ExamListSerializer
-        return self.serializer_class
-
-    def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        exam = exam_service.create_exam(serializer.validated_data)
-
-        exam_with_subject = self._get_exam_with_related_data(exam)
-        response_serializer = ExamSerializer(exam_with_subject)
-
-        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
-
-    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        partial: bool = kwargs.pop("partial", False)
-        try:
-            exam_id_value: Optional[str] = self.kwargs.get("pk")
-
-            if exam_id_value is None:
-                raise ValueError("Primary key (pk) not provided.")
-
-            # 400 오류 해결 로직: int() 변환을 먼저 시도
-            exam_id: int = int(exam_id_value)
-
-            instance = self.get_object()
-            serializer = self.get_serializer(instance, data=request.data, partial=partial)
-            serializer.is_valid(raise_exception=True)
-
-            updated_exam = exam_service.update_exam(exam_id, serializer.validated_data)
-        except ValueError as e:  # get_object()에서 DoesNotExist 발생 시
-            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
-        except TypeError:  # URL Conf가 제대로 안되어 문자열이 넘어올 때 (이 경로는 DRF에서 404로 덮힘)
-            return Response({"detail": "Invalid primary key format."}, status=status.HTTP_400_BAD_REQUEST)
-
-        updated_exam_with_subject = self._get_exam_with_related_data(updated_exam)
-        response_serializer = ExamSerializer(updated_exam_with_subject)
-        return Response(response_serializer.data)
-
-    def destroy(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        try:
-            exam_id_value: Optional[str] = self.kwargs.get("pk")
-
-            if exam_id_value is None:
-                raise ValueError("Primary key (pk) not provided.")
-
-            # 400 오류 해결 로직: int() 변환을 먼저 시도
-            exam_id: int = int(exam_id_value)
-
-            exam_service.delete_exam(exam_id)
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_404_NOT_FOUND)
-        except TypeError:
-            return Response({"detail": "Invalid primary key format."}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-# ====================================================================
-# APITestCase를 상속받는 실제 테스트 클래스 (변동 없음)
-# ====================================================================
-
-
 class ExamAdminViewTest(APITestCase):
     """ExamAdminViewSet에 대한 테스트 케이스"""
 
-    # ClassVar로 클래스 속성 선언
+    # ClassVar로 클래스 속성 선언 (setUpTestData)
     course: ClassVar[Course]
-    admin_user: ClassVar[User]
+    # admin_user: ClassVar[User]
+    admin_user: ClassVar[get_user_model()]
     subject_python: ClassVar[Subject]
     subject_flask: ClassVar[Subject]
     subject_django: ClassVar[Subject]
-    exam_a: ClassVar[Exam]
-    exam_b: ClassVar[Exam]
-    exam_c: ClassVar[Exam]
+
+    # 인스턴스 변수 (setUp)
+    exam_a: Exam
+    exam_b: Exam
+    exam_c: Exam
 
     @classmethod
     def setUpTestData(cls) -> None:
-        """테스트 전체에서 사용될 공통 데이터 설정"""
-
-        cls.course = Course.objects.create(id=1, name="be 코스")
-        # 관리자 유저 생성
-        try:
-            cls.admin_user = User.objects.create_superuser(
-                name="admin_test",
-                email="admin@test.com",
-                password="testpassword",
-                birthday=datetime.date(1990, 1, 1),
-            )
-        except Exception:
-            cls.admin_user = User.objects.create(
-                name="admin_test",
-                is_staff=True,
-                is_superuser=True,
-                birthday=datetime.date(1990, 1, 1),
-            )
-
-        # Subject 인스턴스 생성
+        """
+        테스트 전체에서 사용될 공통 데이터 설정
+        Read-Only 공통 데이터 (코스, 유저, 과목)
+        """
+        cls.course = Course.objects.create(name="be 코스")
+        cls.admin_user = get_user_model().objects.create_superuser(
+            email="admin@test.com",
+            password="testpassword",
+            name="admin",
+            birthday=datetime.date(1990, 1, 1),
+        )  # 관리자 유저 생성
         cls.subject_python = Subject.objects.create(
-            id=10, title="Python 기초", number_of_days=30, number_of_hours=10, course_id=cls.course.id
-        )
-        cls.subject_flask = Subject.objects.create(
-            id=15, title="Flask 심화", number_of_days=20, number_of_hours=15, course_id=cls.course.id
+            title="Python", course=cls.course, number_of_days=10, number_of_hours=10
         )
         cls.subject_django = Subject.objects.create(
-            id=20, title="Django 심화", number_of_days=40, number_of_hours=20, course_id=cls.course.id
+            title="Django", course=cls.course, number_of_days=20, number_of_hours=40
         )
-
-        # Exam 인스턴스 생성
-        # created_at 시간 순서: exam_a < exam_b < exam_c
-        cls.exam_a = Exam.objects.create(
-            title="a기초 파이썬 시험", subject=cls.subject_python, created_at="2025-01-01T10:00:00Z"
-        )
-        cls.exam_b = Exam.objects.create(
-            title="c심화 장고 시험", subject=cls.subject_django, created_at="2025-01-02T11:00:00Z"
-        )
-        cls.exam_c = Exam.objects.create(
-            title="c심화 플라스크 시험", subject=cls.subject_flask, created_at="2025-01-20T11:00:00Z"
+        cls.subject_flask = Subject.objects.create(
+            title="Flask", course=cls.course, number_of_days=15, number_of_hours=30
         )
 
     def setUp(self) -> None:
-        """각 테스트 메서드 실행 직전 실행"""
+        """
+        각 테스트 메서드 실행 직전 실행됩니다.
+        각 테스트마다 새로 생성됩니다.
+        """
         self.client.force_authenticate(user=self.admin_user)
-        self.base_url = reverse("exam-list")
+        # 수정/삭제 테스트가 섞여있으므로 매번 새로 생성
+        # created_at 시간 순서: exam_a < exam_b < exam_c (asc)
+        self.exam_a = Exam.objects.create(title="a기초 파이썬 시험", subject=self.subject_python)
+        self.exam_b = Exam.objects.create(title="c심화 장고 시험", subject=self.subject_django)
+        self.exam_c = Exam.objects.create(title="c심화 플라스크 시험", subject=self.subject_flask)
+
+        self.base_url = reverse("exam")
         self.detail_url = reverse("exam-detail", kwargs={"pk": self.exam_a.pk})
 
     # ====================================================================
@@ -275,7 +140,7 @@ class ExamAdminViewTest(APITestCase):
         data = {"subject_id": self.subject_python.id, "exam_title": "오류 테스트"}
         response = self.client.put(self.detail_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data["detail"], "수정할 쪽지시험 정보를 찾을 수 없습니다.")
+        self.assertEqual(response.data["error_detail"], "수정할 쪽지시험 정보를 찾을 수 없습니다.")
 
     def test_destroy_exam_success(self) -> None:
         response = self.client.delete(self.detail_url)
@@ -290,7 +155,7 @@ class ExamAdminViewTest(APITestCase):
         non_existent_url = reverse("exam-detail", kwargs={"pk": 9999})
         response = self.client.delete(non_existent_url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["detail"], "유효하지 않은 요청 데이터입니다.")
+        self.assertEqual(response.data["error_detail"], "유효하지 않은 요청 데이터입니다.")
 
     def test_list_exams_with_search_and_subject_filter(self) -> None:
         """키워드(search_keyword)와 subject_id 필터링 조합 확인"""
@@ -317,11 +182,34 @@ class ExamAdminViewTest(APITestCase):
         invalid_url = reverse("exam-detail", kwargs={"pk": "abc"})
         response = self.client.put(invalid_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["detail"], "유효하지 않은 요청 데이터입니다.")
+        self.assertEqual(response.data["error_detail"], "유효하지 않은 요청 데이터입니다.")
 
     def test_destroy_exam_invalid_pk_format_returns_400(self) -> None:
         """PK가 숫자가 아닐 때 400 응답 확인"""
         invalid_url = reverse("exam-detail", kwargs={"pk": "xyz"})
         response = self.client.delete(invalid_url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["detail"], "유효하지 않은 요청 데이터입니다.")
+        self.assertEqual(response.data["error_detail"], "유효하지 않은 요청 데이터입니다.")
+
+    def test_retrieve_non_existent_exam_returns_404(self) -> None:
+        """존재하지 않는 ID 조회 시 404 확인"""
+        url = reverse("exam-detail", kwargs={"pk": 99999})
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data["error_detail"], "수정할 쪽지시험 정보를 찾을 수 없습니다.")
+
+    def test_create_exam_with_invalid_subject_id_returns_404(self) -> None:
+        """POST 시 유효하지 않은 subject_id (404) 테스트"""
+        data = {
+            "subject_id": 8888,  # 존재하지 않는 과목
+            "exam_title": "에러 테스트",
+        }
+        response = self.client.post(self.base_url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data["error_detail"], "해당 과목 정보를 찾을 수 없습니다.")
+
+    def test_list_exams_empty_result_returns_404(self) -> None:
+        """LIST 시 결과가 없을 때 404 응답 확인 아무것도 검색되지 않을 키워드 전송"""
+        response = self.client.get(self.base_url, {"search_keyword": "존재하지않는시험이름입니다"})
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data["error_detail"], "등록된 쪽지시험이 없습니다.")
