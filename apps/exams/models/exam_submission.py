@@ -1,7 +1,6 @@
-from django.conf import settings
 from django.db import models
 
-from ...core.models import TimeStampedModel
+from apps.core.models import TimeStampedModel
 
 
 class ExamSubmission(TimeStampedModel):
