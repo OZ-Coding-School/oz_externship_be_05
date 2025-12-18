@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, Union
 from django.contrib import admin
 from django.utils.safestring import SafeString, mark_safe
 
+from apps.community.admin.utils.filter import TimeOrderingFilter
 from apps.courses.models import Subject
 
 if TYPE_CHECKING:
@@ -15,16 +16,62 @@ else:
 
 @admin.register(Subject)
 class SubjectAdmin(BaseAdmin):
-    list_display = (
+    fields = (
         "id",
         "title",
+        "course",
         "number_of_days",
+        "number_of_hours",
         "status",
-        "get_preview",
+        "thumbnail_img_url",
         "created_at",
         "updated_at",
     )
-    readonly_fields = ("created_at", "updated_at")
+
+    list_display = (
+        "id",
+        "get_preview",
+        "title",
+        "display_number_of_days",
+        "display_number_of_hours",
+        "course",
+        "status",
+        "created_at",
+        "updated_at",
+    )
+
+    readonly_fields = (
+        "id",
+        "course",
+        "created_at",
+        "updated_at"
+    )
+
+    search_fields = (
+        "title",
+    )
+
+    list_display_links = (
+        "title",
+    )
+
+    list_filter = (
+        TimeOrderingFilter,
+        "course",
+        "status",
+    )
+
+    date_hierarchy = "created_at"
+
+    @admin.display(description="수강 일수", ordering="number_of_days")
+    def display_number_of_days(self, obj: Subject) -> str:
+        return f"{obj.number_of_days} 일"
+
+    @admin.display(description="시수", ordering="number_of_hours")
+    def display_number_of_hours(self, obj: Subject) -> str:
+        if obj.number_of_hours:
+            return f"{obj.number_of_hours} 시간"
+        return "-"
 
     def get_preview(self, obj: Any) -> Union[str, SafeString]:
         image_url = obj.thumbnail_img_url

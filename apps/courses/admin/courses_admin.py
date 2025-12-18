@@ -56,7 +56,9 @@ class CourseAdmin(BaseAdmin):
 
     list_display_links = ("name",)
 
-    list_filter = (CourseOrderingFilter,)
+    list_filter = (
+        CourseOrderingFilter,
+    )
 
     date_hierarchy = "created_at"
 

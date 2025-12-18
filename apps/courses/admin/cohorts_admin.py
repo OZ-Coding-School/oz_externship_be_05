@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any
 
 from django.contrib import admin
 
+from apps.community.admin.utils.filter import TimeOrderingFilter
 from apps.courses.models import Cohort
 
 if TYPE_CHECKING:
@@ -52,11 +53,11 @@ class CohortAdmin(BaseAdmin):
     search_fields = ("number",)
     date_hierarchy = "created_at"
     list_filter = (
+        TimeOrderingFilter,
         "status",
         "course",
     )
 
-    inlines = ()
 
     @admin.display(description="기수", ordering="number")
     def display_number(self, obj: Cohort) -> str:
