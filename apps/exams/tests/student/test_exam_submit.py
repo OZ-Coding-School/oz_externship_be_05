@@ -74,6 +74,7 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         self.single_choice_question = ExamQuestion.objects.create(
             exam=self.exam,
             question="공주가 아침에 일어나면 가장 먼저 하는 행동은 무엇인가요?",
+            explanation="테스트용 설명",
             type=QuestionType.SINGLE_CHOICE,
             options=[
                 "기지개 켜기",
@@ -89,6 +90,7 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         self.multiple_choice_question = ExamQuestion.objects.create(
             exam=self.exam,
             question="공주가 하루 동안 반드시 지켜야 하는 두 가지 규칙은 무엇인가요?",
+            explanation="테스트용 설명",
             type=QuestionType.MULTIPLE_CHOICE,
             options=[
                 "감사 인사하기",
@@ -104,6 +106,7 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         self.ox_question = ExamQuestion.objects.create(
             exam=self.exam,
             question="공주는 힘든 일이 있어도 원망하거나 투덜대지 않는다. (O/X)",
+            explanation="테스트용 설명",
             type=QuestionType.OX,
             answer="O",
             point=3,
@@ -113,6 +116,7 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         self.short_question = ExamQuestion.objects.create(
             exam=self.exam,
             question="공주의 규칙 1번은 무엇인가요?",
+            explanation="테스트용 설명",
             type=QuestionType.SHORT_ANSWER,
             answer="울지않기",
             point=5,
@@ -122,6 +126,7 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         self.ordering_question = ExamQuestion.objects.create(
             exam=self.exam,
             question="공주의 아침 준비 루틴을 순서대로 나열하세요.",
+            explanation="테스트용 설명",
             type=QuestionType.ORDERING,
             options=[
                 "A: 침대 정리",
@@ -137,6 +142,7 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
         self.fill_blank_question = ExamQuestion.objects.create(
             exam=self.exam,
             question='공주의 좌우명을 완성하세요: "_____, 그리고 _____."',
+            explanation="테스트용 설명",
             type=QuestionType.FILL_BLANK,
             blank_count=2,
             answer=["용기", "친절"],
@@ -394,6 +400,7 @@ class ExamSubmissionViewTest(APITestCase):
         self.single_choice_question = ExamQuestion.objects.create(
             exam=self.exam,
             question="공주가 아침에 일어나면 가장 먼저 하는 행동은 무엇인가요?",
+            explanation="테스트용 설명",
             type=QuestionType.SINGLE_CHOICE,
             options=[
                 "기지개 켜기",
@@ -409,6 +416,7 @@ class ExamSubmissionViewTest(APITestCase):
         self.multiple_choice_question = ExamQuestion.objects.create(
             exam=self.exam,
             question="공주가 하루 동안 반드시 지켜야 하는 두 가지 규칙은 무엇인가요?",
+            explanation="테스트용 설명",
             type=QuestionType.MULTIPLE_CHOICE,
             options=[
                 "감사 인사하기",
@@ -424,6 +432,7 @@ class ExamSubmissionViewTest(APITestCase):
         self.ox_question = ExamQuestion.objects.create(
             exam=self.exam,
             question="공주는 힘든 일이 있어도 원망하거나 투덜대지 않는다. (O/X)",
+            explanation="테스트용 설명",
             type=QuestionType.OX,
             answer="O",
             point=3,
@@ -433,6 +442,7 @@ class ExamSubmissionViewTest(APITestCase):
         self.short_question = ExamQuestion.objects.create(
             exam=self.exam,
             question="공주의 규칙 1번은 무엇인가요?",
+            explanation="테스트용 설명",
             type=QuestionType.SHORT_ANSWER,
             answer="울지않기",
             point=5,
@@ -442,6 +452,7 @@ class ExamSubmissionViewTest(APITestCase):
         self.ordering_question = ExamQuestion.objects.create(
             exam=self.exam,
             question="공주의 아침 준비 루틴을 순서대로 나열하세요.",
+            explanation="테스트용 설명",
             type=QuestionType.ORDERING,
             options=[
                 "A: 침대 정리",
@@ -457,6 +468,7 @@ class ExamSubmissionViewTest(APITestCase):
         self.fill_blank_question = ExamQuestion.objects.create(
             exam=self.exam,
             question='공주의 좌우명을 완성하세요: "_____, 그리고 _____."',
+            explanation="테스트용 설명",
             type=QuestionType.FILL_BLANK,
             blank_count=2,
             answer=["용기", "친절"],
