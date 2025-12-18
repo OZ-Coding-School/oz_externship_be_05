@@ -1,8 +1,7 @@
 from django.urls import path
 
-from apps.qna.spec.question.spec_question_create.views import QuestionCreateSpecAPIView
-from apps.qna.views.question.question_create import QuestionCreateAPIView
+from apps.qna.views.question.question_api import QuestionAPIView
 
 urlpatterns = [
-    path("questions", QuestionCreateAPIView.as_view(), name="question_create"),
+    path("questions", QuestionAPIView.as_view(), name="questions"),
 ]
