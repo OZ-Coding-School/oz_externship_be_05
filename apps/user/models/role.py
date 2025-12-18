@@ -30,7 +30,7 @@ class LearningCoach(TimeStampedModel):
 
 
 class CohortStudent(TimeStampedModel):
-    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="cohort_students")
+    cohort = models.ForeignKey(Cohort, on_delete=models.CASCADE, related_name="cohortstudent")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self) -> str:

@@ -77,15 +77,15 @@ class CohortAdmin(BaseAdmin):
 
     @admin.display(description="등록 학생")
     def display_students(self, obj: Cohort) -> str:
-        students_query = obj.cohort_students.all()
+        students_query = obj.cohortstudent.all()
 
         if students_query:  # .exists 존재여부 체크
             student_names = [s.user.name for s in students_query if s.user.name]
-            return "\n".join(student_names) + "\n \n (수강생이 있을시 기수 삭제 불가.)"
+            return "\n".join(student_names) + "\n \n ( 수강생이 있을시 기수 삭제 불가. )"
 
         return "학생 없음"
 
     def has_delete_permission(self, request: Any, obj: Any = None) -> bool:
-        if obj and obj.cohort_students.exists():
+        if obj and obj.cohortstudent.exists():
             return False
         return super().has_delete_permission(request, obj)
