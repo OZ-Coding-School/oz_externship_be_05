@@ -69,9 +69,9 @@ class ExamAdminViewTest(APITestCase):
         self.base_url = reverse("exam")
         self.detail_url = reverse("exam-detail", kwargs={"pk": self.exam_a.pk})
 
-    # ====================================================================
-    # 1. 기존 목록 조회 (list) 및 CRUD 테스트
-    # ====================================================================
+    # --------------------------------------------------------------------
+    # 기존 목록 조회 (list) 및 CRUD 테스트
+    # --------------------------------------------------------------------
 
     def test_list_all_exams_and_serializer_check(self) -> None:
         response = self.client.get(self.base_url)
