@@ -1,22 +1,28 @@
+from typing import Any
+
 from rest_framework import serializers
+
 from apps.user.models.withdraw import Withdrawal
+
 from .common import (
-    UserWithdrawalMiniSerializer,
-    UserWithdrawalDetailMiniSerializer,
-    CourseMiniSerializer,
     CohortMiniSerializer,
+    CourseMiniSerializer,
+    UserWithdrawalDetailMiniSerializer,
+    UserWithdrawalMiniSerializer,
 )
 
-class AdminAccountWithdrawalListSerializer(serializers.ModelSerializer):
+
+class AdminAccountWithdrawalListSerializer(serializers.ModelSerializer[Withdrawal]):
     user = UserWithdrawalMiniSerializer(read_only=True)
     reason_display = serializers.CharField(source="get_reason_display", read_only=True)
     withdrawn_at = serializers.DateTimeField(source="created_at", read_only=True)
 
     class Meta:
         model = Withdrawal
-        fields = ("id","user","reason","reason_display","withdrawn_at")
+        fields = ("id", "user", "reason", "reason_display", "withdrawn_at")
 
-class AdminAccountWithdrawalRetrieveSerializer(serializers.ModelSerializer):
+
+class AdminAccountWithdrawalRetrieveSerializer(serializers.ModelSerializer[Withdrawal]):
     user = UserWithdrawalDetailMiniSerializer(read_only=True)
     reason_display = serializers.CharField(source="get_reason_display", read_only=True)
     withdrawn_at = serializers.DateTimeField(source="created_at", read_only=True)
@@ -35,14 +41,16 @@ class AdminAccountWithdrawalRetrieveSerializer(serializers.ModelSerializer):
             "withdrawn_at",
         )
 
-    def get_assigned_courses(self, obj: Withdrawal):
+    def get_assigned_courses(self, obj: Withdrawal) -> list[dict[str, Any]]:
         result = []
-        for cs in obj.user.cohort_students.all():
+        for cs in obj.user.cohortstudent_set.select_related("cohort__course").all():
             cohort = cs.cohort
             if not cohort:
                 continue
-            result.append({
-                "course": CourseMiniSerializer(cohort.course).data,
-                "cohort": CohortMiniSerializer(cohort).data,
-            })
+            result.append(
+                {
+                    "course": CourseMiniSerializer(cohort.course).data,
+                    "cohort": CohortMiniSerializer(cohort).data,
+                }
+            )
         return result
