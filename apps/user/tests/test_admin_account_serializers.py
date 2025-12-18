@@ -4,18 +4,18 @@ from typing import ClassVar
 from django.test import TestCase
 from django.utils import timezone
 
-from apps.admin_accounts.serializers.accounts import (
+from apps.courses.models.cohorts_models import Cohort
+from apps.courses.models.courses_models import Course
+from apps.user.models import User
+from apps.user.models.role import CohortStudent
+from apps.user.serializers.admin.accounts import (
     AdminAccountListSerializer,
     AdminAccountResponseSerializer,
     AdminAccountRetrieveSerializer,
     AdminAccountRoleUpdateSerializer,
     AdminAccountUpdateSerializer,
 )
-from apps.admin_accounts.tests.utils.serializer_asserts import SerializerAssertsMixin
-from apps.courses.models.cohorts_models import Cohort
-from apps.courses.models.courses_models import Course
-from apps.user.models import User
-from apps.user.models.role import CohortStudent
+from apps.user.tests.utils.serializer_asserts import SerializerAssertsMixin
 
 ROLE_USER = {"U", "AD"}
 ROLE_COHORT = {"TA", "ST"}

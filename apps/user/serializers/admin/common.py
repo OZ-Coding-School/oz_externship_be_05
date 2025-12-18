@@ -10,6 +10,7 @@ from apps.user.models import User, Withdrawal
 # status field 생성 class
 class StatusMixin(serializers.Serializer[dict[str, Any]]):
     status = serializers.SerializerMethodField()
+    course = serializers.ListField
 
     def get_status(self, obj: User) -> str:
         if Withdrawal.objects.filter(user=obj).exists():
