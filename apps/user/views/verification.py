@@ -10,8 +10,8 @@ from rest_framework.views import APIView
 from apps.user.serializers.verification import (
     EmailCodeSerializer,
     PhoneCodeSerializer,
-    SMSRequestSerializer,
     SignupEmailRequestSerializer,
+    SMSRequestSerializer,
 )
 from apps.user.utils.sender import EmailSender, SMSSender
 
@@ -61,8 +61,8 @@ class VerifySMSAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         try:
             sender = SMSSender()
-        except RuntimeError as exc:
-            raise ValidationError(str(exc)) from exc
+        except RuntimeError:
+            Response({"error_detail": "SMS 인증에 문제가 발생했습니다."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         token = sender.verify_code(
             serializer.validated_data["phone_number"],
             serializer.validated_data["verify_code"],

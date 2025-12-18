@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.user.models import User
-from apps.user.serializers.account import (
+from apps.user.serializers.auth import (
     LoginSerializer,
     SignupSerializer,
 )

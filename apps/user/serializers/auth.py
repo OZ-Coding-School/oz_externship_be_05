@@ -9,7 +9,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.user.models import User
 from apps.user.serializers.base import BaseMixin
-from apps.user.serializers.mixins import SMSTokenMixin, EmailTokenMixin, SenderMixin
+from apps.user.serializers.mixins import EmailTokenMixin, SenderMixin, SMSTokenMixin
 
 
 class SignupSerializer(SenderMixin, EmailTokenMixin, serializers.ModelSerializer[Any]):

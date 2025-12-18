@@ -1,14 +1,13 @@
 from django.urls import path
 
 from apps.user.views import social_login_views
-from apps.user.views.account import (
+from apps.user.views.auth import (
     LoginAPIView,
     SignupAPIView,
 )
-
 from apps.user.views.verification import (
-    SendSMSVerificationAPIView,
     SendEmailAPIView,
+    SendSMSVerificationAPIView,
     VerifyEmailAPIView,
     VerifySMSAPIView,
 )
