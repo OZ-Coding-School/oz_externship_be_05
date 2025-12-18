@@ -60,9 +60,7 @@ class SubjectAdmin(BaseAdmin):
 
     @admin.display(description="시수", ordering="number_of_hours")
     def display_number_of_hours(self, obj: Subject) -> str:
-        if obj.number_of_hours:
-            return f"{obj.number_of_hours} 시간"
-        return "-"
+        return f"{obj.number_of_hours} 시간"
 
     def get_preview(self, obj: Any) -> Union[str, SafeString]:
         image_url = obj.thumbnail_img_url
