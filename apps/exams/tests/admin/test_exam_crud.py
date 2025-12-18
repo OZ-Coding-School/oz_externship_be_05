@@ -2,6 +2,7 @@ import datetime
 from typing import ClassVar
 from unittest.mock import MagicMock, patch
 
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -9,7 +10,6 @@ from rest_framework.test import APITestCase
 from apps.courses.models import Course, Subject
 from apps.exams.models import Exam
 from apps.exams.services.admin import ExamService
-from django.contrib.auth import get_user_model
 
 # 서비스 인스턴스 생성
 exam_service = ExamService()
