@@ -1,14 +1,15 @@
+import datetime
 from typing import Any
+
 from django.http import HttpRequest
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory
-import datetime
 
 from apps.chatbot.models.chatbot_completions import ChatbotCompletion
 from apps.chatbot.models.chatbot_sessions import ChatbotSession, ChatModel
 from apps.chatbot.serializers.completion_serializers import CompletionCreateSerializer
-from apps.qna.models.question.question_category import QuestionCategory
 from apps.qna.models.question.question_base import Question
+from apps.qna.models.question.question_category import QuestionCategory
 from apps.user.models.user import User
 
 
@@ -18,8 +19,9 @@ class CompletionCreateSerializerTests(TestCase):
     question_category: QuestionCategory
     question: Question
     session: ChatbotSession
+    factory: APIRequestFactory
 
-    # 데이터 생성
+    # 데이터 생성: 유저 → (질문카테고리 후) 질문 → 세션 → 시리얼라이저 (view는 이제 view,api 테스트)
     @classmethod
     def setUpTestData(cls) -> None:
         cls.password = "00000000"
@@ -77,9 +79,26 @@ class CompletionCreateSerializerTests(TestCase):
         self.assertEqual(completion.message, data["message"])
         self.assertEqual(completion.role, "user")
 
+    # 공통 검증용 헬퍼
+    def _check_payload(self, data: dict[str, Any], field: str = "message") -> None:
+        request = self._make_request()
+        serializer = CompletionCreateSerializer(
+            data=data,
+            context={"request": request, "session": self.session},
+        )
+        self.assertFalse(serializer.is_valid())
+        self.assertIn(field, serializer.errors)
 
     # 메세지 누락 케이스
+    def test_missing_message(self) -> None:
+        data: dict[str, str] = {}
+        self._check_payload(data)
 
     # 빈 메세지면 invalid 나오나요(경우가 더 있나 이거)
+    def test_blank_message(self) -> None:
+        data: dict[str, str] = {
+            "message": "",
+        }
+        self._check_payload(data)
 
-    #
+    # 더 테스트할 내용이 있을까요?
