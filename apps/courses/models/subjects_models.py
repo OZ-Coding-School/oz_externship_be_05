@@ -18,5 +18,10 @@ class Subject(TimeStampedModel):
     thumbnail_img_url = models.URLField(null=True, blank=True)
     status = models.BooleanField(default=True)
 
+    def __str__(self) -> str:
+        return self.title
+
     class Meta:
+        verbose_name = "Subject"
+        verbose_name_plural = "Subjects"
         db_table = "subjects"
