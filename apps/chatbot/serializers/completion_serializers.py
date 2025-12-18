@@ -27,4 +27,3 @@ class CompletionCreateSerializer(serializers.ModelSerializer[ChatbotCompletion])
             "created_at": {"read_only": True},
             "updated_at": {"read_only": True},
         }
-
