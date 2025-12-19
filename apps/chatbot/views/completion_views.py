@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -7,12 +9,13 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.chatbot.models.chatbot_sessions import ChatbotSession
 from apps.chatbot.models.chatbot_completions import ChatbotCompletion, UserRole
+from apps.chatbot.models.chatbot_sessions import ChatbotSession
 from apps.chatbot.serializers.completion_serializers import (
     CompletionCreateSerializer,
     CompletionSerializer,
 )
+from apps.chatbot.services.ai_response import ai_chat_response
 
 
 class CompletionCreateAPIView(APIView):
@@ -55,7 +58,7 @@ class CompletionCreateAPIView(APIView):
             "400": {"type": "object", "example": {"error_detail": "Message field is essential"}},
             "401": {"type": "object", "example": {"error_detail": "Authentication credentials were not provided."}},
             "403": {"type": "object", "example": {"error_detail": "Session does not exist."}},
-            "404": {"type": "object", "example": {"error_detail": "Session not found"}},  # 403 대신 사용
+            "404": {"type": "object", "example": {"error_detail": "Session not found"}},
         },
     )
 
@@ -70,7 +73,7 @@ class CompletionCreateAPIView(APIView):
         user_completion: ChatbotCompletion = serializer.save(session=session, role=UserRole.USER)
 
         # ai 응답 생성, 저장
-        ai_completion = self._ai_chat_response(session, user_completion.message)
+        ai_completion = ai_chat_response(session=session, user_message=user_completion.message)
 
         return Response(
             {
