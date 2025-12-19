@@ -15,7 +15,10 @@ from apps.chatbot.serializers.completion_serializers import (
     CompletionCreateSerializer,
     CompletionSerializer,
 )
-from apps.chatbot.services.ai_response import ai_chat_response
+from apps.chatbot.services.completion_response_service import (
+    ai_response_generate,
+    user_message_save,
+)
 
 
 class CompletionCreateAPIView(APIView):
@@ -67,13 +70,18 @@ class CompletionCreateAPIView(APIView):
         # 세션 검증: 종속여부 및 존재여부
         session = get_object_or_404(ChatbotSession, id=session_id, user=request.user)
 
-        # 요청 데이터 검증, 사용자 메세지 저장
+        # 요청 데이터 검증
         serializer = CompletionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user_completion: ChatbotCompletion = serializer.save(session=session, role=UserRole.USER)
 
-        # ai 응답 생성, 저장
-        ai_completion = ai_chat_response(session=session, user_message=user_completion.message)
+        # 사용자 메세지 저장 at service
+        user_completion = user_message_save(
+            session=session,
+            message=serializer.validated_data["message"],
+        )
+
+        # ai 응답 생성, 저장 at service
+        ai_completion = ai_response_generate(session=session, user_message=user_completion.message)
 
         return Response(
             {
