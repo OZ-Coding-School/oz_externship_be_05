@@ -1,6 +1,7 @@
 from typing import Union
 
 from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
+from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
@@ -10,7 +11,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.chatbot.models import ChatbotCompletion, ChatbotSession
+from apps.chatbot.models.chatbot_sessions import ChatbotSession
+from apps.chatbot.models.chatbot_completions import ChatbotCompletion, UserRole
 from apps.chatbot.serializers.completion_serializers import (
     CompletionCreateSerializer,
     CompletionSerializer,
@@ -19,18 +21,6 @@ from apps.chatbot.serializers.completion_serializers import (
 
 class CompletionCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
-
-    # session 존재여부 검증
-    def _get_session_check(self, session_id: int) -> ChatbotSession:
-        try:
-            return ChatbotSession.objects.get(id=session_id)
-        except ChatbotSession.DoesNotExist:
-            raise NotFound("Session not found")
-
-    # 세션 종속여부 확인
-    def _session_dependency(self, session: ChatbotSession, user: Union[AbstractBaseUser, AnonymousUser]) -> None:
-        if session.user != user:
-            raise NotFound("Session not found")
 
     def _ai_chat_response(self, session: ChatbotSession, user_message: str) -> ChatbotCompletion:
         # ai 챗봇 답변. services에서 구현
@@ -87,9 +77,8 @@ class CompletionCreateAPIView(APIView):
 
     # completion 대화 생성
     def post(self, request: Request, session_id: int) -> Response:
-        # 세션 검증
-        session = self._get_session_check(session_id)
-        self._session_dependency(session, request.user)
+        # 세션 검증: 종속여부 및 존재여부
+        session = get_object_or_404(ChatbotSession, id=session_id, user=request.user)
 
         # 요청 데이터 검증, 사용자 메세지 저장
         serializer = CompletionCreateSerializer(data=request.data)
