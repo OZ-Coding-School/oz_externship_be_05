@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
+from apps.core.exceptions.exception_messages import EMS
 from apps.exams.models import Exam
 from apps.exams.permissions.admin_permission import AdminUserPermission
 from apps.exams.serializers.admin import ExamListSerializer, ExamSerializer
@@ -93,7 +94,7 @@ class ExamAdminListCreateAPIView(APIView):
 
         except ValueError:
             # 유효하지 않은 쿼리 파라미터 (list 400)
-            return Response({"error_detail": "유효하지 않은 조회 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(EMS.E400_INVALID_REQUEST("조회"), status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
         summary="쪽지시험 생성",
@@ -113,18 +114,14 @@ class ExamAdminListCreateAPIView(APIView):
             serializer.is_valid(raise_exception=True)  # 시리얼라이저로 유효성 검사
             exam = exam_service.create_exam(serializer.validated_data)  # 서비스 호출
         except ObjectDoesNotExist:
-            return Response(
-                {"error_detail": "해당 과목 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND
-            )  # subject_id
+            return Response(EMS.E404_NOT_FOUND("해당 과목 정보"), status=status.HTTP_404_NOT_FOUND)  # subject_id
         except IntegrityError:
-            return Response({"error_detail": "동일한 이름의 시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT)
+            return Response(EMS.E409_DUPLICATE_NAME("시험"), status=status.HTTP_409_CONFLICT)
         except Exception as e:
             # 시리얼라이저 is_valid(raise_exception=True)에서 발생된 Validation Error는
             # DRF에서 자동으로 400을 반환하지만, 커스텀 메시지를 위해 예외를 잡아서 재처리
             if hasattr(e, "detail") and isinstance(e.detail, dict):
-                return Response(
-                    {"error_detail": "유효하지 않은 시험 생성 요청입니다."}, status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response(EMS.E400_INVALID_REQUEST("시험 생성"), status=status.HTTP_400_BAD_REQUEST)
             raise
 
         # subject_title N+1 쿼리 방지.
@@ -171,11 +168,9 @@ class ExamAdminRetrieveUpdateDestroyAPIView(APIView):
             serializer = self.serializer_class(exam)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except ValueError:
-            return Response({"error_detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(EMS.E400_INVALID_DATA("요청"), status=status.HTTP_400_BAD_REQUEST)
         except Exam.DoesNotExist:
-            return Response(
-                {"error_detail": "수정할 쪽지시험 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response(EMS.E404_NOT_FOUND("수정할 쪽지시험 정보"), status=status.HTTP_404_NOT_FOUND)
 
     @extend_schema(
         summary="쪽지시험 수정",
@@ -195,24 +190,18 @@ class ExamAdminRetrieveUpdateDestroyAPIView(APIView):
             response_serializer = self.serializer_class(updated_exam)
             return Response(response_serializer.data)
         except ValueError:
-            return Response({"error_detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(EMS.E400_INVALID_DATA("요청"), status=status.HTTP_400_BAD_REQUEST)
         except Exam.DoesNotExist:
             # get_object_for_detail 또는 update_exam 내부에서 발생
-            return Response(
-                {"error_detail": "수정할 쪽지시험 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response(EMS.E404_NOT_FOUND("수정할 쪽지시험 정보"), status=status.HTTP_404_NOT_FOUND)
         except IntegrityError:
-            return Response(
-                {"error_detail": "동일한 이름의 쪽지시험이 이미 존재합니다."}, status=status.HTTP_409_CONFLICT
-            )
+            return Response(EMS.E409_DUPLICATE_NAME("쪽지시험"), status=status.HTTP_409_CONFLICT)
         except ObjectDoesNotExist:  # subject_id 미발견
-            return Response({"error_detail": "해당 과목 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(EMS.E404_NOT_FOUND("해당 과목 정보"), status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             # 시리얼라이저 Validation Error (400)
             if hasattr(e, "detail") and isinstance(e.detail, dict):
-                return Response(
-                    {"error_detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response(EMS.E400_INVALID_DATA("요청"), status=status.HTTP_400_BAD_REQUEST)
             raise
 
     @extend_schema(
@@ -221,16 +210,14 @@ class ExamAdminRetrieveUpdateDestroyAPIView(APIView):
         responses={204: None},
     )
     def delete(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> Response:
-        """DELETE: 시험 삭제 view (destroy 대체)"""
+        """DELETE: 시험 삭제 view (destroy)"""
         try:
             exam_id: int = int(pk)
 
             exam_service.delete_exam(exam_id)
         except ValueError:
-            return Response({"error_detail": "유효하지 않은 요청 데이터입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(EMS.E400_INVALID_DATA("요청"), status=status.HTTP_400_BAD_REQUEST)
         except Exam.DoesNotExist:
-            return Response(
-                {"error_detail": "수정할 쪽지시험 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response(EMS.E404_NOT_FOUND("수정할 쪽지시험 정보"), status=status.HTTP_404_NOT_FOUND)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
