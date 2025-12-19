@@ -1,28 +1,32 @@
 from rest_framework import serializers
 
-from apps.courses.models import Cohort
+from apps.courses.models import Cohort, Course
 
 
-class CourseCohortSerializer(serializers.ModelSerializer[Cohort]):
-    course_name = serializers.ReadOnlyField(source="course.name")
-    cohort_display = serializers.SerializerMethodField()
+class CohortSerializer(serializers.ModelSerializer[Cohort]):
+    display = serializers.SerializerMethodField()
 
     class Meta:
         model = Cohort
         fields = [
             "id",
-            "course",
-            "course_name",
             "number",
-            "cohort_display",
+            "display",
             "status",
         ]
         read_only_fields = [
             "id",
-            "course",
             "number",
             "status",
         ]
 
-    def get_cohort_display(self, obj: Cohort) -> str:
+    def get_display(self, obj: Cohort) -> str:
         return f"{obj.number}기"
+
+
+class CourseCohortsSerializer(serializers.ModelSerializer[Course]):
+    cohorts = CohortSerializer(source="select_enable_cohorts", many=True, read_only=True)
+
+    class Meta:
+        model = Course
+        fields = ["id", "name", "cohorts"]

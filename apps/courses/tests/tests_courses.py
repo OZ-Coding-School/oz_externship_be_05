@@ -1,6 +1,7 @@
 from django.urls import reverse
 from rest_framework import status
 
+from apps.courses.models.cohorts_models import CohortStatusChoices
 from apps.courses.tests.test_base import BaseCourseTestCase
 
 
@@ -14,16 +15,24 @@ class CohortsListViewTest(BaseCourseTestCase):
         """
         수강 중인 기수 목록 요청
         """
-        expected_data = [
-            {
-                "id": self.active_cohort.id,
-                "course": self.course.id,
-                "course_name": self.course.name,
-                "number": self.active_cohort.number,
-                "cohort_display": "1기",
-                "status": "IN_PROGRESS",
-            }
-        ]
+        expected_data = {
+            "id": self.course.id,
+            "name": self.course.name,
+            "cohorts": [
+                {
+                    "id": self.active_cohort.id,
+                    "number": self.active_cohort.number,
+                    "display": "1기",
+                    "status": "IN_PROGRESS",
+                },
+                {
+                    "id": self.pending_cohort.id,
+                    "number": self.pending_cohort.number,
+                    "display": "3기",
+                    "status": "PENDING",
+                },
+            ],
+        }
 
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)

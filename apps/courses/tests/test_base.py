@@ -39,7 +39,17 @@ class BaseCourseTestCase(APITestCase):
             end_date="2025-12-31",
             status=CohortStatusChoices.IN_PROGRESS,
         )
-        # 4. 수료 기수 생성
+        # 4. 대기중 기수 생성
+        self.pending_cohort = Cohort.objects.create(
+            course=self.course,
+            number=3,
+            max_student=10,
+            start_date="2025-01-01",
+            end_date="2025-12-31",
+            status=CohortStatusChoices.PENDING,
+        )
+
+        # 5. 수료 기수 생성
         self.completed_cohort = Cohort.objects.create(
             course=self.course,
             number=2,
@@ -49,7 +59,7 @@ class BaseCourseTestCase(APITestCase):
             status=CohortStatusChoices.COMPLETED,
         )
 
-        # 5. 과목 생성
+        # 6. 과목 생성
         self.subject = Subject.objects.create(
             title="테스트 과목",
             course=self.course,
