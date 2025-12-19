@@ -12,8 +12,8 @@ urlpatterns: list[URLPattern | URLResolver] = [
     ),
     path(
         # student/result
-        "/api/v1/exams/submissions/{submission_id}",
+        "submissions/<int:submission_id>",
         ExamResultView.as_view(),
-        name = "exam__result",
+        name = "exam_result",
     )
 ]
