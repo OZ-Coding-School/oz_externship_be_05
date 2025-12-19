@@ -57,6 +57,6 @@ def get_question_list(
     return list(page_obj.object_list), {
         "page": page,
         "page_size": page_size,
-        "total_pages": paginator.num_pages,
+        "total_pages": paginator.num_pages,  # view에서는 안쓰지만 혹시몰라 남김
         "total_count": paginator.count,
     }

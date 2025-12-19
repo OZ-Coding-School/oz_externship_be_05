@@ -19,6 +19,7 @@ class QuestionListEmptyError(APIException):
     status_code = status.HTTP_404_NOT_FOUND
     default_detail = "조회 가능한 질문이 존재하지 않습니다."
 
+
 ## 상세조회
 class QuestionNotFoundError(APIException):
     status_code = status.HTTP_404_NOT_FOUND

@@ -45,8 +45,10 @@ class QuestionAPIView(APIView):
 
         return Response(
             {
-                "results": QuestionListSerializer(questions, many=True).data,
-                "page": page_info,
+                "page": page_info["page"],
+                "size": page_info["page_size"],
+                "total_count": page_info["total_count"],
+                "questions": QuestionListSerializer(questions, many=True).data,
             },
             status=status.HTTP_200_OK,
         )
@@ -57,7 +59,7 @@ class QuestionAPIView(APIView):
         serializer = QuestionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        category = get_category_or_raise(serializer.validated_data["category"])
+        category = get_category_or_raise(serializer.validated_data["category_id"])
 
         user = cast(User, request.user)
 

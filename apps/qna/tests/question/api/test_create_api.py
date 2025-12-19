@@ -30,7 +30,7 @@ class QuestionCreateAPITests(APITestCase):
         payload = {
             "title": "질문 등록",
             "content": "내용입니다",
-            "category": self.category.id,
+            "category_id": self.category.id,
             "image_urls": ["https://test.com/img.png"],
         }
 

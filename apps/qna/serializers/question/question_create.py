@@ -4,7 +4,7 @@ from apps.qna.models import Question
 
 
 class QuestionCreateSerializer(serializers.ModelSerializer[Question]):
-    category = serializers.IntegerField()
+    category_id = serializers.IntegerField()
 
     image_urls = serializers.ListField(
         child=serializers.URLField(),
@@ -17,6 +17,6 @@ class QuestionCreateSerializer(serializers.ModelSerializer[Question]):
         fields = [
             "title",
             "content",
-            "category",
+            "category_id",
             "image_urls",
         ]

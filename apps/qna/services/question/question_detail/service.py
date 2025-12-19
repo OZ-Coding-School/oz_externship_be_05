@@ -1,6 +1,8 @@
 from apps.qna.exceptions.question_exceptions import QuestionNotFoundError
 from apps.qna.models import Question
-from apps.qna.services.question.question_detail.selectors import get_question_detail_queryset
+from apps.qna.services.question.question_detail.selectors import (
+    get_question_detail_queryset,
+)
 
 
 def get_question_detail(*, question_id: int) -> Question:
