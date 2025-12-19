@@ -1,9 +1,9 @@
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
-from apps.qna.models.answer.answers import Answer
 
 from apps.core.models import TimeStampedModel
+from apps.qna.models.answer.answers import Answer
 
 
 class AnswerImage(TimeStampedModel):
