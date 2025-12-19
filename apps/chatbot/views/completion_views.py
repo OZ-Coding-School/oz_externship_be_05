@@ -1,11 +1,7 @@
-from typing import Union
-
-from django.contrib.auth.models import AbstractBaseUser, AnonymousUser
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -21,19 +17,6 @@ from apps.chatbot.serializers.completion_serializers import (
 
 class CompletionCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
-
-    def _ai_chat_response(self, session: ChatbotSession, user_message: str) -> ChatbotCompletion:
-        # ai 챗봇 답변. services에서 구현
-        ai_response = f"Reply to '{user_message}'"
-
-        # AI 응답 DB에 저장
-        ai_completion = ChatbotCompletion.objects.create(
-            session=session,
-            message=ai_response,
-            role="assistant",
-        )
-
-        return ai_completion
 
     @extend_schema(
         tags=["AI 챗봇"],
@@ -71,6 +54,7 @@ class CompletionCreateAPIView(APIView):
             },
             "400": {"type": "object", "example": {"error_detail": "Message field is essential"}},
             "401": {"type": "object", "example": {"error_detail": "Authentication credentials were not provided."}},
+            "403": {"type": "object", "example": {"error_detail": "Session does not exist."}},
             "404": {"type": "object", "example": {"error_detail": "Session not found"}},  # 403 대신 사용
         },
     )
@@ -83,7 +67,7 @@ class CompletionCreateAPIView(APIView):
         # 요청 데이터 검증, 사용자 메세지 저장
         serializer = CompletionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user_completion: ChatbotCompletion = serializer.save(session=session, role="user")
+        user_completion: ChatbotCompletion = serializer.save(session=session, role=UserRole.USER)
 
         # ai 응답 생성, 저장
         ai_completion = self._ai_chat_response(session, user_completion.message)
