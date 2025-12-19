@@ -23,10 +23,11 @@ class Answer(TimeStampedModel):
     is_adopted = models.BooleanField(default=False, help_text="채택 여부")
 
     class Meta:
+        app_label = "qna"
         db_table = "answers"
         verbose_name = "답변"
         verbose_name_plural = "답변 목록"
         ordering = ["-created_at"]  # 최신 답변이 먼저 오도록 정렬
 
     def __str__(self) -> str:
-        return f"{self.pk}번 답변"
+        return f"{self.pk}번 답변 (by {self.author_id})"
