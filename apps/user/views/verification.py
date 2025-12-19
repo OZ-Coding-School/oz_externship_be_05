@@ -34,7 +34,7 @@ class VerifyEmailAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         token = EmailSender().verify_code(
             serializer.validated_data["email"],
-            serializer.validated_data["verify_code"],
+            serializer.validated_data["email_code"],
         )
         return Response({"detail": "이메일 인증에 성공하였습니다.", "email_token": token}, status=status.HTTP_200_OK)
 
@@ -65,6 +65,6 @@ class VerifySMSAPIView(APIView):
             Response({"error_detail": "SMS 인증에 문제가 발생했습니다."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         token = sender.verify_code(
             serializer.validated_data["phone_number"],
-            serializer.validated_data["verify_code"],
+            serializer.validated_data["sms_code"],
         )
-        return Response({"detail": "SMS 인증에 성공하였습니다.", "phone_token": token}, status=status.HTTP_200_OK)
+        return Response({"detail": "SMS 인증에 성공하였습니다.", "sms_token": token}, status=status.HTTP_200_OK)

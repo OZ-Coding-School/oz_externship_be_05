@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, cast
 
 from django.contrib.auth import authenticate
 from rest_framework import serializers
@@ -12,7 +12,10 @@ from apps.user.serializers.base import BaseMixin
 from apps.user.serializers.mixins import EmailTokenMixin, SenderMixin, SMSTokenMixin
 
 
-class SignupSerializer(SenderMixin, EmailTokenMixin, serializers.ModelSerializer[Any]):
+class SignupSerializer(SenderMixin, EmailTokenMixin, SMSTokenMixin, serializers.ModelSerializer[Any]):
+
+    sms_token = BaseMixin.get_verify_token_field()
+    email_token = BaseMixin.get_verify_token_field()
     password = BaseMixin.get_password_field(write_only=True)
 
     class Meta:
@@ -34,8 +37,14 @@ class SignupSerializer(SenderMixin, EmailTokenMixin, serializers.ModelSerializer
         return BaseMixin.validate_password(self, value)
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
-        phone_identifier = self.verify_sms_token(attrs["sms_token"])
-        email_identifier = self.verify_email_token(attrs["email_token"])
+        sms_token = attrs.get("sms_token")
+        email_token = attrs.get("email_token")
+
+        if sms_token is None or email_token is None:
+            raise serializers.ValidationError("인증 토큰이 누락되었습니다.")
+
+        phone_identifier = self.verify_sms_token(cast(str, sms_token))
+        email_identifier = self.verify_email_token(cast(str, email_token))
 
         if User.objects.filter(email=email_identifier).exists():
             raise serializers.ValidationError("이미 가입된 이메일입니다.")

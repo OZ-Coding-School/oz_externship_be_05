@@ -41,11 +41,10 @@ class Sender(ABC):
 
     def verify_token(self, token: str) -> str:
         """토큰 검증함. 성공하면 idenfier(폰번호/이메일) 반환"""
-        identifier = self.verification_service.get_identifier_by_token(token)
+        identifier = self.verification_service.verify_token(token, consume=True)
         if identifier:
-            self.verification_service.verify(identifier, token, consume=True, is_token=True)
             return identifier
-        raise ValidationError("유효하지 않은 토큰입니다.")
+        raise ValidationError("인증이 만료되었습니다.")
 
 
 class EmailSender(Sender):
