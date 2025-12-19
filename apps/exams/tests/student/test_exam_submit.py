@@ -171,8 +171,12 @@ class ExamSubmitServiceAndSerializerTest(TestCase):
                         "question_id": q.id,
                         "question": q.question,
                         "type": q.type,
-                        "answer": q.answer,
+                        "prompt": getattr(q, "prompt", "") or "",
                         "point": q.point,
+                        "options": getattr(q, "options", []) or [],
+                        "answer": q.answer,
+                        "explanation": q.explanation,
+                        "blank_count": getattr(q, "blank_count", None),
                     }
                     for q in questions
                 ]
