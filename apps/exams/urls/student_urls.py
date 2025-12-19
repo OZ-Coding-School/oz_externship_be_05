@@ -14,6 +14,6 @@ urlpatterns: list[URLPattern | URLResolver] = [
         # student/result
         "submissions/<int:submission_id>",
         ExamResultView.as_view(),
-        name = "exam_result",
-    )
+        name="exam_result",
+    ),
 ]
