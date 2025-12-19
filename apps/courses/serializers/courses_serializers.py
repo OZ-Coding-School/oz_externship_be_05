@@ -4,7 +4,8 @@ from apps.courses.models import Cohort
 
 
 class CourseCohortSerializer(serializers.ModelSerializer[Cohort]):
-    course_name = serializers.ReadOnlyField(source='course.name')
+    course_name = serializers.ReadOnlyField(source="course.name")
+    cohort_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Cohort
@@ -13,7 +14,7 @@ class CourseCohortSerializer(serializers.ModelSerializer[Cohort]):
             "course",
             "course_name",
             "number",
-            "cohort_display"
+            "cohort_display",
             "status",
         ]
         read_only_fields = [
@@ -23,5 +24,5 @@ class CourseCohortSerializer(serializers.ModelSerializer[Cohort]):
             "status",
         ]
 
-    def cohort_display(self, obj) -> str:
+    def get_cohort_display(self, obj: Cohort) -> str:
         return f"{obj.number}기"
