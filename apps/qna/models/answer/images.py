@@ -1,4 +1,5 @@
 from django.db import models
+
 from apps.core.models import TimeStampedModel
 from apps.qna.models.answer.answers import Answer
 
@@ -22,7 +23,7 @@ class AnswerImage(TimeStampedModel):
         db_table = "answers_images"
         verbose_name = "답변 이미지"
         verbose_name_plural = "답변 이미지 목록"
-        ordering = ["-created_at"]  
+        ordering = ["-created_at"]
 
     def __str__(self) -> str:
         return f"{self.pk}번 이미지 (on Answer {self.answer_id}) - {self.image_url}"  # 어떤 답변에 붙은이미지인지 식별
