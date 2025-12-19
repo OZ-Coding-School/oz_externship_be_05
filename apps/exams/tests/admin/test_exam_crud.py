@@ -7,6 +7,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from apps.core.exceptions.exception_messages import EMS
 from apps.courses.models import Course, Subject
 from apps.exams.models import Exam
 from apps.exams.services.admin import ExamService
@@ -140,7 +141,7 @@ class ExamAdminViewTest(APITestCase):
         data = {"subject_id": self.subject_python.id, "exam_title": "오류 테스트"}
         response = self.client.put(self.detail_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data["error_detail"], "수정할 쪽지시험 정보를 찾을 수 없습니다.")
+        self.assertEqual(response.data["error_detail"], EMS.E404_NOT_FOUND("수정할 쪽지시험 정보").get("error_detail"))
 
     def test_destroy_exam_success(self) -> None:
         response = self.client.delete(self.detail_url)
@@ -155,7 +156,7 @@ class ExamAdminViewTest(APITestCase):
         non_existent_url = reverse("exam-detail", kwargs={"pk": 9999})
         response = self.client.delete(non_existent_url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["error_detail"], "유효하지 않은 요청 데이터입니다.")
+        self.assertEqual(response.data["error_detail"], EMS.E400_INVALID_DATA("요청").get("error_detail"))
 
     def test_list_exams_with_search_and_subject_filter(self) -> None:
         """키워드(search_keyword)와 subject_id 필터링 조합 확인"""
@@ -182,21 +183,21 @@ class ExamAdminViewTest(APITestCase):
         invalid_url = reverse("exam-detail", kwargs={"pk": "abc"})
         response = self.client.put(invalid_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["error_detail"], "유효하지 않은 요청 데이터입니다.")
+        self.assertEqual(response.data["error_detail"], EMS.E400_INVALID_DATA("요청").get("error_detail"))
 
     def test_destroy_exam_invalid_pk_format_returns_400(self) -> None:
         """PK가 숫자가 아닐 때 400 응답 확인"""
         invalid_url = reverse("exam-detail", kwargs={"pk": "xyz"})
         response = self.client.delete(invalid_url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["error_detail"], "유효하지 않은 요청 데이터입니다.")
+        self.assertEqual(response.data["error_detail"], EMS.E400_INVALID_DATA("요청").get("error_detail"))
 
     def test_retrieve_non_existent_exam_returns_404(self) -> None:
         """존재하지 않는 ID 조회 시 404 확인"""
         url = reverse("exam-detail", kwargs={"pk": 99999})
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data["error_detail"], "수정할 쪽지시험 정보를 찾을 수 없습니다.")
+        self.assertEqual(response.data["error_detail"], EMS.E404_NOT_FOUND("수정할 쪽지시험 정보").get("error_detail"))
 
     def test_create_exam_with_invalid_subject_id_returns_404(self) -> None:
         """POST 시 유효하지 않은 subject_id (404) 테스트"""
@@ -206,4 +207,4 @@ class ExamAdminViewTest(APITestCase):
         }
         response = self.client.post(self.base_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data["error_detail"], "해당 과목 정보를 찾을 수 없습니다.")
+        self.assertEqual(response.data["error_detail"], EMS.E404_NOT_FOUND("해당 과목 정보").get("error_detail"))
