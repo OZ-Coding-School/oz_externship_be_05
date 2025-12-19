@@ -23,10 +23,7 @@ class AnswerComment(TimeStampedModel):
 
     class Meta:
         app_label = "qna"
-        db_table = "answers_comments"
-        verbose_name = "답변 댓글"
-        verbose_name_plural = "답변 댓글 목록"
-        ordering = ["-created_at"]  # 최신 댓글이 먼저 오도록 정렬
+        db_table = "answer_comments"
 
     def __str__(self) -> str:
         return f"{self.pk}번 댓글 (by {self.author_id})"  # 작성자가 누구인지빠르게 파악
