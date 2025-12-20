@@ -1,5 +1,7 @@
 from rest_framework import status
+from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,7 +11,22 @@ from apps.qna.services.question.question_detail.service import get_question_deta
 
 
 class QuestionDetailAPIView(APIView):
-    authentication_classes = []
+    """
+    질문 상세 조회 / 질문 수정 API
+    - GET   : 질문 상세 조회 (공개)
+    - PUT   : 질문 수정 (추후 구현)
+    - DELETE : 질문 삭제 (고민중)
+    """
+
+    def get_authenticators(self) -> list[BaseAuthentication]:
+        if self.request.method == "GET":
+            return []
+        return super().get_authenticators()
+
+    def get_permissions(self) -> list[BasePermission]:
+        if self.request.method in ("PUT",):
+            return []
+        return []
 
     def get(self, request: Request, question_id: int) -> Response:
         self.validation_error_message = "유효하지 않은 질문 상세 조회 요청입니다."
