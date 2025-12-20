@@ -1,3 +1,4 @@
+from datetime import timedelta
 from typing import cast
 
 from django.test import TestCase
@@ -48,7 +49,7 @@ class QuestionListServiceTests(TestCase):
         with self.assertRaises(QuestionListEmptyError):
             get_question_list(
                 page=1,
-                page_size=10,
+                size=10,
             )
 
     # 기본 목록 조회 성공
@@ -60,7 +61,7 @@ class QuestionListServiceTests(TestCase):
 
         questions, page_info = get_question_list(
             page=1,
-            page_size=10,
+            size=10,
         )
 
         self.assertEqual(len(questions), 1)
@@ -79,9 +80,9 @@ class QuestionListServiceTests(TestCase):
         )
 
         questions, _ = get_question_list(
-            answered=True,
+            answer_status="answered",
             page=1,
-            page_size=10,
+            size=10,
         )
 
         self.assertEqual(len(questions), 1)
@@ -95,9 +96,9 @@ class QuestionListServiceTests(TestCase):
 
         # "_" = get_question_list의 반환값을 받긴하지만 사용X
         questions, _ = get_question_list(
-            category=self.root_category.id,
+            category_id=self.root_category.id,
             page=1,
-            page_size=10,
+            size=10,
         )
 
         self.assertEqual(len(questions), 1)
@@ -114,13 +115,81 @@ class QuestionListServiceTests(TestCase):
         )
 
         questions, _ = get_question_list(
-            search="Django",
+            search_keyword="Django",
             page=1,
-            page_size=10,
+            size=10,
         )
 
         self.assertEqual(len(questions), 1)
         self.assertIn("Django", questions[0].title)
+
+    # 정렬 필터 - latest
+    def test_sort_latest(self) -> None:
+        q1 = self.create_question(
+            title="오래된 질문",
+            category=self.child_category,
+        )
+        q1.created_at = timezone.now() - timedelta(days=1)
+        q1.save(update_fields=["created_at"])
+
+        q2 = self.create_question(
+            title="최신 질문",
+            category=self.child_category,
+        )
+
+        questions, _ = get_question_list(
+            sort="latest",
+            page=1,
+            size=10,
+        )
+
+        self.assertEqual(questions[0].id, q2.id)
+
+    # 정렬 필터 - oldest
+    def test_sort_oldest(self) -> None:
+        q1 = self.create_question(
+            title="오래된 질문",
+            category=self.child_category,
+        )
+        q1.created_at = timezone.now() - timedelta(days=1)
+        q1.save(update_fields=["created_at"])
+
+        q2 = self.create_question(
+            title="최신 질문",
+            category=self.child_category,
+        )
+
+        questions, _ = get_question_list(
+            sort="oldest",
+            page=1,
+            size=10,
+        )
+
+        self.assertEqual(questions[0].id, q1.id)
+
+    # 정렬 필터 - views
+    def test_sort_views(self) -> None:
+        q1 = self.create_question(
+            title="조회수 적음",
+            category=self.child_category,
+        )
+        q1.view_count = 10
+        q1.save(update_fields=["view_count"])
+
+        q2 = self.create_question(
+            title="조회수 많음",
+            category=self.child_category,
+        )
+        q2.view_count = 50
+        q2.save(update_fields=["view_count"])
+
+        questions, _ = get_question_list(
+            sort="views",
+            page=1,
+            size=10,
+        )
+
+        self.assertEqual(questions[0].id, q2.id)
 
     # thumbnail_image_url 서브쿼리
     def test_thumbnail_image_annotation(self) -> None:
@@ -136,7 +205,7 @@ class QuestionListServiceTests(TestCase):
 
         questions, _ = get_question_list(
             page=1,
-            page_size=10,
+            size=10,
         )
 
         # mypy만족을 위해 추가

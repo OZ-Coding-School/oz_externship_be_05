@@ -12,29 +12,36 @@ from .filters import (
     filter_by_answered,
     filter_by_category,
     filter_by_search,
+    filter_by_sort,
 )
 
 
 def get_question_list(
     *,
-    answered: bool | None = None,
-    category: int | None = None,
-    search: str | None = None,
+    answer_status: str | None = None,
+    category_id: int | None = None,
+    search_keyword: str | None = None,
+    sort: str = "latest",
     page: int,
-    page_size: int,
+    size: int,
 ) -> tuple[Sequence[Question], dict[str, int]]:
 
     # base queryset
-    base_qs: QuerySet[Question] = (
-        Question.objects.select_related("author", "category")
-        .annotate(answer_count=Count("answers", distinct=True))
-        .order_by("-created_at")
+    base_qs: QuerySet[Question] = Question.objects.select_related("author", "category").annotate(
+        answer_count=Count("answers", distinct=True)
     )
+
+    answered = None
+    if answer_status == "answered":
+        answered = True
+    elif answer_status == "unanswered":
+        answered = False
 
     # 필터 단계
     filtered_qs = filter_by_answered(base_qs, answered)
-    filtered_qs = filter_by_category(filtered_qs, category)
-    filtered_qs = filter_by_search(filtered_qs, search)
+    filtered_qs = filter_by_category(filtered_qs, category_id)
+    filtered_qs = filter_by_search(filtered_qs, search_keyword)
+    filtered_qs = filter_by_sort(filtered_qs, sort)
 
     # annotate 단계 (가짜 컬럼들)
     annotated_qs = filtered_qs.annotate(content_preview=Substr("content", 1, 100)).annotate(
@@ -44,7 +51,7 @@ def get_question_list(
     )
 
     # pagination
-    paginator = Paginator(annotated_qs, page_size)
+    paginator = Paginator(annotated_qs, size)
 
     if paginator.count == 0:  # 질문 개수 = 0
         raise QuestionListEmptyError()
@@ -56,7 +63,7 @@ def get_question_list(
 
     return list(page_obj.object_list), {
         "page": page,
-        "page_size": page_size,
+        "page_size": size,
         "total_pages": paginator.num_pages,  # view에서는 안쓰지만 혹시몰라 남김
         "total_count": paginator.count,
     }
