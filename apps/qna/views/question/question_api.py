@@ -7,6 +7,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.exceptions.exception_messages import EMS
 from apps.qna.permissions.question.question_create_permission import (
     QuestionCreatePermission,
 )
@@ -36,7 +37,7 @@ class QuestionAPIView(APIView):
         return []
 
     def get(self, request: Request) -> Response:
-        self.validation_error_message = "유효하지 않은 목록 조회 요청입니다."
+        self.validation_error_message = EMS.E400_INVALID_REQUEST("질문 목록 조회")["error_detail"]
 
         query_serializer = QuestionListQuerySerializer(data=request.query_params)
         query_serializer.is_valid(raise_exception=True)
@@ -54,7 +55,7 @@ class QuestionAPIView(APIView):
         )
 
     def post(self, request: Request) -> Response:
-        self.validation_error_message = "유효하지 않은 질문 등록 요청입니다."
+        self.validation_error_message = EMS.E400_INVALID_REQUEST("질문 등록")["error_detail"]
 
         serializer = QuestionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

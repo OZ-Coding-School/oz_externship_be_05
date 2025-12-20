@@ -2,6 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from apps.core.exceptions.exception_messages import EMS
 from apps.qna.models import QuestionCategory
 from apps.user.models.user import RoleChoices, User
 
@@ -52,7 +53,7 @@ class QuestionCreateAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(
             response.data["error_detail"],
-            "로그인한 수강생만 질문을 등록할 수 있습니다.",
+            EMS.E401_STUDENT_ONLY_ACTION("질문을 등록")["error_detail"],
         )
 
     # 403 Role가 학생이 아닌 경우
@@ -69,6 +70,10 @@ class QuestionCreateAPITests(APITestCase):
         response = self.client.post(self.url, payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(
+            response.data["error_detail"],
+            EMS.E403_QNA_PERMISSION_DENIED("등록")["error_detail"],
+        )
 
     # 400 제목이 없음
     def test_invalid_payload_gets_400(self) -> None:
@@ -85,5 +90,5 @@ class QuestionCreateAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(
             response.data["error_detail"],
-            "유효하지 않은 질문 등록 요청입니다.",
+            EMS.E400_INVALID_REQUEST("질문 등록")["error_detail"],
         )

@@ -6,6 +6,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.exceptions.exception_messages import EMS
 from apps.qna.serializers.question.question_detail import QuestionDetailSerializer
 from apps.qna.services.question.question_detail.service import get_question_detail
 
@@ -29,7 +30,7 @@ class QuestionDetailAPIView(APIView):
         return []
 
     def get(self, request: Request, question_id: int) -> Response:
-        self.validation_error_message = "유효하지 않은 질문 상세 조회 요청입니다."
+        self.validation_error_message = EMS.E400_INVALID_REQUEST("질문 상세 조회")["error_detail"]
 
         if question_id <= 0:
             raise ValidationError("question_id는 1 이상이어야 합니다.")

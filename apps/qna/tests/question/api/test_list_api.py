@@ -2,6 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from apps.core.exceptions.exception_messages import EMS
 from apps.qna.models import Question, QuestionCategory
 from apps.user.models import User
 from apps.user.models.user import RoleChoices
@@ -30,7 +31,7 @@ class QuestionListAPITests(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.data["error_detail"],
-            "유효하지 않은 목록 조회 요청입니다.",
+            EMS.E400_INVALID_REQUEST("질문 목록 조회")["error_detail"],
         )
         self.assertIn("errors", response.data)
 
@@ -58,7 +59,7 @@ class QuestionListAPITests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(
             response.data["error_detail"],
-            "조회 가능한 질문이 존재하지 않습니다.",
+            EMS.E404_NO_QUESTIONS_AVAILABLE["error_detail"],
         )
 
     # 목록 조회 성공

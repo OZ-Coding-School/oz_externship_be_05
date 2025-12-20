@@ -1,6 +1,7 @@
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
+from apps.core.exceptions.exception_messages import EMS
 from apps.qna.models import (
     Answer,
     AnswerComment,
@@ -101,5 +102,5 @@ class QuestionDetailAPITests(APITestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.data["error_detail"],
-            "유효하지 않은 질문 상세 조회 요청입니다.",
+            EMS.E400_INVALID_REQUEST("질문 상세 조회")["error_detail"],
         )
