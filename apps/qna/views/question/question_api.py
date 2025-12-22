@@ -18,7 +18,6 @@ from apps.qna.serializers.question.question_list_query import (
 )
 from apps.qna.services.question.question_create_service import (
     create_question,
-    get_category_or_raise,
 )
 from apps.qna.services.question.question_list.service import get_question_list
 from apps.user.models import User
@@ -60,7 +59,7 @@ class QuestionAPIView(APIView):
         serializer = QuestionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        category = get_category_or_raise(serializer.validated_data["category_id"])
+        category = serializer.validated_data["category"]
 
         user = cast(User, request.user)
 
