@@ -2,9 +2,6 @@ from rest_framework import serializers
 
 
 class QuestionListQuerySerializer(serializers.Serializer[dict[str, object]]):
-    page = serializers.IntegerField(required=False, default=1)
-    size = serializers.IntegerField(required=False, default=10)
-
     search_keyword = serializers.CharField(required=False, allow_blank=True)
     category_id = serializers.IntegerField(required=False)
 
