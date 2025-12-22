@@ -3,10 +3,7 @@ from typing import Any
 from rest_framework import serializers
 
 from apps.user.models import User
-from apps.user.models.user import RoleChoices
 from apps.user.serializers.admin.common import (
-    CohortMiniSerializer,
-    CourseMiniSerializer,
     StatusMixin,
 )
 
