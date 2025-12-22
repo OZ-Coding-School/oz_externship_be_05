@@ -1,4 +1,3 @@
-
 from django.db.models import Exists, OuterRef, Q
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAdminUser
@@ -7,12 +6,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.user.models.user import RoleChoices, User
+from apps.user.models.withdraw import Withdrawal
 from apps.user.pagination import AdminAccountPagination
 from apps.user.serializers.admin.accounts import AdminAccountListSerializer
-
-
-from apps.user.models.withdraw import Withdrawal
-
 
 STATUS_QUERY_VALUES = {"activated", "deactivated", "withdrew"}
 ROLE_QUERY_VALUES = {"admin", "staff", "user", "student"}
@@ -33,24 +29,14 @@ class AdminAccountListAPIView(APIView):
     def get(self, request: Request) -> Response:
         qs = User.objects.all()
 
-        qs = qs.annotate(
-            is_withdrawing=Exists(
-                Withdrawal.objects.filter(user_id=OuterRef("pk"))
-            )
-        )
-
+        qs = qs.annotate(is_withdrawing=Exists(Withdrawal.objects.filter(user_id=OuterRef("pk"))))
 
         search = request.query_params.get("search")
         if search:
-            cond = (
-                Q(email__icontains=search)
-                | Q(nickname__icontains=search)
-                | Q(name__icontains=search)
-            )
+            cond = Q(email__icontains=search) | Q(nickname__icontains=search) | Q(name__icontains=search)
             if search.isdigit():
                 cond |= Q(id=int(search))
             qs = qs.filter(cond)
-
 
         status = request.query_params.get("status")
         if status:
@@ -77,7 +63,6 @@ class AdminAccountListAPIView(APIView):
                 qs = qs.filter(role=RoleChoices.ST)
             elif role == "staff":
                 qs = qs.filter(role__in=[RoleChoices.TA, RoleChoices.LC, RoleChoices.OM])
-
 
         ordering = (request.query_params.get("ordering") or "id").strip()
         direction = (request.query_params.get("direction") or "desc").strip()
