@@ -3,6 +3,7 @@ from typing import Any
 from apps.qna.models import Question, QuestionCategory, QuestionImage
 from apps.user.models import User
 
+
 def create_question(
     *,
     author: User,

@@ -1,4 +1,4 @@
-from typing import TypedDict
+from typing import Optional, TypedDict
 
 from apps.qna.models import QuestionCategory
 
@@ -25,7 +25,8 @@ class CategoryInfo(TypedDict):
 
 def build_category_info(category: QuestionCategory) -> CategoryInfo:
     names: list[str] = []
-    current = category
+
+    current: Optional[QuestionCategory] = category
 
     while current is not None:
         names.append(current.name)

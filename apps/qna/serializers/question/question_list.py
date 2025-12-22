@@ -3,17 +3,17 @@ from typing import Any
 from rest_framework import serializers
 
 from apps.qna.models import Question
-from apps.qna.services.question.question_list.category_utils import CategoryInfo, build_category_info
+from apps.qna.serializers.common.author_serializer import AuthorSerializer
+from apps.qna.services.question.question_list.category_utils import (
+    CategoryInfo,
+    build_category_info,
+)
 
 
 class QuestionListSerializer(serializers.ModelSerializer[Question]):
     category = serializers.SerializerMethodField()
 
-    profile_img_url = serializers.CharField(
-        source="author.profile_image_url",
-        allow_null=True,
-    )
-    nickname = serializers.CharField(source="author.nickname")
+    author = AuthorSerializer(read_only=True)
 
     content_preview = serializers.CharField()
     answer_count = serializers.IntegerField()
@@ -30,8 +30,7 @@ class QuestionListSerializer(serializers.ModelSerializer[Question]):
         fields = [
             "id",
             "category",
-            "profile_img_url",
-            "nickname",
+            "author",
             "title",
             "content_preview",
             "answer_count",

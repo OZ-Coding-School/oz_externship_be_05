@@ -1,6 +1,5 @@
 from django.test import TestCase
 
-
 from apps.qna.models import Question, QuestionCategory, QuestionImage
 from apps.qna.services.question.question_create_service import (
     create_question,
@@ -37,4 +36,3 @@ class QuestionCreateServiceTests(TestCase):
         self.assertEqual(Question.objects.count(), 1)
         self.assertEqual(QuestionImage.objects.count(), 1)
         self.assertEqual(question.title, "질문 제목")
-

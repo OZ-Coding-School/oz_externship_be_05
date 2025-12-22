@@ -10,6 +10,7 @@ class QuestionCreateNotAuthenticated(APIException):
     status_code = status.HTTP_401_UNAUTHORIZED
     default_detail = EMS.E401_STUDENT_ONLY_ACTION("질문을 등록")["error_detail"]
 
+
 ## 조회
 class QuestionListEmptyError(APIException):
     status_code = status.HTTP_404_NOT_FOUND
