@@ -26,7 +26,8 @@ from apps.user.models import User
 class QuestionAPIView(APIView):
 
     def get_authenticators(self) -> list[BaseAuthentication]:
-        if self.request.method == "GET":
+        request = getattr(self, "request", None)
+        if request and request.method == "GET":
             return []
         return super().get_authenticators()
 
@@ -58,7 +59,6 @@ class QuestionAPIView(APIView):
         serializer.is_valid(raise_exception=True)
 
         category = get_category_or_raise(serializer.validated_data["category"])
-
         user = cast(User, request.user)
 
         question = create_question(
