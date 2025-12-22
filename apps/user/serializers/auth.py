@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any, cast
 
 from django.contrib.auth import authenticate
+from django.db import IntegrityError
 from rest_framework import serializers
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -58,9 +59,11 @@ class SignupSerializer(SenderMixin, EmailTokenMixin, SMSTokenMixin, serializers.
         return attrs
 
     def create(self, validated_data: dict[str, Any]) -> User:
-
         password = validated_data.pop("password")
-        return User.objects.create_user(password=password, **validated_data)
+        try:
+            return User.objects.create_user(password=password, **validated_data)
+        except IntegrityError as exc:
+            raise serializers.ValidationError("이미 가입된 사용자입니다.") from exc
 
 
 class LoginSerializer(serializers.Serializer[Any], BaseMixin):
