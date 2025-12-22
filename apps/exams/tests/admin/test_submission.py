@@ -44,20 +44,14 @@ class AdminExamSubmissionTest(APITestCase):
             role=RoleChoices.ST,
         )
 
-        self.course = Course.objects.create(name="초격차 백엔드 부트캠프")
-
-        # 코스 생성
+        # 코스
         self.course = Course.objects.create(
-            name="course",
+            name="초격차 백엔드 부트캠프",
             tag="TT",
             description="test course description",
         )
 
-        # 코호트 생성
-        from datetime import datetime
-
-        from django.utils import timezone
-
+        # 과목
         self.cohort = Cohort.objects.create(
             course=self.course,
             number=1,
@@ -121,6 +115,7 @@ class AdminExamSubmissionTest(APITestCase):
         }
 
         res = self.client.get(self.url, params)
+        print(res.status_code, res.data)
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data["page"], 1)
