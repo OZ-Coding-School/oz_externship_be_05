@@ -40,9 +40,6 @@ class AdminAccountListAPIView(APIView):
 
         status = request.query_params.get("status")
         if status:
-            if status not in STATUS_QUERY_VALUES:
-                raise ValidationError({"status": [f"invalid value. allowed: {sorted(STATUS_QUERY_VALUES)}"]})
-
             if status == "withdrew":
                 qs = qs.filter(is_withdrawing=True)
             elif status == "activated":
@@ -52,9 +49,6 @@ class AdminAccountListAPIView(APIView):
 
         role = request.query_params.get("role")
         if role:
-            if role not in ROLE_QUERY_VALUES:
-                raise ValidationError({"role": [f"invalid value. allowed: {sorted(ROLE_QUERY_VALUES)}"]})
-
             if role == "admin":
                 qs = qs.filter(role=RoleChoices.AD)
             elif role == "user":
@@ -68,9 +62,9 @@ class AdminAccountListAPIView(APIView):
         direction = (request.query_params.get("direction") or "desc").strip()
 
         if ordering not in ORDERING_ALLOWED:
-            raise ValidationError({"ordering": [f"invalid value. allowed: {sorted(ORDERING_ALLOWED)}"]})
+            ordering = "id"
         if direction not in DIRECTION_ALLOWED:
-            raise ValidationError({"direction": [f"invalid value. allowed: {sorted(DIRECTION_ALLOWED)}"]})
+            direction = "desc"
 
         order_field = ORDERING_MAP[ordering]
         if direction == "desc":
