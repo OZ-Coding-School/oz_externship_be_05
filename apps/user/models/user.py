@@ -75,6 +75,7 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     @property
     def status(self) -> str:
         from apps.user.models.withdraw import Withdrawal
+
         is_withdrawing = getattr(self, "is_withdrawing", None)
         if is_withdrawing is None:
             is_withdrawing = Withdrawal.objects.filter(user_id=self.pk).exists()

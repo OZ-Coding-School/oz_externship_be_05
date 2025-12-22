@@ -39,7 +39,7 @@ class UserWithdrawalMiniSerializer(serializers.ModelSerializer[User]):
         fields = ("id", "email", "name", "role", "birthday")
 
 
-class UserWithdrawalDetailMiniSerializer( serializers.ModelSerializer[User]):
+class UserWithdrawalDetailMiniSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
         fields = ("id", "email", "name", "gender", "role", "status", "profile_image_url", "created_at")

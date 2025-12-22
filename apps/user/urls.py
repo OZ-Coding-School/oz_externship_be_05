@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.user.views import social_login_views
+from apps.user.views.admin.accounts import AdminAccountListAPIView
 from apps.user.views.auth import (
     LoginAPIView,
     SignupAPIView,
@@ -11,7 +12,6 @@ from apps.user.views.verification import (
     VerifyEmailAPIView,
     VerifySMSAPIView,
 )
-from apps.user.views.admin.accounts import AdminAccountListAPIView
 
 urlpatterns = [
     path("accounts/social-login/kakao", social_login_views.KakaoLoginStartAPIView.as_view(), name="kakao-login-start"),
