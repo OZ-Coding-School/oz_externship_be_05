@@ -246,3 +246,5 @@ VERIFICATION_CODE_CHARS = os.getenv("VERIFICATION_CODE_CHARS", default="12345678
 
 # social-login redirect_url
 FRONTEND_SOCIAL_REDIRECT_URL = os.getenv("FRONTEND_SOCIAL_REDIRECT_URL")
+# withdrawal / account deletion settings
+WITHDRAWAL_GRACE_DAYS = int(os.getenv("WITHDRAWAL_GRACE_DAYS", "14"))
