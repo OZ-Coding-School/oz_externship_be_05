@@ -42,7 +42,7 @@ class AdminDeploymentSerializer(serializers.ModelSerializer[ExamDeployment]):
             DeploymentValidator.validate_open(open_at)
 
         # update 시작된 시험 시간 변경 불가
-        if instance is not None and "open_at" in attrs:
+        if isinstance(instance, ExamDeployment) and "open_at" in attrs:
             DeploymentValidator.validate_not_started(
                 open_at=instance.open_at,
                 status=instance.status,
