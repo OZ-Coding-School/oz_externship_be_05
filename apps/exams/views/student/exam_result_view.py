@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.exceptions.exception_messages import EMS
 from apps.exams.models.exam_submission import ExamSubmission
+from apps.exams.permissions.student_permission import IsSubmissionOwner
 from apps.exams.serializers.student.exam_result_serializer import ExamResultSerializer
 from apps.exams.services.student.exam_result_service import build_exam_result
 
@@ -19,7 +21,7 @@ class ExamResultView(APIView):
     """
 
     # 인증된 사용자만 접근 가능
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsSubmissionOwner]
 
     def get(
         self,
@@ -34,14 +36,10 @@ class ExamResultView(APIView):
             submission = ExamSubmission.objects.select_related("deployment__exam").get(pk=submission_id)
         except ExamSubmission.DoesNotExist:
             # 제출 내역이 없는 경우
-            raise NotFound("해당 시험 정보를 찾을 수 없습니다.")
+            raise NotFound(detail=EMS.E404_NOT_FOUND("쪽지시험"))
 
         # 본인이 제출한 시험만 조회 가능
-        if submission.submitter_id != request.user.id:
-            return Response(
-                {"error_detail": "권한이 없습니다."},
-                status=403,
-            )
+        self.check_object_permissions(request, submission)
 
         # 결과 조회용 응답 데이터 조립
         data = build_exam_result(submission)
