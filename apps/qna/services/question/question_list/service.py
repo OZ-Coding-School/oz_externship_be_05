@@ -3,6 +3,7 @@ from typing import Sequence
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
 from django.db.models import Count, OuterRef, QuerySet, Subquery
 from django.db.models.functions import Substr
+
 from apps.qna.models import Question, QuestionImage
 
 from .filters import (
@@ -22,11 +23,9 @@ def get_question_list(
 ) -> QuerySet[Question]:
 
     # base queryset
-    base_qs = (
-        Question.objects
-        .select_related("author", "category")
-        .annotate(answer_count=Count("answers", distinct=True)
-    ))
+    base_qs = Question.objects.select_related("author", "category").annotate(
+        answer_count=Count("answers", distinct=True)
+    )
 
     answered = None
     if answer_status == "answered":
@@ -44,9 +43,6 @@ def get_question_list(
     return qs.annotate(
         content_preview=Substr("content", 1, 100),
         thumbnail_image_url=Subquery(
-            QuestionImage.objects
-            .filter(question=OuterRef("pk"))
-            .order_by("created_at", "id")
-            .values("img_url")[:1]
+            QuestionImage.objects.filter(question=OuterRef("pk")).order_by("created_at", "id").values("img_url")[:1]
         ),
     )
