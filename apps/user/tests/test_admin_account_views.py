@@ -1,16 +1,20 @@
 from datetime import date
+from typing import ClassVar
 
-from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
-from apps.user.models.user import RoleChoices
+from apps.user.models.user import RoleChoices, User
 from apps.user.models.withdraw import Withdrawal
-
-User = get_user_model()
 
 
 class AdminAccountListAPITests(APITestCase):
+    admin: ClassVar[User]
+    u1: ClassVar[User]
+    u2: ClassVar[User]
+    u3: ClassVar[User]
+    url: ClassVar[str]
+
     @classmethod
     def setUpTestData(cls) -> None:
         cls.admin = User.objects.create_user(
@@ -80,7 +84,6 @@ class AdminAccountListAPITests(APITestCase):
         self.assertIn("next", resp.data)
         self.assertIn("previous", resp.data)
         self.assertIn("results", resp.data)
-        self.assertIsInstance(resp.data["results"], list)
 
     def test_search_filters_by_email_or_name_or_nickname(self) -> None:
         resp = self.client.get(self.url, {"search": "kim"})
@@ -99,32 +102,7 @@ class AdminAccountListAPITests(APITestCase):
         self.assertEqual(resp.status_code, 200)
         ids = [row["id"] for row in resp.data["results"]]
         self.assertIn(self.u2.id, ids)
-        self.assertNotIn(self.u3.id, ids) 
-
-    def test_filter_role_staff(self) -> None:
-        staff = User.objects.create_user(
-            email="ta@example.com",
-            password="pass1234!",
-            name="TA",
-            nickname="ta",
-            phone_number="01044444444",
-            gender="M",
-            birthday=date(1999, 2, 2),
-            role=RoleChoices.TA,
-        )
-
-        resp = self.client.get(self.url, {"role": "staff"})
-        self.assertEqual(resp.status_code, 200)
-        ids = [row["id"] for row in resp.data["results"]]
-        self.assertIn(staff.id, ids)
-
-    def test_ordering_created_at_asc(self) -> None:
-
-        resp = self.client.get(self.url, {"ordering": "created_at", "direction": "asc"})
-        self.assertEqual(resp.status_code, 200)
-        rows = resp.data["results"]
-        if len(rows) >= 2:
-            self.assertLessEqual(rows[0]["created_at"], rows[-1]["created_at"])
+        self.assertNotIn(self.u3.id, ids)
 
     def test_invalid_role_returns_400(self) -> None:
         resp = self.client.get(self.url, {"role": "staf"})

@@ -29,5 +29,5 @@ urlpatterns = [
     path("verification/send-email", SendEmailAPIView.as_view(), name="signup_send_email"),
     path("verification/verify-email", VerifyEmailAPIView.as_view(), name="signup_verify_email"),
     # 어드민
-    path("admin/accounts", AdminAccountListAPIView.as_view()),
+    path("admin/accounts", AdminAccountListAPIView.as_view(), name="admin-account-list"),
 ]
