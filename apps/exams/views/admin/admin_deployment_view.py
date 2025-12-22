@@ -1,15 +1,11 @@
-from typing import Any, cast
-
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from apps.core.utils.ints import to_int
-from apps.exams.permissions.admin_permission import IsStaffOrAdmin
+from apps.core.utils.pagination import Pagination
+from apps.core.utils.types import to_int
+from apps.exams.permissions.admin_permission import AdminUserPermission
 from apps.exams.serializers.admin import (
     AdminDeploymentCreateResponseSerializer,
     AdminDeploymentListItemSerializer,
@@ -22,14 +18,11 @@ from apps.exams.services.admin.admin_deployment_service import (
 )
 
 
-class DeploymentListCreateAPIView(APIView):
+class DeploymentListCreateAPIView(AdminUserPermission):
     """
     GET - 배포 목록 조회
     POST - 배포 생성
     """
-
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsStaffOrAdmin]
 
     # --------------------
     # GET - 배포 목록 조회
@@ -73,41 +66,11 @@ class DeploymentListCreateAPIView(APIView):
             order=request.query_params.get("order", "desc"),
         )
 
-        # Pagination
-        class _Pagination(PageNumberPagination):
-            page_query_param = "page"
-            page_size_query_param = "size"
-            page_size = 10
-
-            def get_paginated_response(self, data: Any) -> Response:
-                size = self.get_page_size(cast(Request, self.request))
-
-                if self.page is None:
-                    return Response(
-                        {
-                            "page": 1,
-                            "size": size or 10,
-                            "total_count": 0,
-                            "deployments": [],
-                        },
-                        status=status.HTTP_200_OK,
-                    )
-
-                return Response(
-                    {
-                        "page": self.page.number,
-                        "size": size if size is not None else self.page.paginator.per_page,
-                        "total_count": self.page.paginator.count,
-                        "deployments": data,
-                    },
-                    status=status.HTTP_200_OK,
-                )
-
-        paginator = _Pagination()
+        paginator = Pagination()
         page = paginator.paginate_queryset(queryset, request)
-
         serializer = AdminDeploymentListItemSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
+
 
     # --------------------
     # POST - 배포 생성
@@ -159,16 +122,4 @@ class DeploymentListCreateAPIView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-        # 정상 생성 시
-        assert deployment is not None  # 타입 안정성 보장
-        return Response(
-            {
-                "exam_id": deployment.exam_id,
-                "cohort_id": deployment.cohort_id,
-                "duration_time": deployment.duration_time,
-                "access_code": deployment.access_code,
-                "open_at": deployment.open_at,
-                "close_at": deployment.close_at,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        return Response({"pk": deployment.pk}, status=status.HTTP_201_CREATED)
