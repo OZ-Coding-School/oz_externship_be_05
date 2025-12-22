@@ -66,7 +66,7 @@ class QuestionDetailAPITests(APITestCase):
         data = response.data
 
         # 질문 기본 필드
-        self.assertEqual(data["question_id"], self.question.id)
+        self.assertEqual(data["id"], self.question.id)
         self.assertEqual(data["title"], "질문 제목")
         self.assertEqual(data["content"], "질문 내용")
 
