@@ -7,7 +7,7 @@ from rest_framework.response import Response
 
 from apps.exams.permissions.admin_permission import AdminUserPermission
 from apps.exams.serializers.admin.admin_submission_serializer import (
-    AdminExamSubmissionList,
+    AdminExamSubmissionListSerializer,
 )
 from apps.exams.services.admin.admin_submission_service import (
     AdminSubmissionListParams,
@@ -21,7 +21,7 @@ class AdminSubmissionListAPIView(AdminUserPermission):
     def get(self, request: Request) -> Response:
         qp = request.query_params
 
-        order_raw = str(qp.get("order", "desc") or "desc")
+        order_raw = str(qp.get("order") or "desc")
         order: Order = cast(Order, order_raw)
 
         params = AdminSubmissionListParams(
@@ -34,6 +34,7 @@ class AdminSubmissionListAPIView(AdminUserPermission):
             order=order,
         )
 
-        data = get_admin_exam_submission_list(params)
-        ser = AdminExamSubmissionList(data)
+        payload = get_admin_exam_submission_list(params)
+
+        ser = AdminExamSubmissionListSerializer(instance=payload)
         return Response(ser.data, status=200)

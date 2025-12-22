@@ -5,28 +5,36 @@ from rest_framework import serializers
 from apps.exams.models import ExamSubmission
 
 
-class AdminSubmission(serializers.ModelSerializer):  # type: ignore[type-arg]
+class AdminSubmissionListSerializer(serializers.ModelSerializer):  # type: ignore[type-arg]
+    """
+    관리자 응시내역 목록의 '행(row)' 하나를 표현하는 serializer.
+    (ExamSubmission 1건)
+    """
+
     submission_id = serializers.IntegerField(source="id", read_only=True)
 
-    nickname = serializers.CharField(source="submitter.nickname", read_only=True)
-    name = serializers.CharField(source="submitter.name", read_only=True)
+    # 사용자 정보
+    nickname = serializers.CharField(source="submitter.nickname")
+    name = serializers.CharField(source="submitter.name")
 
-    course_name = serializers.CharField(source="deployment.cohort.course.name", read_only=True)
-    cohort_number = serializers.IntegerField(source="deployment.cohort.number", read_only=True)
+    # 과정 / 기수
+    course_name = serializers.CharField(source="deployment.cohort.course.name")
+    cohort_number = serializers.IntegerField(source="deployment.cohort.number")
 
-    exam_title = serializers.CharField(source="deployment.exam.title", read_only=True)
+    # 시험 정보
+    exam_title = serializers.CharField(source="deployment.exam.title")
     subject_name = serializers.CharField(source="deployment.exam.subject.name", read_only=True)
 
-    score = serializers.IntegerField(read_only=True)
-    cheating_count = serializers.IntegerField(read_only=True)
-
-    started_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
-    # finished_at > submit - created_at
-    finished_at = serializers.DateTimeField(source="created_at", format="%Y-%m-%d %H:%M:%S", read_only=True)
+    # 시간 정보
+    started_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    finished_at = serializers.DateTimeField(
+        source="created_at",
+        format="%Y-%m-%d %H:%M:%S",
+    )
 
     class Meta:
         model = ExamSubmission
-        fields = [
+        fields = (
             "submission_id",
             "nickname",
             "name",
@@ -38,11 +46,18 @@ class AdminSubmission(serializers.ModelSerializer):  # type: ignore[type-arg]
             "cheating_count",
             "started_at",
             "finished_at",
-        ]
+        )
+        # 관리자 조회 전용 응답이므로 전체 read-only
+        read_only_fields = fields
 
 
-class AdminExamSubmissionList(serializers.Serializer):  # type: ignore[type-arg]
+class AdminExamSubmissionListSerializer(serializers.Serializer):  # type: ignore[type-arg]
+    """
+    관리자 응시내역 목록 응답 wrapper.
+    payload(dict) 그대로 감싸서 내려준다.
+    """
+
     page = serializers.IntegerField()
     size = serializers.IntegerField()
     total_count = serializers.IntegerField()
-    submissions = AdminSubmission(many=True)
+    submissions = AdminSubmissionListSerializer(many=True)
