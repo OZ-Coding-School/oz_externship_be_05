@@ -46,14 +46,14 @@ class ResultResponse(TypedDict):
 
 
 def _format_hhmmss(seconds: int) -> str:
-    # 초 단위를 문자열로 변환
+    # 초 단위를 "HH:MM:SS" 문자열로 변환
     if seconds < 0:
         seconds = 0
-    td = timedelta(seconds=seconds)
-    total = int(td.total_seconds())
-    hh = total // 3600
-    mm = (total % 3600) // 60
-    ss = total % 60
+
+    hh = seconds // 3600
+    mm = (seconds % 3600) // 60
+    ss = seconds % 60
+
     return f"{hh:02d}:{mm:02d}:{ss:02d}"
 
 
@@ -63,12 +63,12 @@ def build_exam_result(submission: Any) -> ResultResponse:
     exam = deployment.exam
 
     # 응시 시간 계산 (시작 시각 ~ 제출 시각)
-    submitted_at = getattr(submission, "created_at", None) or timezone.now()
+    submitted_at = submission.created_at
     duration_seconds = int((submitted_at - submission.started_at).total_seconds())
     duration_str = _format_hhmmss(duration_seconds)
 
     # 시험 배포 시 저장된 문항 스냅샷 가져오기
-    snapshot_any: Any = getattr(deployment, "questions_snapshot", None)
+    snapshot_any = deployment.questions_snapshot
     questions_snapshot: List[SnapshotQuestion] = []
 
     if isinstance(snapshot_any, dict):
