@@ -6,6 +6,7 @@ from django.db.models import QuerySet
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -15,7 +16,7 @@ from rest_framework.views import APIView
 from apps.core.exceptions.exception_messages import EMS
 from apps.exams.models import Exam
 from apps.exams.permissions.admin_permission import AdminUserPermission
-from apps.exams.serializers.admin import ExamListSerializer, ExamSerializer
+from apps.exams.serializers.admin import ExamListSerializer, ExamSerializer, ExamQuestionsListSerializer
 from apps.exams.services.admin import ExamService
 
 # 서비스 인스턴스 생성
@@ -50,6 +51,7 @@ class ExamAdminListCreateAPIView(APIView):
     serializer_class: Type[BaseSerializer[Any]] = ExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
 
     @extend_schema(
+        tags=["Exams"],
         summary="쪽지시험 목록 조회",
         description="검색어, 과목 ID, 정렬 기능을 포함한 목록 조회 API입니다.",
         parameters=[
@@ -97,6 +99,7 @@ class ExamAdminListCreateAPIView(APIView):
             return Response(EMS.E400_INVALID_REQUEST("조회"), status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
+        tags=["Exams"],
         summary="쪽지시험 생성",
         description="새로운 쪽지시험을 생성합니다. 과목 ID, 시험 제목, 썸네일 URL을 입력받습니다.",
         request=ExamSerializer,  # 요청 시 사용할 시리얼라이저
@@ -108,6 +111,9 @@ class ExamAdminListCreateAPIView(APIView):
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """POST: 시험 생성 view (create)"""
+        if not request.user.is_staff:    # Forbidden
+            raise PermissionDenied(EMS.E403_PERMISSION_DENIED("쪽지시험 생성"))
+
         serializer = ExamSerializer(data=request.data)
 
         try:
@@ -124,7 +130,7 @@ class ExamAdminListCreateAPIView(APIView):
                 return Response(EMS.E400_INVALID_REQUEST("시험 생성"), status=status.HTTP_400_BAD_REQUEST)
             raise
 
-        # subject_title N+1 쿼리 방지.
+        # subject_name N+1 쿼리 방지.
         exam_with_subject = exam_service.get_exam_by_id(exam.pk)
         response_serializer = ExamSerializer(exam_with_subject)
 
@@ -156,16 +162,17 @@ class ExamAdminRetrieveUpdateDestroyAPIView(APIView):
             raise Exam.DoesNotExist  # 객체 미발견
 
     @extend_schema(
+        tags=["Exams"],
         summary="쪽지시험 상세 조회",
-        description="특정 ID의 쪽지시험 상세 정보와 집계 데이터(문제 수, 제출 수)를 조회합니다.",
+        description="특정 ID의 쪽지시험 상세 정보와 속한 문제를 조회합니다.",
         responses={200: ExamListSerializer},
     )
     def get(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> Response:
         """GET: 시험 상세 조회 view (retrieve)"""
         try:
-            exam = self.get_object_for_detail(pk)
+            exam = exam_service.get_exam_questions_by_id(int(pk))
 
-            serializer = self.serializer_class(exam)
+            serializer = ExamQuestionsListSerializer(exam)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except ValueError:
             return Response(EMS.E400_INVALID_DATA("요청"), status=status.HTTP_400_BAD_REQUEST)
@@ -173,6 +180,7 @@ class ExamAdminRetrieveUpdateDestroyAPIView(APIView):
             return Response(EMS.E404_NOT_FOUND("수정할 쪽지시험 정보"), status=status.HTTP_404_NOT_FOUND)
 
     @extend_schema(
+        tags=["Exams"],
         summary="쪽지시험 수정",
         description="시험 제목, 과목 ID, 썸네일 등을 수정합니다.",
         request=ExamSerializer,
@@ -205,6 +213,7 @@ class ExamAdminRetrieveUpdateDestroyAPIView(APIView):
             raise
 
     @extend_schema(
+        tags=["Exams"],
         summary="쪽지시험 삭제",
         description="특정 쪽지시험을 삭제합니다. 관련 배포 정보 및 제출 내역에 영향을 줄 수 있습니다.",
         responses={204: None},

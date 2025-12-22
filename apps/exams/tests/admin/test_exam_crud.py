@@ -121,7 +121,7 @@ class ExamAdminViewTest(APITestCase):
         self.assertEqual(Exam.objects.count(), 4)
         response_data = response.data
         self.assertIn("thumbnail_img_url", response_data)
-        self.assertIn("subject_title", response_data)
+        self.assertIn("subject_name", response_data)
         self.assertNotIn("question_count", response_data)
 
     def test_update_exam_success(self) -> None:

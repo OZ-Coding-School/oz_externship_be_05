@@ -1,4 +1,4 @@
-from .admin_exam_serializer import ExamListSerializer, ExamSerializer
+from .admin_exam_serializer import ExamListSerializer, ExamSerializer, ExamQuestionsListSerializer
 
 # from .admin_deployment_serializer import
 # from .admin_exam_detail_serializer import
@@ -9,4 +9,5 @@ from .admin_exam_serializer import ExamListSerializer, ExamSerializer
 __all__ = [
     "ExamSerializer",
     "ExamListSerializer",
+    "ExamQuestionsListSerializer"
 ]
