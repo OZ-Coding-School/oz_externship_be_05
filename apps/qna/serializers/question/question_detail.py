@@ -26,7 +26,7 @@ class AnswerSerializer(serializers.Serializer):  # type: ignore[type-arg]
 
 
 class QuestionDetailSerializer(serializers.Serializer):  # type: ignore[type-arg]
-    question_id = serializers.IntegerField(source="id")
+    id = serializers.IntegerField(read_only=True)
     title = serializers.CharField()
     content = serializers.CharField()
     images = serializers.SerializerMethodField()

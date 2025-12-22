@@ -10,8 +10,6 @@ from apps.qna.services.question.question_list.category_utils import (
 
 
 class QuestionListSerializer(serializers.ModelSerializer[Question]):
-    question_id = serializers.IntegerField(source="id")
-
     category_path = serializers.SerializerMethodField()
 
     profile_img_url = serializers.CharField(
@@ -34,7 +32,7 @@ class QuestionListSerializer(serializers.ModelSerializer[Question]):
     class Meta:
         model = Question
         fields = [
-            "question_id",
+            "id",
             "category_path",
             "profile_img_url",
             "nickname",
