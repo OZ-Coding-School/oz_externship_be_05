@@ -9,13 +9,8 @@ from apps.user.models import User, Withdrawal
 
 # status field 생성 class
 class StatusMixin(serializers.Serializer[dict[str, Any]]):
-    status = serializers.SerializerMethodField()
+    status = serializers.CharField(source="status", read_only=True)
     course = serializers.ListField
-
-    def get_status(self, obj: User) -> str:
-        if Withdrawal.objects.filter(user=obj).exists():
-            return "withdrew"
-        return "active" if obj.is_active else "inactive"
 
 
 # course 응답 검증 시리얼라이저
