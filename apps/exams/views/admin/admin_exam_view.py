@@ -126,7 +126,7 @@ class ExamAdminListCreateAPIView(APIView):
                 return Response(EMS.E400_INVALID_REQUEST("시험 생성"), status=status.HTTP_400_BAD_REQUEST)
             raise
 
-        # subject_title N+1 쿼리 방지.
+        # subject_name N+1 쿼리 방지.
         exam_with_subject = exam_service.get_exam_by_id(exam.pk)
         response_serializer = ExamSerializer(exam_with_subject)
 
@@ -160,7 +160,7 @@ class ExamAdminRetrieveUpdateDestroyAPIView(APIView):
     @extend_schema(
         tags=["쪽지시험 관리"],
         summary="쪽지시험 상세 조회",
-        description="특정 ID의 쪽지시험 상세 정보와 집계 데이터(문제 수, 제출 수)를 조회합니다.",
+        description="특정 ID의 쪽지시험 상세 정보와 속한 문제를 조회합니다.",
         responses={200: ExamListSerializer},
     )
     def get(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> Response:
