@@ -19,31 +19,29 @@ def get_question_list(
     category_id: int | None = None,
     search_keyword: str | None = None,
     sort: str = "latest",
-    page: int,
-    size: int,
-) -> tuple[Sequence[Question], dict[str, int]]:
+) -> QuerySet[Question]:
 
     # base queryset
-    base_qs: QuerySet[Question] = (
+    base_qs = (
         Question.objects
         .select_related("author", "category")
         .annotate(answer_count=Count("answers", distinct=True)
     ))
 
-    answered: bool | None = None
+    answered = None
     if answer_status == "answered":
         answered = True
     elif answer_status == "unanswered":
         answered = False
 
     # 필터 단계
-    filtered_qs = filter_by_answered(base_qs, answered)
-    filtered_qs = filter_by_category(filtered_qs, category_id)
-    filtered_qs = filter_by_search(filtered_qs, search_keyword)
-    filtered_qs = filter_by_sort(filtered_qs, sort)
+    qs = filter_by_answered(base_qs, answered)
+    qs = filter_by_category(qs, category_id)
+    qs = filter_by_search(qs, search_keyword)
+    qs = filter_by_sort(qs, sort)
 
     # annotate 단계 (가짜 컬럼들)
-    annotated_qs = filtered_qs.annotate(
+    return qs.annotate(
         content_preview=Substr("content", 1, 100),
         thumbnail_image_url=Subquery(
             QuestionImage.objects
@@ -52,30 +50,3 @@ def get_question_list(
             .values("img_url")[:1]
         ),
     )
-
-    # pagination
-    paginator = Paginator(annotated_qs, size)
-
-    # 결과가 0건 → 예외 없이 빈 리스트 반환
-    if paginator.count == 0:
-        return [], {
-            "page": page,
-            "page_size": size,
-            "total_pages": 0,
-            "total_count": 0,
-        }
-
-    try:
-        page_obj = paginator.page(page)
-        object_list = list(page_obj.object_list)
-        current_page = page
-    except (EmptyPage, PageNotAnInteger):
-        object_list = []
-        current_page = page
-
-    return object_list, {
-        "page": current_page,
-        "page_size": size,
-        "total_pages": paginator.num_pages,
-        "total_count": paginator.count,
-    }

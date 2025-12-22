@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.core.exceptions.exception_messages import EMS
+from apps.qna.pagination import QuestionPageNumberPagination
 from apps.qna.permissions.question.question_create_permission import (
     QuestionCreatePermission,
 )
@@ -38,20 +39,22 @@ class QuestionAPIView(APIView):
     def get(self, request: Request) -> Response:
         self.validation_error_message = EMS.E400_INVALID_REQUEST("질문 목록 조회")["error_detail"]
 
+        # Query 파싱 (엄격 검증 X)
         query_serializer = QuestionListQuerySerializer(data=request.query_params)
         query_serializer.is_valid(raise_exception=True)
 
-        questions, page_info = get_question_list(**query_serializer.validated_data)
+        # QuerySet만 받아옴 (pagination 없음)
+        queryset = get_question_list(**query_serializer.validated_data)
 
-        return Response(
-            {
-                "page": page_info["page"],
-                "size": page_info["page_size"],
-                "total_count": page_info["total_count"],
-                "questions": QuestionListSerializer(questions, many=True).data,
-            },
-            status=status.HTTP_200_OK,
-        )
+        # DRF Pagination 적용
+        paginator = QuestionPageNumberPagination()
+        page = paginator.paginate_queryset(queryset, request)
+
+        # Serializer
+        serializer = QuestionListSerializer(page, many=True)
+
+        # DRF 표준 응답
+        return paginator.get_paginated_response(serializer.data)
 
     def post(self, request: Request) -> Response:
         self.validation_error_message = EMS.E400_INVALID_REQUEST("질문 등록")["error_detail"]
