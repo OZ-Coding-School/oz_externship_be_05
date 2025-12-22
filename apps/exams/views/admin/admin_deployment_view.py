@@ -1,10 +1,12 @@
+from django.db import IntegrityError
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from apps.core.utils.pagination import Pagination
+from apps.core.utils.paginations import Pagination
 from apps.core.utils.types import to_int
+from apps.exams.exceptions import DeploymentConflictException
 from apps.exams.permissions.admin_permission import AdminUserPermission
 from apps.exams.serializers.admin import (
     AdminDeploymentCreateResponseSerializer,
@@ -95,12 +97,15 @@ class DeploymentListCreateAPIView(AdminUserPermission):
         serializer = AdminDeploymentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        deployment, error_code = create_deployment(
-            cohort=serializer.validated_data["cohort"],
-            exam=serializer.validated_data["exam"],
-            duration_time=serializer.validated_data["duration_time"],
-            open_at=serializer.validated_data["open_at"],
-            close_at=serializer.validated_data["close_at"],
-        )
+        try:
+            deployment = create_deployment(
+                cohort=serializer.validated_data["cohort"],
+                exam=serializer.validated_data["exam"],
+                duration_time=serializer.validated_data["duration_time"],
+                open_at=serializer.validated_data["open_at"],
+                close_at=serializer.validated_data["close_at"],
+            )
+        except IntegrityError:
+            raise DeploymentConflictException(detail="이미 처리되었습니다.")
 
         return Response({"pk": deployment.pk}, status=status.HTTP_201_CREATED)
