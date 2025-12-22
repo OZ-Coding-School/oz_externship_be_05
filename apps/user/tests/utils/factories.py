@@ -1,8 +1,5 @@
-from __future__ import annotations
-
-from datetime import date, timedelta
-
-from django.utils import timezone
+from datetime import date
+from typing import Final
 
 from apps.courses.models.cohorts_models import Cohort
 from apps.courses.models.courses_models import Course
@@ -11,17 +8,17 @@ from apps.user.models import User
 
 def make_user(
     *,
-    email: str = "u@test.com",
-    password: str = "pass1234!!",
-    name: str = "name",
-    nickname: str = "nick",
-    phone_number: str = "01012345678",
-    gender: str = "M",
-    birthday: date = date(2000, 1, 1),
-    role: str = "U",
-    is_active: bool = True,
+    email: str,
+    password: str,
+    name: str,
+    nickname: str,
+    phone_number: str,
+    gender: str,
+    birthday: date,
+    role: str,
+    is_active: bool,
 ) -> User:
-    user = User.objects.create_user(
+    return User.objects.create_user(
         email=email,
         password=password,
         name=name,
@@ -32,24 +29,24 @@ def make_user(
         role=role,
         is_active=is_active,
     )
-    return user
 
 
-def make_course(*, name: str = "Backend", tag: str = "BE", description: str = "desc") -> Course:
-    return Course.objects.create(name=name, tag=tag, description=description)
+def make_course(*, name: str, tag: str, description: str) -> Course:
+    return Course.objects.create(name, tag, description)
 
 
 def make_cohort(
     *,
     course: Course,
-    number: int = 1,
-    max_student: int = 30,
+    number: int,
+    max_student: int,
+    start_date: date,
+    end_date: date,
 ) -> Cohort:
-    today = timezone.now().date()
     return Cohort.objects.create(
         course=course,
         number=number,
         max_student=max_student,
-        start_date=today,
-        end_date=today + timedelta(days=30),
+        start_date=start_date,
+        end_date=end_date,
     )
