@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.qna.models import Question
-from apps.qna.services.question.question_list.category_utils import build_category_path
+from apps.qna.services.question.question_list.category_utils import build_category_info, CategoryInfo
 
 
 class AuthorSerializer(serializers.Serializer):  # type: ignore[type-arg]
@@ -30,7 +30,7 @@ class QuestionDetailSerializer(serializers.Serializer):  # type: ignore[type-arg
     title = serializers.CharField()
     content = serializers.CharField()
     images = serializers.SerializerMethodField()
-    category_path = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
     view_count = serializers.IntegerField()
     created_at = serializers.DateTimeField()
     author = AuthorSerializer()
@@ -39,5 +39,6 @@ class QuestionDetailSerializer(serializers.Serializer):  # type: ignore[type-arg
     def get_images(self, obj: Question) -> list[str]:
         return [img.img_url for img in obj.images.all()]
 
-    def get_category_path(self, obj: Question) -> str:
-        return build_category_path(obj.category)["path"]
+    def get_category(self, obj: Question) -> CategoryInfo:
+        return build_category_info(obj.category)
+

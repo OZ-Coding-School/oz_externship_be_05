@@ -17,20 +17,24 @@ def get_descendant_category_ids(category_id: int) -> list[int]:
     return ids
 
 
-class CategoryPath(TypedDict):
+class CategoryInfo(TypedDict):
     id: int
-    path: str
+    depth: int
+    names: list[str]
 
 
-def build_category_path(category: QuestionCategory) -> CategoryPath:
+def build_category_info(category: QuestionCategory) -> CategoryInfo:
     names: list[str] = []
+    current = category
 
-    current: QuestionCategory | None = category
     while current is not None:
         names.append(current.name)
         current = current.parent
 
+    names.reverse()
+
     return {
         "id": category.id,
-        "path": " > ".join(reversed(names)),
+        "depth": len(names) - 1,
+        "names": names,
     }
