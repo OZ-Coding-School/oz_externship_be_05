@@ -26,7 +26,7 @@ class AdminAccountListAPITests(APITestCase):
             gender="M",
             birthday=date(1990, 1, 1),
             is_staff=True,
-            is_superuser=True, 
+            is_superuser=True,
             role=RoleChoices.AD,
         )
 
