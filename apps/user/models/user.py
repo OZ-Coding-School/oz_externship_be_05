@@ -6,9 +6,7 @@ from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
-
 from apps.core.models import TimeStampedModel
-from apps.user.models.withdraw import Withdrawal
 from apps.user.utils.nickname import generate_nickname
 
 
@@ -76,6 +74,7 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
 
     @property
     def status(self) -> str:
+        from apps.user.models.withdraw import Withdrawal
         is_withdrawing = getattr(self, "is_withdrawing", None)
         if is_withdrawing is None:
             is_withdrawing = Withdrawal.objects.filter(user_id=self.pk).exists()
