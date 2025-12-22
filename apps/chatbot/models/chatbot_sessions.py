@@ -17,7 +17,6 @@ class ChatbotSession(TimeStampedModel):
 
     class Meta:
         db_table = "chatbot_sessions"
-        ordering = ("-created_at", "-id")
         constraints = [
             models.UniqueConstraint(fields=("user", "question"), name="user_question_unique"),
         ]
