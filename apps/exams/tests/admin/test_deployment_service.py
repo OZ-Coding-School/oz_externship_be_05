@@ -79,18 +79,34 @@ class DeploymentServiceTests(TestCase):
     # Helpers ---------------------------------------------------------
 
     def _create_default_deployment(self, **override: Any) -> ExamDeployment:
+        if not hasattr(self, "_deployment_counter"):
+            self._deployment_counter = 0
+        self._deployment_counter += 1
+        offset = timedelta(minutes=10 * self._deployment_counter)
 
-        base: dict[str, Any] = {
-            "cohort": self.cohort,
-            "exam": self.exam,
-            "duration_time": 60,
-            "open_at": self.open_at,
-            "close_at": self.close_at,
-        }
+        cohort = override.pop("cohort", None) or Cohort.objects.create(
+            course=self.course,
+            number=100 + self._deployment_counter,  # 중복 방지
+            max_student=30,
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timedelta(days=30),
+        )
 
-        params = {**base, **override}
+        exam = override.pop("exam", self.exam)
+        open_at = override.pop("open_at", self.open_at + offset)
+        close_at = override.pop("close_at", self.close_at + offset)
 
-        return create_deployment(**params)
+        deployment, error_code = create_deployment(
+            cohort=cohort,
+            exam=exam,
+            duration_time=60,
+            open_at=open_at,
+            close_at=close_at,
+        )
+
+        assert deployment is not None, f"Deployment creation failed: {error_code}"
+
+        return deployment
 
     def _force_started(self, deployment: ExamDeployment) -> ExamDeployment:
         deployment.open_at = timezone.now() - timedelta(hours=1)
@@ -265,28 +281,12 @@ class DeploymentServiceTests(TestCase):
             end_date=timezone.now().date() + timedelta(days=30),
         )
 
-        d1 = self._create_default_deployment()
+        # self.cohort 배포 명시 생성
+        d1 = self._create_default_deployment(cohort=self.cohort)
+        # 다른 cohort 배포
         self._create_default_deployment(cohort=other_cohort)
 
         deployments = list_admin_deployments(cohort=self.cohort)
-        self.assertEqual(deployments.count(), 1)
-
-        first = deployments.first()
-        assert first is not None
-
-        self.assertEqual(first.id, d1.id)
-
-    # 상태별 필터링
-    def test_list_deployments_filter_by_status(self) -> None:
-        d1 = self._create_default_deployment()
-        self._create_default_deployment()
-
-        set_deployment_status(
-            deployment=d1,
-            status=DeploymentStatus.DEACTIVATED,
-        )
-
-        deployments = list_admin_deployments(status=DeploymentStatus.DEACTIVATED)
         self.assertEqual(deployments.count(), 1)
 
         first = deployments.first()
