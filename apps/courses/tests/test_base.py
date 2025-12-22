@@ -29,6 +29,7 @@ class BaseCourseTestCase(APITestCase):
             name="테스트 과정",
             tag=1,
             description="테스트 과정",
+            thumbnail_img_url="https://example.com/test.jpg",
         )
         # 3. 수강중 기수 생성
         self.active_cohort = Cohort.objects.create(
