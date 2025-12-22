@@ -1,6 +1,7 @@
-from typing import Any
+from typing import Any, cast
 
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.request import Request
 from rest_framework.response import Response
 
 
@@ -11,11 +12,15 @@ class Pagination(PageNumberPagination):
 
     def get_paginated_response(self, data: Any) -> Response:
 
+        current_size = self.get_page_size(cast(Request, self.request)) or self.page_size
+
         return Response(
             {
                 "page": self.page.number if self.page else 1,
-                "size": self.get_page_size(self.request) or self.page_size,
-                "total_count": self.page.paginator.count if self.page else 0,
+                "size": current_size,
+                "count": self.page.paginator.count if self.page else 0,
+                "previous": self.get_previous_link(),
+                "next": self.get_next_link(),
                 "results": data,
             }
         )
