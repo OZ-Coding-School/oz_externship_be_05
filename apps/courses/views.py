@@ -12,9 +12,9 @@ from apps.courses.serializers.courses_serializers import CourseCohortsSerializer
 
 
 class CourseCohortsView(APIView):
-    permission_classes = [IsAdminUser]
+    # permission_classes = [IsAdminUser]
 
-    def get(self, request: Request, course_id: int) -> Response:
+    def get(self, request: Request) -> Response:
         try:
             courses = Course.objects.prefetch_related(
                 Prefetch(
@@ -24,8 +24,8 @@ class CourseCohortsView(APIView):
                     ),
                     to_attr="select_enable_cohorts",
                 )
-            ).get(id=course_id)
+            ).all()
         except Course.DoesNotExist:
             return Response(EMS.E404_NOT_FOUND("과정 정보"), status=status.HTTP_404_NOT_FOUND)
 
-        return Response(CourseCohortsSerializer(courses).data)
+        return Response(CourseCohortsSerializer(courses, many=True).data)
