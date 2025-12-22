@@ -10,10 +10,10 @@ urlpatterns: list[URLPattern | URLResolver] = [
         ExamSubmissionCreateAPIView.as_view(),
         name="exam_submit",
     ),
-    # path(
-    #     # student/result
-    #     "/api/v1/exams/submissions/{submission_id}",
-    #     ExamResultView.as_view(),
-    #     name = "exam__result",
-    # )
+    path(
+        # student/result
+        "submissions/<int:submission_id>",
+        ExamResultView.as_view(),
+        name="exam_result",
+    ),
 ]
