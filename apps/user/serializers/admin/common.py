@@ -7,12 +7,6 @@ from apps.courses.models.courses_models import Course
 from apps.user.models import User, Withdrawal
 
 
-# status field 생성 class
-class StatusMixin(serializers.Serializer[dict[str, Any]]):
-    status = serializers.CharField(source="status", read_only=True)
-    course = serializers.ListField
-
-
 # course 응답 검증 시리얼라이저
 class CourseMiniSerializer(serializers.ModelSerializer[Course]):
     class Meta:
@@ -45,7 +39,7 @@ class UserWithdrawalMiniSerializer(serializers.ModelSerializer[User]):
         fields = ("id", "email", "name", "role", "birthday")
 
 
-class UserWithdrawalDetailMiniSerializer(StatusMixin, serializers.ModelSerializer[User]):
+class UserWithdrawalDetailMiniSerializer( serializers.ModelSerializer[User]):
     class Meta:
         model = User
         fields = ("id", "email", "name", "gender", "role", "status", "profile_image_url", "created_at")
