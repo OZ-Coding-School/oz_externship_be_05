@@ -9,10 +9,6 @@ from apps.user.serializers.admin.accounts import (
 )
 from apps.user.tests.utils.serializer_asserts import SerializerAssertsMixin
 
-ROLE_USER = {"U", "AD"}
-ROLE_COHORT = {"TA", "ST"}
-ROLE_COURSES = {"OM", "LC"}
-
 
 class AdminAccountListSerialzierTests(SerializerAssertsMixin, TestCase):
     user: ClassVar[User]
