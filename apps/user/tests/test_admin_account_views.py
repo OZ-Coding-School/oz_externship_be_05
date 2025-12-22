@@ -115,3 +115,9 @@ class AdminAccountListAPITests(APITestCase):
         resp = self.client.get(self.url, {"page_size": 2})
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(len(resp.data["results"]), 2)
+
+    def test_invalid_ordering_and_direction_fallbacks_to_default(self) -> None:
+        resp = self.client.get(self.url, {"ordering": "nope", "direction": "nope"})
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn("results", resp.data)
+        self.assertIsInstance(resp.data["results"], list)
