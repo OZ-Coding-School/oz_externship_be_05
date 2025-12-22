@@ -1,13 +1,9 @@
-from datetime import date, timedelta
+from datetime import date
 from typing import ClassVar
 
 from django.test import TestCase
-from django.utils import timezone
 
-from apps.courses.models.cohorts_models import Cohort
-from apps.courses.models.courses_models import Course
 from apps.user.models import User
-from apps.user.models.role import CohortStudent
 from apps.user.serializers.admin.accounts import (
     AdminAccountListSerializer,
 )
