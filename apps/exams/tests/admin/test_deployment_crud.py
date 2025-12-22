@@ -10,6 +10,7 @@ from rest_framework.test import APITestCase
 from apps.core.utils.base62 import Base62
 from apps.courses.models import Cohort, Course, Subject
 from apps.exams.models import Exam, ExamDeployment
+from apps.exams.models.exam_deployment import DeploymentStatus
 from apps.exams.services.admin.admin_deployment_service import create_deployment
 from apps.user.models.user import GenderChoices, RoleChoices, User
 
@@ -100,16 +101,13 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         close_at = override.pop("close_at", open_at + timedelta(hours=1))
         duration_time = override.pop("duration_time", 60)
 
-        deployment, error_code = create_deployment(
+        deployment = create_deployment(
             cohort=cohort,
             exam=exam,
             duration_time=duration_time,
             open_at=open_at,
             close_at=close_at,
         )
-
-        if error_code is not None or deployment is None:
-            raise Exception(f"Deployment creation failed: {error_code}")
 
         return deployment
 
@@ -124,11 +122,18 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         response = self.client.get(self.url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("page", response.data)
-        self.assertIn("size", response.data)
-        self.assertIn("total_count", response.data)
-        self.assertIn("deployments", response.data)
-        self.assertEqual(response.data["total_count"], 15)
+
+        response_json = response.json()
+        self.assertIn("count", response_json)
+        self.assertIn("results", response_json)
+
+        self.assertEqual(response_json["count"], 15)
+        self.assertEqual(len(response_json["results"]), 10)
+
+        first_deployment = response_json["results"][0]
+        self.assertIn("id", first_deployment)
+        self.assertIn("exam", first_deployment)
+        self.assertIn("cohort", first_deployment)
 
     def test_get_deployments_as_normal_user_forbidden(self) -> None:
         """일반 유저(403 Forbidden)"""
@@ -145,7 +150,7 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         response = self.client.get(self.url, {"page": 1, "size": 5})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["deployments"]), 5)
+        self.assertEqual(len(response.data["results"]), 5)
         self.assertEqual(response.data["page"], 1)
         self.assertEqual(response.data["size"], 5)
 
@@ -171,9 +176,9 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         response = self.client.get(self.url, {"cohort_id": other_cohort.id})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["total_count"], 1)
+        self.assertEqual(response.data["count"], 1)
         self.assertEqual(
-            response.data["deployments"][0]["cohort_number"],
+            response.data["results"][0]["cohort"]["number"],
             other_cohort.number,
         )
 
@@ -184,7 +189,7 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         response = self.client.get(self.url, {"subject_id": self.subject.id})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["total_count"], 15)
+        self.assertEqual(response.data["count"], 15)
 
     def test_sorting_by_created_at_desc(self) -> None:
         """created_at desc 정렬 확인"""
@@ -196,10 +201,7 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         latest_id = self.deployments[-1].id
-        self.assertEqual(
-            response.data["deployments"][0]["deployment_id"],
-            latest_id,
-        )
+        self.assertEqual(response.data["results"][0]["id"], latest_id)
 
     def test_invalid_query_params(self) -> None:
         """잘못된 query parameter(int가 아님) 입력 시 400 Bad Request 확인"""
@@ -230,9 +232,13 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
             "open_at": (timezone.now() + timedelta(minutes=1)).isoformat(),
             "close_at": (timezone.now() + timedelta(hours=2)).isoformat(),
         }
+
         response = self.client.post(self.url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["cohort_id"], new_cohort.id)
+
+        response_json = response.json()
+        self.assertIn("pk", response_json)
+        self.assertIsInstance(response_json["pk"], int)
 
     def test_create_deployment_forbidden_for_normal_user(self) -> None:
         """일반 유저가 배포 생성 시 403 Forbidden 확인"""
@@ -277,6 +283,12 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         """이미 존재하는 cohort+exam 배포 생성 시 409 Conflict 확인"""
         self.client.force_authenticate(user=self.admin_user)
         existing = self.deployments[0]
+
+        # 활성화 상태 + open_at <= now로 설정
+        existing.status = DeploymentStatus.ACTIVATED
+        existing.open_at = timezone.now() - timedelta(minutes=1)
+        existing.save(update_fields=["status", "open_at"])
+
         data = {
             "cohort": existing.cohort.id,
             "exam": existing.exam.id,
@@ -286,3 +298,7 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         }
         response = self.client.post(self.url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn(
+            f"동일한 조건의 배포가 이미 존재합니다: '{existing.exam.title}' - {existing.cohort.number}기",
+            response.data["error_detail"],
+        )
