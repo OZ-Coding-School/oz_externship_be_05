@@ -6,10 +6,11 @@ from django.db import transaction
 from django.db.models import Avg, Count, FloatField, QuerySet, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
-from rest_framework.exceptions import APIException, ValidationError
+from rest_framework.exceptions import ValidationError
 
 from apps.core.utils.base62 import Base62
 from apps.courses.models import Cohort
+from apps.exams.exceptions import DeploymentConflictException
 from apps.exams.models import Exam, ExamDeployment, ExamQuestion
 from apps.exams.models.exam_deployment import DeploymentStatus
 from apps.exams.services.admin.dtos import DeploymentDetailDTO, QuestionSnapshotDTO
@@ -138,13 +139,15 @@ def create_deployment(
 
     # 중복 배포 확인
     if ExamDeployment.objects.filter(cohort=cohort, exam=exam).exists():
-        raise APIException(detail="동일한 조건의 배포가 이미 존재합니다.", code="conflict", status_code=409)
+        raise DeploymentConflictException(
+            detail=f"동일한 조건의 배포가 이미 존재합니다: '{exam.title}' - {cohort.number}기 "
+        )
 
     # 이미 해당 기수에 활성화된 배포내역이 있는지 확인
     active_deployments = ExamDeployment.objects.filter(cohort=cohort, exam=exam, status=DeploymentStatus.ACTIVATED)
     for dep in active_deployments:
         if dep.open_at <= now:
-            raise APIException(detail="이미 활성화된 시험입니다.", code="conflict", status_code=409)
+            raise DeploymentConflictException(detail=f"이미 활성화된 시험입니다: '{exam.title}' - {cohort.number}기")
 
     # 정상 생성
     deployment = ExamDeployment.objects.create(
