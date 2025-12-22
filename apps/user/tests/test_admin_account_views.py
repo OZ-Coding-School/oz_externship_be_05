@@ -104,9 +104,12 @@ class AdminAccountListAPITests(APITestCase):
         self.assertIn(self.u2.id, ids)
         self.assertNotIn(self.u3.id, ids)
 
-    def test_invalid_role_returns_400(self) -> None:
+    def test_invalid_role_is_ignored_returns_200(self) -> None:
+        resp_all = self.client.get(self.url)
+        self.assertEqual(resp_all.status_code, 200)
         resp = self.client.get(self.url, {"role": "staf"})
-        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.data["count"], resp_all.data["count"])
 
     def test_pagination_page_size(self) -> None:
         resp = self.client.get(self.url, {"page_size": 2})

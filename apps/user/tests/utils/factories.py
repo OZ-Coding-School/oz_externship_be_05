@@ -32,7 +32,7 @@ def make_user(
 
 
 def make_course(*, name: str, tag: str, description: str) -> Course:
-    return Course.objects.create(name, tag, description)
+    return Course.objects.create(name=name, tag=tag, description=description)
 
 
 def make_cohort(
