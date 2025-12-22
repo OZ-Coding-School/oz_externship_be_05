@@ -22,7 +22,7 @@ class AnswerSerializer(serializers.Serializer):  # type: ignore[type-arg]
     created_at = serializers.DateTimeField()
     is_adopted = serializers.BooleanField()
     author = AuthorSerializer()
-    comments = AnswerCommentSerializer(source="answer_comments", many=True)
+    comments = AnswerCommentSerializer(many=True)
 
 
 class QuestionDetailSerializer(serializers.Serializer):  # type: ignore[type-arg]
