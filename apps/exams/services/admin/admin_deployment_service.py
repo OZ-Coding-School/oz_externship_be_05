@@ -1,12 +1,12 @@
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional
 
 from django.db import transaction
-from django.db.models import Avg, Count, Field, FloatField, QuerySet, Value
+from django.db.models import Avg, Count, FloatField, QuerySet, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import APIException, ValidationError
 
 from apps.core.utils.base62 import Base62
 from apps.courses.models import Cohort
@@ -127,25 +127,24 @@ def get_admin_deployment_detail(*, deployment_id: int) -> DeploymentDetailDTO:
 @transaction.atomic
 def create_deployment(
     *, cohort: Cohort, exam: Exam, duration_time: int, open_at: datetime, close_at: datetime
-) -> Tuple[Optional[ExamDeployment], Optional[str]]:
+) -> ExamDeployment:
     """
     배포 생성
-    반환값:
-        - 성공: (ExamDeployment, None)
-        - 실패: (None, 실패 사유 문자열)
+    성공: ExamDeployment 반환
+    실패: 409
     """
 
     now = timezone.now()
 
     # 중복 배포 확인
     if ExamDeployment.objects.filter(cohort=cohort, exam=exam).exists():
-        return None, "DUPLICATE"
+        raise APIException(detail="동일한 조건의 배포가 이미 존재합니다.", code="conflict", status_code=409)
 
-    # 이미 시작된 시험 확인
+    # 이미 해당 기수에 활성화된 배포내역이 있는지 확인
     active_deployments = ExamDeployment.objects.filter(cohort=cohort, exam=exam, status=DeploymentStatus.ACTIVATED)
     for dep in active_deployments:
         if dep.open_at <= now:
-            return None, "ALREADY_STARTED"
+            raise APIException(detail="이미 활성화된 시험입니다.", code="conflict", status_code=409)
 
     # 정상 생성
     deployment = ExamDeployment.objects.create(
@@ -158,7 +157,7 @@ def create_deployment(
         status=DeploymentStatus.ACTIVATED,
         questions_snapshot=_build_questions_snapshot(exam),
     )
-    return deployment, None
+    return deployment
 
 
 # 시험 배포 정보 수정 (open_at, close_at, duration_time) -------------------------

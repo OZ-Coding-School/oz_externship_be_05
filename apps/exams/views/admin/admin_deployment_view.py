@@ -71,7 +71,6 @@ class DeploymentListCreateAPIView(AdminUserPermission):
         serializer = AdminDeploymentListItemSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
 
-
     # --------------------
     # POST - 배포 생성
     # --------------------
@@ -103,23 +102,5 @@ class DeploymentListCreateAPIView(AdminUserPermission):
             open_at=serializer.validated_data["open_at"],
             close_at=serializer.validated_data["close_at"],
         )
-
-        # 에러 처리
-        if error_code is not None:
-            if error_code == "DUPLICATE":
-                return Response(
-                    {"detail": "동일한 조건의 배포가 이미 존재합니다."},
-                    status=status.HTTP_409_CONFLICT,
-                )
-            elif error_code == "ALREADY_STARTED":
-                return Response(
-                    {"detail": "이미 시작된 시험입니다."},
-                    status=status.HTTP_409_CONFLICT,
-                )
-            else:
-                return Response(
-                    {"detail": "배포 생성 실패"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
 
         return Response({"pk": deployment.pk}, status=status.HTTP_201_CREATED)
