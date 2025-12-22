@@ -102,7 +102,8 @@ class SMSSender(Sender):
         self.verify_service_sid = getattr(settings, "TWILIO_VERIFY_SERVICE_SID", None)
 
         if not self.account_sid or not self.auth_token or not self.verify_service_sid:
-            raise RuntimeError("Twilio 설정값이 안보임 : (ACCOUNT_SID / AUTH_TOKEN / VERIFY_SERVICE_SID).")
+            logger.exception(f"Twilio 설정값 ㅇㄷ감 : TWILIO_ACCOUNT_SID={self.account_sid} , TWILIO_AUTH_TOKEN={self.auth_token} , TWILIO_VERIFY_SERVICE_SID={self.verify_service_sid}")
+            raise APIException("SMS 인증서비스에 문제가 발생했습니다.")
 
         self.client = Client(self.account_sid, self.auth_token)
 
@@ -144,4 +145,3 @@ class SMSSender(Sender):
             raise
         except Exception as exc:
             logger.exception(f"SMS 검증 실패 : {exc}")
-            raise ValidationError("유효하지 않은 번호 혹은 코드입니다.")

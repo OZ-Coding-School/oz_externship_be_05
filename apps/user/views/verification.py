@@ -45,11 +45,7 @@ class SendSMSVerificationAPIView(APIView):
     def post(self, request: Request) -> Response:
         serializer = SMSRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        try:
-            sender = SMSSender()
-        except RuntimeError:
-            Response({"error_detail": "SMS 전송 중 문제가 발생했습니다."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        sender.send(serializer.validated_data["phone_number"])
+        SMSSender().send(serializer.validated_data["phone_number"])
         return Response({"detail": "SMS 인증 코드가 전송되었습니다."}, status=status.HTTP_200_OK)
 
 
@@ -59,11 +55,7 @@ class VerifySMSAPIView(APIView):
     def post(self, request: Request) -> Response:
         serializer = PhoneCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        try:
-            sender = SMSSender()
-        except RuntimeError:
-            Response({"error_detail": "SMS 인증에 문제가 발생했습니다."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        token = sender.verify_code(
+        token = SMSSender().verify_code(
             serializer.validated_data["phone_number"],
             serializer.validated_data["sms_code"],
         )
