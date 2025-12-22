@@ -10,6 +10,7 @@ from rest_framework.exceptions import ValidationError
 
 from apps.core.utils.base62 import Base62
 from apps.courses.models import Cohort
+from apps.exams.constants import DEFAULT_DEPLOYMENT_SORT, DEPLOYMENT_SORT_OPTIONS
 from apps.exams.exceptions import DeploymentConflictException
 from apps.exams.models import Exam, ExamDeployment, ExamQuestion
 from apps.exams.models.exam_deployment import DeploymentStatus
@@ -23,7 +24,7 @@ from apps.exams.services.admin.validators.deployment_validator import (
 def list_admin_deployments(
     *,
     cohort_id: Optional[int] = None,
-    cohort: Optional[Any] = None,
+    cohort: Optional[Cohort] = None,
     subject_id: Optional[int] = None,
     search_keyword: Optional[str] = None,
     sort: str = "created_at",
@@ -56,8 +57,8 @@ def list_admin_deployments(
         qs = qs.filter(exam__title__icontains=search_keyword)
 
     # 정렬(최신순, 응시횟수 많은 순, 평균 점수 높은 순)
-    if sort not in {"created_at", "submit_count", "avg_score"}:
-        sort = "created_at"
+    if sort not in DEPLOYMENT_SORT_OPTIONS.values():
+        sort = DEFAULT_DEPLOYMENT_SORT
 
     prefix = "-" if order == "desc" else ""
 
