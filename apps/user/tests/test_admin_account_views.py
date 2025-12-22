@@ -121,3 +121,21 @@ class AdminAccountListAPITests(APITestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn("results", resp.data)
         self.assertIsInstance(resp.data["results"], list)
+
+    def test_search_by_id_when_search_is_digit(self) -> None:
+        resp = self.client.get(self.url, {"search": str(self.u2.id)})
+        self.assertEqual(resp.status_code, 200)
+        ids = [row["id"] for row in resp.data["results"]]
+        self.assertIn(self.u2.id, ids)
+
+    def test_filter_status_activated(self) -> None:
+        resp = self.client.get(self.url, {"status": "activated"})
+        self.assertEqual(resp.status_code, 200)
+        ids = [row["id"] for row in resp.data["results"]]
+        self.assertIn(self.u1.id, ids)
+
+    def test_filter_role_admin(self) -> None:
+        resp = self.client.get(self.url, {"role": "admin"})
+        self.assertEqual(resp.status_code, 200)
+        ids = [row["id"] for row in resp.data["results"]]
+        self.assertIn(self.admin.id, ids)
