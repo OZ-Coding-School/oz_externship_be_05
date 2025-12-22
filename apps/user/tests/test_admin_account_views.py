@@ -139,3 +139,12 @@ class AdminAccountListAPITests(APITestCase):
         self.assertEqual(resp.status_code, 200)
         ids = [row["id"] for row in resp.data["results"]]
         self.assertIn(self.admin.id, ids)
+
+    def test_invalid_status_is_ignored_returns_200(self) -> None:
+        resp_all = self.client.get(self.url)
+        self.assertEqual(resp_all.status_code, 200)
+
+        resp = self.client.get(self.url, {"status": "actived"})
+        self.assertEqual(resp.status_code, 200)
+
+        self.assertEqual(resp.data["count"], resp_all.data["count"])
