@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.courses.models import Cohort, Course, Subject
+from apps.exams.exceptions import DeploymentConflictException
 from apps.exams.models import Exam, ExamDeployment, ExamQuestion
 from apps.exams.models.exam_deployment import DeploymentStatus
 from apps.exams.models.exam_question import QuestionType
@@ -79,12 +80,12 @@ class DeploymentServiceTests(TestCase):
     # Helpers ---------------------------------------------------------
 
     def _create_default_deployment(self, **override: Any) -> ExamDeployment:
-        if not hasattr(self, "_deployment_counter"):
-            self._deployment_counter = 0
-        self._deployment_counter += 1
+        self._deployment_counter = getattr(self, "_deployment_counter", 0) + 1
         offset = timedelta(minutes=10 * self._deployment_counter)
 
-        cohort = override.pop("cohort", None) or Cohort.objects.create(
+        pop = override.pop
+
+        cohort = pop("cohort", None) or Cohort.objects.create(
             course=self.course,
             number=100 + self._deployment_counter,  # 중복 방지
             max_student=30,
@@ -92,19 +93,17 @@ class DeploymentServiceTests(TestCase):
             end_date=timezone.now().date() + timedelta(days=30),
         )
 
-        exam = override.pop("exam", self.exam)
-        open_at = override.pop("open_at", self.open_at + offset)
-        close_at = override.pop("close_at", self.close_at + offset)
+        exam = pop("exam", self.exam)
+        open_at = pop("open_at", self.open_at + offset)
+        close_at = pop("close_at", self.close_at + offset)
 
-        deployment, error_code = create_deployment(
+        deployment = create_deployment(
             cohort=cohort,
             exam=exam,
             duration_time=60,
             open_at=open_at,
             close_at=close_at,
         )
-
-        assert deployment is not None, f"Deployment creation failed: {error_code}"
 
         return deployment
 
@@ -146,6 +145,35 @@ class DeploymentServiceTests(TestCase):
         deployment = ExamDeployment.objects.get()
 
         self.assertGreaterEqual(deployment.open_at, deployment.close_at)
+
+    # 중복 배포 예외처리
+    def test_create_duplicate_deployment(self) -> None:
+        deployment = self._create_default_deployment()
+
+        # 중복 배포 시도
+        with self.assertRaises(DeploymentConflictException) as cm:
+            self._create_default_deployment(cohort=deployment.cohort, exam=deployment.exam)
+
+        self.assertIn(
+            f"동일한 조건의 배포가 이미 존재합니다: '{deployment.exam.title}' - {deployment.cohort.number}기",
+            str(cm.exception),
+        )
+
+    # 이미 활성화된 시험 예외처리
+    def test_create_deployment_with_active_conflict(self) -> None:
+        deployment = self._create_default_deployment()
+
+        deployment.status = DeploymentStatus.ACTIVATED
+        deployment.open_at = timezone.now() - timedelta(hours=1)
+        deployment.save(update_fields=["status", "open_at"])
+
+        with self.assertRaises(DeploymentConflictException) as cm:
+            self._create_default_deployment(cohort=deployment.cohort, exam=deployment.exam)
+
+        self.assertIn(
+            f"동일한 조건의 배포가 이미 존재합니다: '{deployment.exam.title}' - {deployment.cohort.number}기",
+            str(cm.exception),
+        )
 
     # UPDATE ---------------------------------------------------------
 
