@@ -1,5 +1,4 @@
 from django.db.models import Exists, OuterRef, Q
-from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -10,18 +9,22 @@ from apps.user.models.withdraw import Withdrawal
 from apps.user.pagination import AdminAccountPagination
 from apps.user.serializers.admin.accounts import AdminAccountListSerializer
 
-STATUS_QUERY_VALUES = {"activated", "deactivated", "withdrew"}
-ROLE_QUERY_VALUES = {"admin", "staff", "user", "student"}
 
-
-ORDERING_MAP = {
-    "id": "id",
-    "created_at": "created_at",
-    "birthday": "birthday",
-}
-ORDERING_ALLOWED = set(ORDERING_MAP.keys())
+ORDERING_ALLOWED = {"id", "created_at", "birthday"}
 DIRECTION_ALLOWED = {"asc", "desc"}
 
+STATUS_FILTERS = {
+    "withdrew" : Q(is_withdrawing=True),
+    "activated" : Q(is_withdrawing=False, is_active=True),
+    "deactivated" : Q(is_withdrawing=False, is_active=False),
+}
+
+ROLE_FILTERS = {
+    "admin": Q(role=RoleChoices.AD),
+    "user": Q(role=RoleChoices.USER),
+    "student": Q(role=RoleChoices.ST),
+    "staff": Q(role__in=[RoleChoices.TA, RoleChoices.LC, RoleChoices.OM])
+}
 
 class AdminAccountListAPIView(APIView):
     permission_classes = [IsAdminUser]
@@ -39,25 +42,15 @@ class AdminAccountListAPIView(APIView):
             qs = qs.filter(cond)
 
         status = request.query_params.get("status")
-        if status:
-            if status == "withdrew":
-                qs = qs.filter(is_withdrawing=True)
-            elif status == "activated":
-                qs = qs.filter(is_withdrawing=False, is_active=True)
-            elif status == "deactivated":
-                qs = qs.filter(is_withdrawing=False, is_active=False)
+        status_query = STATUS_FILTERS.get(status or "")
+        if status_query:
+            qs = qs.filter(status_query)
 
         role = request.query_params.get("role")
-        if role:
-            if role == "admin":
-                qs = qs.filter(role=RoleChoices.AD)
-            elif role == "user":
-                qs = qs.filter(role=RoleChoices.USER)
-            elif role == "student":
-                qs = qs.filter(role=RoleChoices.ST)
-            elif role == "staff":
-                qs = qs.filter(role__in=[RoleChoices.TA, RoleChoices.LC, RoleChoices.OM])
-
+        role_query = ROLE_FILTERS.get(role or "")
+        if role_query:
+            qs = qs.filter(role_query)
+            
         ordering = (request.query_params.get("ordering") or "id").strip()
         direction = (request.query_params.get("direction") or "desc").strip()
 
@@ -66,7 +59,7 @@ class AdminAccountListAPIView(APIView):
         if direction not in DIRECTION_ALLOWED:
             direction = "desc"
 
-        order_field = ORDERING_MAP[ordering]
+        order_field = ordering
         if direction == "desc":
             order_field = f"-{order_field}"
         qs = qs.order_by(order_field)
