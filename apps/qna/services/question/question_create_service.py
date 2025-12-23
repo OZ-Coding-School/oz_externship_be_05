@@ -1,15 +1,7 @@
 from typing import Any
 
-from apps.qna.exceptions.question_exceptions import CategoryNotFoundError
 from apps.qna.models import Question, QuestionCategory, QuestionImage
 from apps.user.models import User
-
-
-def get_category_or_raise(category_id: int) -> QuestionCategory:
-    try:
-        return QuestionCategory.objects.get(id=category_id)
-    except QuestionCategory.DoesNotExist:
-        raise CategoryNotFoundError()
 
 
 def create_question(
