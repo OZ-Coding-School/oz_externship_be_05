@@ -65,37 +65,38 @@ from apps.chatbot.services.completion_response_service import (
 #         },
 #     )
 
-    # completion 대화 생성 (기존 레거시, 삭제 예정)
-    # def post(self, request: Request, session_id: int) -> Response:
-    #     # 세션 검증: 종속여부 및 존재여부
-    #     session = get_object_or_404(ChatbotSession, id=session_id, user=request.user)
-    #
-    #     # 요청 데이터 검증
-    #     serializer = CompletionCreateSerializer(data=request.data)
-    #     serializer.is_valid(raise_exception=True)
-    #
-    #     # 사용자 메세지 저장 at service
-    #     user_completion = user_message_save(
-    #         session=session,
-    #         message=serializer.validated_data["message"],
-    #     )
-    #
-    #     # ai 응답 생성, 저장 at service
-    #     ai_completion = ai_response_generate(session=session, user_message=user_completion.message)
-    #
-    #     return Response(
-    #         {
-    #             "user_completion": CompletionSerializer(user_completion).data,
-    #             "ai_completion": CompletionSerializer(ai_completion).data,
-    #         },
-    #         status=status.HTTP_201_CREATED,
-    #     )
+# completion 대화 생성 (기존 레거시, 삭제 예정)
+# def post(self, request: Request, session_id: int) -> Response:
+#     # 세션 검증: 종속여부 및 존재여부
+#     session = get_object_or_404(ChatbotSession, id=session_id, user=request.user)
+#
+#     # 요청 데이터 검증
+#     serializer = CompletionCreateSerializer(data=request.data)
+#     serializer.is_valid(raise_exception=True)
+#
+#     # 사용자 메세지 저장 at service
+#     user_completion = user_message_save(
+#         session=session,
+#         message=serializer.validated_data["message"],
+#     )
+#
+#     # ai 응답 생성, 저장 at service
+#     ai_completion = ai_response_generate(session=session, user_message=user_completion.message)
+#
+#     return Response(
+#         {
+#             "user_completion": CompletionSerializer(user_completion).data,
+#             "ai_completion": CompletionSerializer(ai_completion).data,
+#         },
+#         status=status.HTTP_201_CREATED,
+#     )
+
 
 # SSE 스트리밍 AI 응답 생성 API
 class CompletionStreamAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @ extend_schema(
+    @extend_schema(
         tags=["AI 챗봇"],
         summary="AI 챗봇 응답 생성 API with Streaming",
         description="AI 챗봇과 사용자의 메세지를 생성/저장하는 API. user 메세지 저장 → AI 응답 생성·저장, 이후 둘 다 반환",
@@ -108,11 +109,11 @@ class CompletionStreamAPIView(APIView):
                 description="세션 PK ID",
             ),
         ],
-        responses= {
+        responses={
             "200": {
                 "type": "string",
                 "description": "SSE 스트리밍 응답",
-                },
+            },
             "400": {"type": "object", "example": {"error_detail": "Message field is essential"}},
             "401": {"type": "object", "example": {"error_detail": "Authentication credentials were not provided."}},
             "403": {"type": "object", "example": {"error_detail": "Session does not exist."}},
@@ -125,6 +126,7 @@ class CompletionStreamAPIView(APIView):
         @sync_to_async
         def get_session() -> ChatbotSession:
             return get_object_or_404(ChatbotSession, id=session_id, user=request.user)
+
         session = await get_session()
 
         # 요청 데이터 검증
