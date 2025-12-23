@@ -4,7 +4,7 @@ from typing import Any
 
 from rest_framework import serializers
 
-from apps.user.models import User
+from apps.user.models import User, WithdrawalReason
 from apps.user.serializers.base import BaseMixin
 from apps.user.serializers.mixins import SenderMixin, SMSTokenMixin
 
@@ -61,6 +61,8 @@ class ChangePasswordSerializer(serializers.Serializer[Any], BaseMixin):
 
 
 class ChangePhoneSerializer(SenderMixin, SMSTokenMixin, serializers.Serializer[Any]):
+    sms_token = BaseMixin.get_verify_token_field()
+
     def update(self, instance: User, validated_data: dict[str, Any]) -> User:
         phone_number = self.verify_sms_token(validated_data["sms_token"])
         if User.objects.exclude(pk=instance.pk).filter(phone_number=phone_number).exists():
@@ -68,3 +70,16 @@ class ChangePhoneSerializer(SenderMixin, SMSTokenMixin, serializers.Serializer[A
         instance.phone_number = phone_number
         instance.save(update_fields=["phone_number", "updated_at"])
         return instance
+
+
+class WithdrawalRequestSerializer(serializers.Serializer[Any]):
+    reason = serializers.ChoiceField(
+        choices=WithdrawalReason.choices,
+        required=False,
+        default=WithdrawalReason.OTHER,
+    )
+    reason_detail = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+    )

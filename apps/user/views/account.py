@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -18,6 +19,7 @@ from apps.user.serializers.account import (
     NicknameCheckSerializer,
     UserProfileSerializer,
     UserUpdateSerializer,
+    WithdrawalRequestSerializer,
 )
 
 
@@ -31,10 +33,20 @@ def get_authenticated_user(request: Request) -> User:
 class MeAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        tags=["회원관리"],
+        summary="내 정보 조회 API",
+        responses={200: None},
+    )
     def get(self, request: Request) -> Response:
         user = get_authenticated_user(request)
         return Response(UserProfileSerializer(user).data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        tags=["회원관리"],
+        summary="내 정보 수정 API",
+        responses={200: None},
+    )
     def patch(self, request: Request) -> Response:
         user = get_authenticated_user(request)
         serializer = UserUpdateSerializer(user, data=request.data, partial=True)
@@ -42,19 +54,23 @@ class MeAPIView(APIView):
         serializer.save()
         return Response(UserProfileSerializer(user).data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        tags=["회원관리"],
+        summary="회원탈퇴 신청 API",
+        responses={204: None},
+    )
     def delete(self, request: Request) -> Response:
         user = get_authenticated_user(request)
-        payload = request.data
-        reason_value = payload.get("reason") or WithdrawalReason.OTHER
-        if reason_value not in WithdrawalReason.values:
-            reason_value = WithdrawalReason.OTHER
-        detail = payload.get("reason_detail")
-        grace_days = getattr(settings, "WITHDRAWAL_GRACE_DAYS", 14)
-        due_date = timezone.now().date() + timedelta(days=grace_days)
+        serializer = WithdrawalRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         Withdrawal.objects.update_or_create(
             user=user,
-            defaults={"reason": reason_value, "reason_detail": detail, "due_date": due_date},
+            defaults={
+                "reason": serializer.validated_data["reason"],
+                "reason_detail": serializer.validated_data["reason_detail"],
+                "due_date": timezone.now().date() + timedelta(days=getattr(settings, "WITHDRAWAL_GRACE_DAYS", 14)),
+            },
         )
         user.is_active = False
         user.save(update_fields=["is_active", "updated_at"])
@@ -64,6 +80,11 @@ class MeAPIView(APIView):
 class CheckNicknameAPIView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        tags=["회원관리"],
+        summary="닉네임 중복 조회 API",
+        responses={200: None},
+    )
     def post(self, request: Request) -> Response:
         serializer = NicknameCheckSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -76,6 +97,11 @@ class CheckNicknameAPIView(APIView):
 class ChangePasswordAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        tags=["회원관리"],
+        summary="내 비밀번호 변경 API",
+        responses={200: None},
+    )
     def patch(self, request: Request) -> Response:
         serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
@@ -88,6 +114,11 @@ class ChangePasswordAPIView(APIView):
 class ChangePhoneAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        tags=["회원관리"],
+        summary="내 휴대폰 번호 변경 API",
+        responses={200: None},
+    )
     def patch(self, request: Request) -> Response:
         serializer = ChangePhoneSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
