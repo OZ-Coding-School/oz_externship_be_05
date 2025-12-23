@@ -70,32 +70,44 @@ class AdminDeploymentCreateResponseSerializer(serializers.Serializer[Any]):
     pk = serializers.IntegerField()
 
 
-# ----- 리스트 조회용 -----
-class ExamSerializer(serializers.Serializer[Any]):
+class ExamResponseSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     title = serializers.CharField()
     thumbnail_img_url = serializers.CharField()
 
 
-class SubjectSerializer(serializers.Serializer[Any]):
+class SubjectResponseSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     name = serializers.CharField(source="title")
 
 
-class CourseSerializer(serializers.Serializer[Any]):
+class CourseResponseSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     name = serializers.CharField()
     tag = serializers.CharField()
 
 
-class CohortSerializer(serializers.Serializer[Any]):
+class CohortResponseSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     number = serializers.IntegerField()
     display = serializers.SerializerMethodField()
-    course = CourseSerializer()
+    course = CourseResponseSerializer()
 
     def get_display(self, obj: Cohort) -> str:
         return f"{obj.course.name} {obj.number}기"
+
+
+class DeploymentResponseSerializer(serializers.Serializer[Any]):
+    id = serializers.IntegerField()
+    exam_access_url = serializers.CharField()
+    access_code = serializers.CharField()
+    cohort = CohortResponseSerializer()
+    submit_count = serializers.IntegerField()
+    not_submitted_count = serializers.IntegerField()
+    duration_time = serializers.IntegerField()
+    open_at = serializers.DateTimeField()
+    close_at = serializers.DateTimeField()
+    created_at = serializers.DateTimeField()
 
 
 class AdminDeploymentListItemSerializer(serializers.Serializer[Any]):
@@ -103,9 +115,9 @@ class AdminDeploymentListItemSerializer(serializers.Serializer[Any]):
     submit_count = serializers.IntegerField()
     avg_score = serializers.FloatField(allow_null=True)
     status = serializers.CharField()
-    exam = ExamSerializer()
-    subject = SubjectSerializer(source="exam.subject")
-    cohort = CohortSerializer()
+    exam = ExamResponseSerializer()
+    subject = SubjectResponseSerializer(source="exam.subject")
+    cohort = CohortResponseSerializer()
     created_at = serializers.DateTimeField()
 
 
@@ -115,3 +127,10 @@ class AdminDeploymentListResponseSerializer(serializers.Serializer[Any]):
     previous = serializers.CharField(allow_null=True)
     next = serializers.CharField(allow_null=True)
     results = AdminDeploymentListItemSerializer(many=True)
+
+
+# 디테일 응답
+class AdminDeploymentDetailResponseSerializer(serializers.Serializer[Any]):
+    exam = ExamResponseSerializer()
+    subject = SubjectResponseSerializer()
+    deployment = DeploymentResponseSerializer()
