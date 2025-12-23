@@ -7,7 +7,6 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 
 from apps.core.models import TimeStampedModel
-from apps.courses.models.cohorts_models import Cohort
 from apps.user.utils.nickname import generate_nickname
 
 
@@ -72,6 +71,17 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["name", "birthday"]
+
+    @property
+    def status(self) -> str:
+        from apps.user.models.withdraw import Withdrawal
+
+        is_withdrawing = getattr(self, "is_withdrawing", None)
+        if is_withdrawing is None:
+            is_withdrawing = Withdrawal.objects.filter(user_id=self.pk).exists()
+        if is_withdrawing:
+            return "withdrew"
+        return "active" if self.is_active else "inactive"
 
     class Meta:
         db_table = "users"
