@@ -35,7 +35,7 @@ class SessionCreateListAPIView(APIView):
         return ChatbotSession.objects.filter(user=user.id)
 
     @extend_schema(
-        tags=["Session"],
+        tags=["AI 챗봇"],
         summary="세션 생성 API",
         request=SessionCreateSerializer,
         responses={
@@ -54,7 +54,7 @@ class SessionCreateListAPIView(APIView):
         return Response(output.data, status=status.HTTP_201_CREATED)
 
     @extend_schema(
-        tags=["Session"],
+        tags=["AI 챗봇"],
         summary="세션 리스트 확인 API",
         # responses={
         #     "400": {"object": "object", "example": {"error": "Bad Request"}},
@@ -86,7 +86,7 @@ class SessionDeleteView(APIView):
     serializer_class = SessionSerializer
 
     @extend_schema(
-        tags=["Session Delete"],
+        tags=["AI 챗봇"],
         summary="세션 삭제 API",
         request=SessionSerializer,
         responses={
