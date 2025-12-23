@@ -50,6 +50,7 @@ class ExamAdminListCreateAPIView(APIView):
     serializer_class: Type[BaseSerializer[Any]] = ExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
 
     @extend_schema(
+        tags=["쪽지시험 관리"],
         summary="쪽지시험 목록 조회",
         description="검색어, 과목 ID, 정렬 기능을 포함한 목록 조회 API입니다.",
         parameters=[
@@ -97,6 +98,7 @@ class ExamAdminListCreateAPIView(APIView):
             return Response(EMS.E400_INVALID_REQUEST("조회"), status=status.HTTP_400_BAD_REQUEST)
 
     @extend_schema(
+        tags=["쪽지시험 관리"],
         summary="쪽지시험 생성",
         description="새로운 쪽지시험을 생성합니다. 과목 ID, 시험 제목, 썸네일 URL을 입력받습니다.",
         request=ExamSerializer,  # 요청 시 사용할 시리얼라이저
@@ -156,6 +158,7 @@ class ExamAdminRetrieveUpdateDestroyAPIView(APIView):
             raise Exam.DoesNotExist  # 객체 미발견
 
     @extend_schema(
+        tags=["쪽지시험 관리"],
         summary="쪽지시험 상세 조회",
         description="특정 ID의 쪽지시험 상세 정보와 집계 데이터(문제 수, 제출 수)를 조회합니다.",
         responses={200: ExamListSerializer},
@@ -173,6 +176,7 @@ class ExamAdminRetrieveUpdateDestroyAPIView(APIView):
             return Response(EMS.E404_NOT_FOUND("수정할 쪽지시험 정보"), status=status.HTTP_404_NOT_FOUND)
 
     @extend_schema(
+        tags=["쪽지시험 관리"],
         summary="쪽지시험 수정",
         description="시험 제목, 과목 ID, 썸네일 등을 수정합니다.",
         request=ExamSerializer,
@@ -205,6 +209,7 @@ class ExamAdminRetrieveUpdateDestroyAPIView(APIView):
             raise
 
     @extend_schema(
+        tags=["쪽지시험 관리"],
         summary="쪽지시험 삭제",
         description="특정 쪽지시험을 삭제합니다. 관련 배포 정보 및 제출 내역에 영향을 줄 수 있습니다.",
         responses={204: None},
