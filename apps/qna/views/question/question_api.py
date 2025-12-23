@@ -1,5 +1,6 @@
 from typing import cast
 
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.permissions import BasePermission
@@ -36,6 +37,10 @@ class QuestionAPIView(APIView):
             return [QuestionCreatePermission()]
         return []
 
+    @extend_schema(
+        tags=["질의응답"],
+        summary="질문응답 목록 조회 API",
+    )
     def get(self, request: Request) -> Response:
         self.validation_error_message = "유효하지 않은 목록 조회 요청입니다."
 
@@ -52,6 +57,10 @@ class QuestionAPIView(APIView):
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(
+        tags=["질의응답"],
+        summary="질문등록 API",
+    )
     def post(self, request: Request) -> Response:
         self.validation_error_message = "유효하지 않은 질문 등록 요청입니다."
 
