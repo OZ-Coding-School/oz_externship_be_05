@@ -385,9 +385,9 @@ class DeploymentServiceTests(TestCase):
         deployment = self._create_default_deployment()
         found = get_admin_deployment_detail(deployment_id=deployment.id)
 
-        self.assertEqual(found.deployment_id, deployment.id)
+        self.assertEqual(found.id, deployment.id)
         self.assertEqual(found.exam_id, self.exam.id)
 
     def test_get_deployment_fail(self) -> None:
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValidationError):
             get_admin_deployment_detail(deployment_id=999)
