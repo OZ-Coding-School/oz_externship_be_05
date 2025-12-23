@@ -54,8 +54,8 @@ class KakaoSocialLoginTests(TestCase):
         self.assertEqual(resp.status_code, 302)
         self.assertIn("provider=kakao", resp["Location"])
 
-        self.assertIn("access", resp.cookies)
-        self.assertIn("refresh", resp.cookies)
+        self.assertIn("access_token", resp.cookies)
+        self.assertIn("refresh_token", resp.cookies)
 
     def test_kakao_login_requires_code(self) -> None:
         url = reverse("kakao-callback")
@@ -138,8 +138,8 @@ class NaverSocialLoginTests(TestCase):
 
         self.assertEqual(resp.status_code, 302)
         self.assertIn("provider=naver", resp["Location"])
-        self.assertIn("access", resp.cookies)
-        self.assertIn("refresh", resp.cookies)
+        self.assertIn("access_token", resp.cookies)
+        self.assertIn("refresh_token", resp.cookies)
 
     def test_naver_requires_code_and_state(self) -> None:
         url = reverse("naver-callback")
