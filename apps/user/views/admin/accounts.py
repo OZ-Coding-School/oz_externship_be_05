@@ -1,5 +1,7 @@
 from django.db.models import Exists, OuterRef, Q
 from drf_spectacular.utils import extend_schema
+from rest_framework import status
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -8,7 +10,14 @@ from rest_framework.views import APIView
 from apps.user.models.user import RoleChoices, User
 from apps.user.models.withdraw import Withdrawal
 from apps.user.pagination import AdminAccountPagination
-from apps.user.serializers.admin.accounts import AdminAccountListSerializer
+from apps.user.permissions import AdminAccountRoleUpdatePayloadPermission
+from apps.user.serializers.admin.accounts import (
+    AdminAccountListSerializer,
+    AdminAccountResponseSerializer,
+    AdminAccountRetrieveSerializer,
+    AdminAccountRoleUpdateSerializer,
+    AdminAccountUpdateSerializer,
+)
 
 ORDERING_ALLOWED = {"id", "created_at", "birthday"}
 DIRECTION_ALLOWED = {"asc", "desc"}
@@ -71,3 +80,36 @@ class AdminAccountListAPIView(APIView):
 
         serializer = AdminAccountListSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
+
+
+class AdminAccountRetrieveUpdateView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request: Request, account_id: int) -> Response:
+        user = get_object_or_404(User, pk=account_id)
+        serializer = AdminAccountRetrieveSerializer(instance=user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request: Request, account_id: int) -> Response:
+        user = get_object_or_404(User, pk=account_id)
+        serializer = AdminAccountUpdateSerializer(instance=user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        response_serializer = AdminAccountResponseSerializer(instance=user)
+        return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+    def delete(self, request: Request, account_id: int) -> Response:
+        user = get_object_or_404(User, pk=account_id)
+        user.delete()
+        return Response({"detail": f"유저 데이터가 삭제되었습니다. - pk:{account_id}"}, status=status.HTTP_200_OK)
+
+
+class AdminAccountRoleUpdateView(APIView):
+    permission_classes = [IsAdminUser, AdminAccountRoleUpdatePayloadPermission]
+
+    def patch(self, request: Request, account_id: int) -> Response:
+        user = get_object_or_404(User, pk=account_id)
+        serializer = AdminAccountRoleUpdateSerializer(instance=user, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "권한이 변경되었습니다."}, status=status.HTTP_200_OK)
