@@ -1,4 +1,4 @@
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -30,8 +30,9 @@ class IsStaffOrAdmin(BasePermission):
 class AdminUserPermission(APIView):
     """
     모든 관리자 전용 view단이 상속받을 기본 클래스
-    - IsAdminUser 권한을 적용합니다.
+    - JWT 인증 필수
+    - 관리자(role 기반) 권한 필수
     """
 
     authentication_classes = [JWTAuthentication]
-    permission_classes = [IsStaffOrAdmin]
+    permission_classes = [IsAuthenticated, IsStaffOrAdmin]
