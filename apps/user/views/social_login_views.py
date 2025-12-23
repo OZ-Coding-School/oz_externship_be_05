@@ -61,7 +61,7 @@ class KakaoLoginStartAPIView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Accounts"],
+        tags=["회원관리"],
         summary="카카오 로그인 시작",
         responses={302: None},
     )
@@ -83,7 +83,7 @@ class NaverLoginStartAPIView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Accounts"],
+        tags=["회원관리"],
         summary="네이버 로그인 시작",
         responses={302: None},
     )
