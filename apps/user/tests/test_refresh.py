@@ -32,8 +32,8 @@ class RefreshAPIViewTests(TestCase):
         response = RefreshAPIView.as_view()(request)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["refresh_token"], str(refresh))
         self.assertIn("access_token", response.data)
+        self.assertIn("refresh_token", response.cookies)
 
     def test_refresh_rejects_invalid_token(self) -> None:
         payload = {"refresh_token": "invalid.token.value"}

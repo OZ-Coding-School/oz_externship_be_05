@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework import status
+from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.test import APIRequestFactory
 
@@ -57,21 +58,24 @@ class LoginAPIViewTests(TestCase):
             phone_number="01012345678",
         )
 
-    @patch("apps.user.views.auth.issue_token_pair", return_value={"refresh_token": "r", "access_token": "a"})
+    @patch("apps.user.views.auth.issue_token_pair")
     @patch("apps.user.views.auth.LoginSerializer")
-    def test_login_success_returns_tokens(self, serializer_mock: Any, _token_mock: Any) -> None:
+    def test_login_success_returns_tokens(self, serializer_mock: Any, token_mock: Any) -> None:
         serializer = MagicMock()
         serializer.is_valid.return_value = None
         serializer.validated_data = {"user": self.user}
         serializer_mock.return_value = serializer
+        response = Response({"access_token": "a"}, status=status.HTTP_200_OK)
+        response.set_cookie("refresh_token", "r", httponly=True, path="/")
+        token_mock.return_value = response
 
         request = self.factory.post("/api/v1/accounts/login", {"email": "x", "password": "y"}, format="json")
 
         response = LoginAPIView.as_view()(request)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["refresh_token"], "r")
         self.assertEqual(response.data["access_token"], "a")
+        self.assertIn("refresh_token", response.cookies)
 
     @patch("apps.user.views.auth.LoginSerializer")
     def test_login_invalid_returns_400(self, serializer_mock: Any) -> None:
