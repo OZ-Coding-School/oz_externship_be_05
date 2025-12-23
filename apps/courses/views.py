@@ -14,7 +14,7 @@ from apps.courses.serializers.courses_serializers import CourseCohortsSerializer
 
 @extend_schema(
     summary="해당 과정 진행중인 기수 조회 API",
-    tags=["회원관리"],
+    tags=["과정-기수 관리"],
 )
 class CourseCohortsView(APIView):
     permission_classes = [IsAdminUser]
