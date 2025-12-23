@@ -1,9 +1,9 @@
 from datetime import timedelta
-from typing import Any
+from typing import Any, Dict, cast
 
 from django.test import TestCase
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 
 from apps.courses.models import Cohort, Course, Subject
 from apps.exams.exceptions import DeploymentConflictException
@@ -389,5 +389,11 @@ class DeploymentServiceTests(TestCase):
         self.assertEqual(found.exam_id, self.exam.id)
 
     def test_get_deployment_fail(self) -> None:
-        with self.assertRaises(ValidationError):
+        """존재하지 않는 deployment 조회 시 404 및 에러 메시지 확인"""
+
+        with self.assertRaises(NotFound) as cm:
             get_admin_deployment_detail(deployment_id=999)
+
+        detail = cast(Dict[str, Any], cm.exception.detail)
+
+        self.assertEqual(detail["deployment_id"], "해당 배포 정보를 찾을 수 없습니다.")
