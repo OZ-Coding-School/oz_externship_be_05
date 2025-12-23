@@ -81,4 +81,3 @@ class VerifySMSAPIView(APIView):
             serializer.validated_data["sms_code"],
         )
         return Response({"detail": "SMS 인증에 성공하였습니다.", "sms_token": token}, status=status.HTTP_200_OK)
-

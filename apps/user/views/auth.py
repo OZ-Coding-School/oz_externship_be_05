@@ -8,7 +8,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.user.models import User
-from apps.user.serializers.auth import LoginSerializer, SignupSerializer, TokenRefreshSerializer
+from apps.user.serializers.auth import (
+    LoginSerializer,
+    SignupSerializer,
+    TokenRefreshSerializer,
+)
 from apps.user.utils.tokens import issue_token_pair
 
 

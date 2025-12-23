@@ -5,6 +5,7 @@ from datetime import timedelta
 from django.conf import settings
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.exceptions import NotAuthenticated
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -20,19 +21,29 @@ from apps.user.serializers.account import (
 )
 
 
+def get_authenticated_user(request: Request) -> User:
+    user = request.user
+    if not isinstance(user, User):
+        raise NotAuthenticated()
+    return user
+
+
 class MeAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request: Request) -> Response:
-        return Response(UserProfileSerializer(request.user).data, status=status.HTTP_200_OK)
+        user = get_authenticated_user(request)
+        return Response(UserProfileSerializer(user).data, status=status.HTTP_200_OK)
 
     def patch(self, request: Request) -> Response:
-        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+        user = get_authenticated_user(request)
+        serializer = UserUpdateSerializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(UserProfileSerializer(request.user).data, status=status.HTTP_200_OK)
+        return Response(UserProfileSerializer(user).data, status=status.HTTP_200_OK)
 
     def delete(self, request: Request) -> Response:
+        user = get_authenticated_user(request)
         payload = request.data
         reason_value = payload.get("reason") or WithdrawalReason.OTHER
         if reason_value not in WithdrawalReason.values:
@@ -42,11 +53,11 @@ class MeAPIView(APIView):
         due_date = timezone.now().date() + timedelta(days=grace_days)
 
         Withdrawal.objects.update_or_create(
-            user=request.user,
+            user=user,
             defaults={"reason": reason_value, "reason_detail": detail, "due_date": due_date},
         )
-        request.user.is_active = False
-        request.user.save(update_fields=["is_active", "updated_at"])
+        user.is_active = False
+        user.save(update_fields=["is_active", "updated_at"])
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -68,7 +79,7 @@ class ChangePasswordAPIView(APIView):
     def patch(self, request: Request) -> Response:
         serializer = ChangePasswordSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        user: User = request.user
+        user = get_authenticated_user(request)
         user.set_password(serializer.validated_data["new_password"])
         user.save(update_fields=["password", "updated_at"])
         return Response({"detail": "비밀번호가 변경되었습니다."}, status=status.HTTP_200_OK)
@@ -80,5 +91,6 @@ class ChangePhoneAPIView(APIView):
     def patch(self, request: Request) -> Response:
         serializer = ChangePhoneSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
-        serializer.update(request.user, serializer.validated_data)
-        return Response({"phone_number": request.user.phone_number}, status=status.HTTP_200_OK)
+        user = get_authenticated_user(request)
+        serializer.update(user, serializer.validated_data)
+        return Response({"phone_number": user.phone_number}, status=status.HTTP_200_OK)
