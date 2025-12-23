@@ -3,11 +3,15 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from django.db import transaction
-from django.db.models import Avg, Count, QuerySet
+from django.db.models import Avg, Count, FloatField, QuerySet, Value
+from django.db.models.functions import Coalesce
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.core.utils.base62 import Base62
 from apps.courses.models import Cohort
+from apps.exams.constants import DEFAULT_DEPLOYMENT_SORT, DEPLOYMENT_SORT_OPTIONS
+from apps.exams.exceptions import DeploymentConflictException
 from apps.exams.models import Exam, ExamDeployment, ExamQuestion
 from apps.exams.models.exam_deployment import DeploymentStatus
 from apps.exams.services.admin.dtos import DeploymentDetailDTO, QuestionSnapshotDTO
@@ -19,32 +23,42 @@ from apps.exams.services.admin.validators.deployment_validator import (
 # 시험 배포 목록 조회 -------------------------------------------------------
 def list_admin_deployments(
     *,
+    cohort_id: Optional[int] = None,
     cohort: Optional[Cohort] = None,
-    status: Optional[str] = None,
+    subject_id: Optional[int] = None,
     search_keyword: Optional[str] = None,
     sort: str = "created_at",
     order: str = "desc",
 ) -> QuerySet[ExamDeployment]:
 
-    qs: QuerySet[ExamDeployment] = ExamDeployment.objects.select_related("cohort", "exam").annotate(
-        participant_count=Count("submissions__submitter", distinct=True),
-        avg_score=Avg("submissions__score"),
+    qs: QuerySet[ExamDeployment] = ExamDeployment.objects.select_related(
+        "exam", "exam__subject", "cohort", "cohort__course"
+    ).annotate(
+        submit_count=Count("submissions", distinct=True),
+        avg_score=Coalesce(
+            Avg("submissions__score"),
+            Value(0.0),
+            output_field=FloatField(),
+        ),
     )
 
-    # 필터링(과정별, 기수별)
+    # 기수 필터
     if cohort is not None:
         qs = qs.filter(cohort=cohort)
+    elif cohort_id is not None:
+        qs = qs.filter(cohort_id=cohort_id)
 
-    if status is not None:
-        qs = qs.filter(status=status)
+    # 과목 필터
+    if subject_id is not None:
+        qs = qs.filter(exam__subject_id=subject_id)
 
-    # 검색(검색 키워드와 일부 또는 완전 일치)
+    # 검색 (시험명)
     if search_keyword:
         qs = qs.filter(exam__title__icontains=search_keyword)
 
     # 정렬(최신순, 응시횟수 많은 순, 평균 점수 높은 순)
-    if sort not in {"created_at", "participant_count", "avg_score"}:
-        sort = "created_at"
+    if sort not in DEPLOYMENT_SORT_OPTIONS.values():
+        sort = DEFAULT_DEPLOYMENT_SORT
 
     prefix = "-" if order == "desc" else ""
 
@@ -114,24 +128,40 @@ def get_admin_deployment_detail(*, deployment_id: int) -> DeploymentDetailDTO:
 # 새 시험 배포 생성 --------------------------------------------------------
 @transaction.atomic
 def create_deployment(
-    *,
-    cohort: Cohort,
-    exam: Exam,
-    duration_time: int,
-    open_at: datetime,
-    close_at: datetime,
+    *, cohort: Cohort, exam: Exam, duration_time: int, open_at: datetime, close_at: datetime
 ) -> ExamDeployment:
+    """
+    배포 생성
+    성공: ExamDeployment 반환
+    실패: 409
+    """
 
-    return ExamDeployment.objects.create(
+    now = timezone.now()
+
+    # 중복 배포 확인
+    if ExamDeployment.objects.filter(cohort=cohort, exam=exam).exists():
+        raise DeploymentConflictException(
+            detail=f"동일한 조건의 배포가 이미 존재합니다: '{exam.title}' - {cohort.number}기 "
+        )
+
+    # 이미 해당 기수에 활성화된 배포내역이 있는지 확인
+    active_deployments = ExamDeployment.objects.filter(cohort=cohort, exam=exam, status=DeploymentStatus.ACTIVATED)
+    for dep in active_deployments:
+        if dep.open_at <= now:
+            raise DeploymentConflictException(detail=f"이미 활성화된 시험입니다: '{exam.title}' - {cohort.number}기")
+
+    # 정상 생성
+    deployment = ExamDeployment.objects.create(
         cohort=cohort,
         exam=exam,
         duration_time=duration_time,
-        access_code=Base62.uuid_encode(uuid.uuid4(), length=6),
         open_at=open_at,
         close_at=close_at,
+        access_code=Base62.uuid_encode(uuid.uuid4(), length=6),
         status=DeploymentStatus.ACTIVATED,
         questions_snapshot=_build_questions_snapshot(exam),
     )
+    return deployment
 
 
 # 시험 배포 정보 수정 (open_at, close_at, duration_time) -------------------------

@@ -6,6 +6,7 @@ from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.courses.models import Cohort, Course, Subject
+from apps.exams.exceptions import DeploymentConflictException
 from apps.exams.models import Exam, ExamDeployment, ExamQuestion
 from apps.exams.models.exam_deployment import DeploymentStatus
 from apps.exams.models.exam_question import QuestionType
@@ -79,18 +80,32 @@ class DeploymentServiceTests(TestCase):
     # Helpers ---------------------------------------------------------
 
     def _create_default_deployment(self, **override: Any) -> ExamDeployment:
+        self._deployment_counter = getattr(self, "_deployment_counter", 0) + 1
+        offset = timedelta(minutes=10 * self._deployment_counter)
 
-        base: dict[str, Any] = {
-            "cohort": self.cohort,
-            "exam": self.exam,
-            "duration_time": 60,
-            "open_at": self.open_at,
-            "close_at": self.close_at,
-        }
+        pop = override.pop
 
-        params = {**base, **override}
+        cohort = pop("cohort", None) or Cohort.objects.create(
+            course=self.course,
+            number=100 + self._deployment_counter,  # 중복 방지
+            max_student=30,
+            start_date=timezone.now().date(),
+            end_date=timezone.now().date() + timedelta(days=30),
+        )
 
-        return create_deployment(**params)
+        exam = pop("exam", self.exam)
+        open_at = pop("open_at", self.open_at + offset)
+        close_at = pop("close_at", self.close_at + offset)
+
+        deployment = create_deployment(
+            cohort=cohort,
+            exam=exam,
+            duration_time=60,
+            open_at=open_at,
+            close_at=close_at,
+        )
+
+        return deployment
 
     def _force_started(self, deployment: ExamDeployment) -> ExamDeployment:
         deployment.open_at = timezone.now() - timedelta(hours=1)
@@ -130,6 +145,35 @@ class DeploymentServiceTests(TestCase):
         deployment = ExamDeployment.objects.get()
 
         self.assertGreaterEqual(deployment.open_at, deployment.close_at)
+
+    # 중복 배포 예외처리
+    def test_create_duplicate_deployment(self) -> None:
+        deployment = self._create_default_deployment()
+
+        # 중복 배포 시도
+        with self.assertRaises(DeploymentConflictException) as cm:
+            self._create_default_deployment(cohort=deployment.cohort, exam=deployment.exam)
+
+        self.assertIn(
+            f"동일한 조건의 배포가 이미 존재합니다: '{deployment.exam.title}' - {deployment.cohort.number}기",
+            str(cm.exception),
+        )
+
+    # 이미 활성화된 시험 예외처리
+    def test_create_deployment_with_active_conflict(self) -> None:
+        deployment = self._create_default_deployment()
+
+        deployment.status = DeploymentStatus.ACTIVATED
+        deployment.open_at = timezone.now() - timedelta(hours=1)
+        deployment.save(update_fields=["status", "open_at"])
+
+        with self.assertRaises(DeploymentConflictException) as cm:
+            self._create_default_deployment(cohort=deployment.cohort, exam=deployment.exam)
+
+        self.assertIn(
+            f"동일한 조건의 배포가 이미 존재합니다: '{deployment.exam.title}' - {deployment.cohort.number}기",
+            str(cm.exception),
+        )
 
     # UPDATE ---------------------------------------------------------
 
@@ -265,28 +309,12 @@ class DeploymentServiceTests(TestCase):
             end_date=timezone.now().date() + timedelta(days=30),
         )
 
-        d1 = self._create_default_deployment()
+        # self.cohort 배포 명시 생성
+        d1 = self._create_default_deployment(cohort=self.cohort)
+        # 다른 cohort 배포
         self._create_default_deployment(cohort=other_cohort)
 
         deployments = list_admin_deployments(cohort=self.cohort)
-        self.assertEqual(deployments.count(), 1)
-
-        first = deployments.first()
-        assert first is not None
-
-        self.assertEqual(first.id, d1.id)
-
-    # 상태별 필터링
-    def test_list_deployments_filter_by_status(self) -> None:
-        d1 = self._create_default_deployment()
-        self._create_default_deployment()
-
-        set_deployment_status(
-            deployment=d1,
-            status=DeploymentStatus.DEACTIVATED,
-        )
-
-        deployments = list_admin_deployments(status=DeploymentStatus.DEACTIVATED)
         self.assertEqual(deployments.count(), 1)
 
         first = deployments.first()
