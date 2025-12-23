@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-import sys
 from typing import Any
 
 from django.contrib.auth import get_user_model
@@ -10,12 +8,10 @@ from django.db import IntegrityError
 from django.utils.dateparse import parse_date
 
 from apps.user.models.user import GenderChoices, RoleChoices
-from apps.user.utils.store import UserStore
 
 
 class Command(BaseCommand):
     help = "db에 유저를 만들어줌다"
-    path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "testuser.xdat"))
 
     def add_arguments(self, parser: Any) -> None:
         parser.add_argument("email")
@@ -29,13 +25,8 @@ class Command(BaseCommand):
         parser.add_argument("--inactive", action="store_true")
         parser.add_argument("--staff", action="store_true")
         parser.add_argument("--superuser", action="store_true")
-        parser.add_argument("--make-special", action="store_true")
 
     def handle(self, *args: Any, **options: Any) -> None:
-        if options.get("make_special", False):
-            user = UserStore(self.path, is_default=True)
-            sys.stdout.write(f"{str(user)}")
-            return
         email = options["email"]
         password = options["password"]
         name = options["name"]
