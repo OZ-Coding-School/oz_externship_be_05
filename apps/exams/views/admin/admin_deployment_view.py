@@ -52,6 +52,7 @@ class DeploymentListCreateAPIView(AdminUserPermission):
         ],
         responses={
             200: AdminDeploymentListResponseSerializer,
+            400: OpenApiResponse(description="유효하지 않은 요청입니다."),
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="쪽지시험 배포 조회 권한이 없습니다."),
         },
