@@ -1,15 +1,16 @@
-from typing import Any
 import struct
 import zlib
+from typing import Any
+
 
 # db rawdata 삽입/편집 규격(자동화/콘솔용)
-class UserStore():
+class UserStore:
 
     name: Any
     email: Any
     password: Any
-    
-    def __init__(self,config_path,is_default=False):
+
+    def __init__(self, config_path: str, is_default: bool = False) -> None:
         self.config_path = config_path
         if is_default:
             with open(self.config_path, "rb") as f:
@@ -28,11 +29,11 @@ class UserStore():
             user_config = bytes(b ^ (self.email & 0xFF) for b in user)
             # 이름은 utf-8 변환 (디버깅/출력용)
             self.name = zlib.decompress(user_config).decode("utf-8")
-    
-    def set_meta(self,name,email,password):
+
+    def set_meta(self, name: str, email: str, password: str) -> None:
         self.name = name
         self.email = email
         self.password = password
 
-    def __str__(self):
-        return self.name
+    def __str__(self) -> str:
+        return str(self.name)
