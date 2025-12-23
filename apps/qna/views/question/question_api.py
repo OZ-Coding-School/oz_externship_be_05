@@ -8,6 +8,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.exceptions.exception_messages import EMS
+from apps.qna.pagination import QuestionPageNumberPagination
 from apps.qna.permissions.question.question_create_permission import (
     QuestionCreatePermission,
 )
@@ -18,7 +20,6 @@ from apps.qna.serializers.question.question_list_query import (
 )
 from apps.qna.services.question.question_create_service import (
     create_question,
-    get_category_or_raise,
 )
 from apps.qna.services.question.question_list.service import get_question_list
 from apps.user.models import User
@@ -42,32 +43,37 @@ class QuestionAPIView(APIView):
         summary="질문응답 목록 조회 API",
     )
     def get(self, request: Request) -> Response:
-        self.validation_error_message = "유효하지 않은 목록 조회 요청입니다."
+        self.validation_error_message = EMS.E400_INVALID_REQUEST("질문 목록 조회")["error_detail"]
 
+        # Query 파싱 (엄격 검증 X)
         query_serializer = QuestionListQuerySerializer(data=request.query_params)
         query_serializer.is_valid(raise_exception=True)
 
-        questions, page_info = get_question_list(**query_serializer.validated_data)
+        # QuerySet만 받아옴 (pagination 없음)
+        queryset = get_question_list(**query_serializer.validated_data)
 
-        return Response(
-            {
-                "results": QuestionListSerializer(questions, many=True).data,
-                "page": page_info,
-            },
-            status=status.HTTP_200_OK,
-        )
+        # DRF Pagination 적용
+        paginator = QuestionPageNumberPagination()
+        page = paginator.paginate_queryset(queryset, request)
+
+        # Serializer
+        serializer = QuestionListSerializer(page, many=True)
+
+        # DRF 표준 응답
+        return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
         tags=["질의응답"],
         summary="질문등록 API",
     )
     def post(self, request: Request) -> Response:
-        self.validation_error_message = "유효하지 않은 질문 등록 요청입니다."
+        self.validation_error_message = EMS.E400_INVALID_REQUEST("질문 등록")["error_detail"]
 
         serializer = QuestionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        category = get_category_or_raise(serializer.validated_data["category"])
+        category = serializer.validated_data["category"]
+
         user = cast(User, request.user)
 
         question = create_question(
