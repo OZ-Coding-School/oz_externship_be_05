@@ -1,4 +1,5 @@
 from django.db.models import Exists, OuterRef, Q
+from drf_spectacular.utils import extend_schema
 from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -29,6 +30,7 @@ ROLE_FILTERS = {
 class AdminAccountListAPIView(APIView):
     permission_classes = [IsAdminUser]
 
+    @extend_schema(tags=["회원관리"], summary="전체 회원 목록 가져오는 API")
     def get(self, request: Request) -> Response:
         qs = User.objects.all()
 
