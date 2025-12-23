@@ -18,7 +18,7 @@ class AnswerCreateSpecAPIView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Answers"],
+        tags=["질의응답"],
         summary="답변 생성 (Spec)",
         description="특정 질문에 답변 생성 API 명세 노출용 (DB 미사용)",
         request=AnswerSpecRequestSerializer,
