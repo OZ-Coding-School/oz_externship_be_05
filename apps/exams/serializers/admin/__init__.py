@@ -1,7 +1,7 @@
 from .admin_deployment_serializer import (
     AdminDeploymentCreateResponseSerializer,
-    AdminDeploymentListItemSerializer,
     AdminDeploymentDetailResponseSerializer,
+    AdminDeploymentListItemSerializer,
     AdminDeploymentListResponseSerializer,
     AdminDeploymentSerializer,
 )
