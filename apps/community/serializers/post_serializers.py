@@ -56,7 +56,7 @@ class PostCreateSerializer(PostWriteFieldsSerializer):
 
     def to_representation(self, instance: Post) -> Dict[str, Any]:
         return {
-            "detail": "게시글이 성공적 등록됨.",
+            "detail": "게시글이 성공적으로 등록되었습니다.",
             "post_id": instance.id,
         }
 

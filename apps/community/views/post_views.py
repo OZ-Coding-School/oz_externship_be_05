@@ -1,140 +1,212 @@
-from typing import Any
+from typing import Any, Type
 
-from django.db import models
-from django.db.models import Count, QuerySet
-from drf_spectacular.utils import extend_schema
+from django.db.models import QuerySet
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema, OpenApiParameter,OpenApiExample ,OpenApiResponse
+from drf_spectacular.types import OpenApiTypes
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.mixins import (
-    CreateModelMixin,
-    DestroyModelMixin,
-    ListModelMixin,
-    RetrieveModelMixin,
-    UpdateModelMixin,
-)
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.serializers import BaseSerializer
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.views import APIView
 
 from apps.community.models.post import Post
 from apps.community.serializers.post_serializers import (
     PostCreateSerializer,
-    PostDetailSerializer,
     PostListSerializer,
+    PostDetailSerializer,
     PostUpdateSerializer,
 )
 
 
-class AuthorPermissionMixin:
+def get_base_queryset() -> QuerySet[Post]:
+    return Post.objects.select_related("author", "category")
 
-    def check_author_permission(self, instance: Post) -> None:
-        request = getattr(self, "request", None)
+class PostListCreateAPIView(APIView):
+    """
+    커뮤니티 게시글 목록 조회 및 생성 APIView
+    """
 
-        if request is None or instance.author != request.user:
-            raise PermissionDenied("본인의 게시글만 수정/삭제 가능함.")
+#목록 조회
+    @extend_schema(
+        tags=["커뮤니티"],
+        summary="게시글 목록 조회",
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                description="게시글 제목 검색어",
+                required=False,
+                type=OpenApiTypes.STR,
+            ),
+            OpenApiParameter(
+                name="category_id",
+                description="카테고리 ID로 필터링",
+                required=False,
+                type=OpenApiTypes.INT,
+            ),
+            OpenApiParameter(
+                name="sort",
+                description="정렬 기준 (created_at, updated_at, title, view_count)",
+                required=False,
+                type=OpenApiTypes.STR,
+                default="created_at",
+            ),
+            OpenApiParameter(
+                name="order",
+                description="정렬 순서 (asc, desc)",
+                required=False,
+                type=OpenApiTypes.STR,
+                default="desc",
+            ),
+        ],
+    )
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        queryset = get_base_queryset()
 
+        search_keyword = request.query_params.get("search")
+        if search_keyword:
+            queryset = queryset.filter(title__icontains=search_keyword)
 
-class OptimizedQuerySetMixin:
-    def get_base_queryset(self) -> QuerySet[Post]:
-        return Post.objects.select_related("author", "category")
+        category_id = request.query_params.get("category_id")
+        if category_id:
+            queryset = queryset.filter(category_id=category_id)
 
-    def get_list_queryset(self) -> QuerySet[Post]:
-        return self.get_base_queryset().annotate(
-            like_count=Count("post_likes", distinct=True),
-            comment_count=Count("post_comments", distinct=True),
-        )
+        ALLOWED_SORT_FIELDS = {"created_at", "updated_at","title","view_count"}
 
-    def get_detail_queryset(self) -> QuerySet[Post]:
-        return self.get_base_queryset().annotate(
-            like_count=Count("post_likes", distinct=True),
-        )
+        sort = request.query_params.get("sort","created_at")
+        order = request.query_params.get("order","desc")
 
-
-# C : 생성
-@extend_schema(
-    tags=["커뮤니티"],
-    summary="커뮤니티 게시글 생성 API",
-)
-class PostCreateViewSet(CreateModelMixin, GenericViewSet[Post]):
-    serializer_class = PostCreateSerializer
-    permission_classes = [IsAuthenticated]
-    queryset = Post.objects.none()
-
-
-# R : 목록조회
-@extend_schema(
-    tags=["커뮤니티"],
-    summary="커뮤니티 게시글 목록조회 API",
-)
-class PostListViewSet(OptimizedQuerySetMixin, ListModelMixin, GenericViewSet[Post]):
-    serializer_class = PostListSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def get_queryset(self) -> QuerySet[Post]:
-        return self.get_list_queryset()
-
-
-# R : 상세조회
-@extend_schema(
-    tags=["커뮤니티"],
-    summary="커뮤니티 게시글 상세조회 API",
-)
-class PostDetailViewSet(OptimizedQuerySetMixin, RetrieveModelMixin, GenericViewSet[Post]):
-    serializer_class = PostDetailSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-
-    def get_queryset(self) -> QuerySet[Post]:
-        return self.get_detail_queryset()
-
-    def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        instance = self.get_object()
-
-        if not request.user.is_authenticated or instance.author != request.user:
-            Post.objects.filter(pk=instance.pk).update(
-                view_count=models.F("view_count") + 1,
+        if sort not in ALLOWED_SORT_FIELDS:
+            return Response(
+                {"detail":"정렬 기준이 올바르지 않습니다."}
+                , status=status.HTTP_400_BAD_REQUEST
             )
 
-            instance.refresh_from_db(fields=["view_count"])
+        if order == "desc":
+            sort = f"-{sort}"
 
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        queryset = queryset.order_by(sort)
+
+        serializer = PostListSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+#생성
+    @extend_schema(
+        tags=["커뮤니티"],
+        summary="게시글 생성",
+        request=PostCreateSerializer,
+    )
+    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = PostCreateSerializer(data=request.data, context={"request": request})
+
+        serializer.is_valid(raise_exception=True)
+        post = serializer.save()
+
+        return Response(serializer.to_representation(post), status=status.HTTP_201_CREATED)
 
 
-# U : 수정
-@extend_schema(
-    tags=["커뮤니티"],
-    summary="커뮤니티 게시글 수정 API",
-)
-class PostUpdateViewSet(AuthorPermissionMixin, UpdateModelMixin, GenericViewSet[Post]):
-    serializer_class = PostUpdateSerializer
-    permission_classes = [IsAuthenticated]
-    queryset = Post.objects.select_related("author")
+class PostRetrieveUpdateDestroyAPIView(APIView):
+    """
+    커뮤니티 게시글 => 상세조회 / 수정 / 삭제 APIView
+    """
+    def get_object(self, pk: str) -> Post:
+        try :
+            post_id = int(pk)
+        except ValueError:
+            raise ValueError
 
-    def perform_update(self, serializer: BaseSerializer[Post]) -> None:
-        instance = self.get_object()
-        self.check_author_permission(instance)
-        serializer.save()
+        return get_object_or_404(Post, id=post_id)
 
+# 상세조회
+    @extend_schema(
+        tags=["커뮤니티"],
+        summary="게시글 목록 상세조회",
+    )
+    def get(self, request: Request,pk:str, *args: Any, **kwargs: Any) -> Response:
+        try:
+            post = self.get_object(pk)
+            serializer = PostDetailSerializer(post)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except ValueError:
+            return Response(
+                {"detail": "잘못된 게시글 ID입니다."},
+                status=status.HTTP_400_BAD_REQUEST,)
 
-# D : 삭제
-@extend_schema(
-    tags=["커뮤니티"],
-    summary="커뮤니티 게시글 삭제 API",
-)
-class PostDeleteViewSet(AuthorPermissionMixin, DestroyModelMixin, GenericViewSet[Post]):
-    permission_classes = [IsAuthenticated]
-    queryset = Post.objects.select_related("author")
+#수정
+    @extend_schema(
+        tags=["커뮤니티"],
+        summary="게시글 수정",
+        parameters=[
+            OpenApiParameter(
+                name="pk",
+                description="수정할 게시글 ID",
+                required=True,
+                type=OpenApiTypes.INT,
+            )
+        ],request=PostUpdateSerializer,
+    )
+    def put(self, request: Request,pk:str, *args: Any, **kwargs: Any) -> Response:
+        try:
+            post = self.get_object(pk)
 
-    def perform_destroy(self, instance: Post) -> None:
-        self.check_author_permission(instance)
-        instance.delete()
+            if post.author != request.user:
+                return Response(
+                    {"detail":"수정 권한이 없습니다."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
 
-    def destroy(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        instance = self.get_object()
-        self.perform_destroy(instance)
-        return Response(
-            {"detail": "게시글이 성공적으로 삭제됨."},
-            status=status.HTTP_200_OK,
-        )
+            serializer = PostUpdateSerializer(instance=post, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            updated_post = serializer.save()
+
+            return Response(serializer.to_representation(updated_post)
+                            , status=status.HTTP_200_OK,)
+        except ValueError:
+            return Response(
+                {"detail": "잘못된 게시글 ID입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+#삭제
+    @extend_schema(
+        tags=["커뮤니티"],
+        summary="게시글 삭제",
+        parameters=[
+            OpenApiParameter(
+                name="pk",
+                description="삭제할 게시글 ID",
+                required=True,
+                type=OpenApiTypes.INT,
+            )
+        ],
+        responses={
+            200: OpenApiResponse(
+                description="게시글 삭제 성공",
+                examples=[
+                    OpenApiExample(
+                        name="삭제 성공 응답",
+                        value={"message": "게시글이 삭제되었습니다."},
+                    )
+                ]
+
+            ),
+            403: OpenApiResponse(description="삭제 권한 없음"),
+            400: OpenApiResponse(description="잘못된 게시글 ID"),
+        },
+    )
+    def delete(self,request: Request,pk:str, *args: Any, **kwargs: Any) -> Response:
+        try:
+            post = self.get_object(pk)
+
+            if post.author != request.user:
+                return Response(
+                    {"detail":"삭제 권한이 없습니다."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+
+            post.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except ValueError:
+            return Response(
+                {"detail": "잘못된 게시글 ID입니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
