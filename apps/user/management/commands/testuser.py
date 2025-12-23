@@ -8,7 +8,7 @@ from apps.user.utils.store import UserStore
 class Command(BaseCommand):
     help = "테스트 환경 출력해줌"
     path = os.path.abspath(
-                os.path.join(os.path.dirname(__file__), "..", "testconfig.xdat")
+                os.path.join(os.path.dirname(__file__), "..", "testuser.xdat")
             )
     
     # testcase
