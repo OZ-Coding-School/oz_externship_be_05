@@ -5,8 +5,9 @@ from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
-from rest_framework import serializers
+from rest_framework import serializers, status
 from rest_framework.exceptions import ValidationError
+from rest_framework.test import APIRequestFactory
 
 from apps.user.models.user import GenderChoices
 from apps.user.serializers.auth import SignupSerializer
@@ -17,6 +18,12 @@ from apps.user.serializers.verification import SignupEmailRequestSerializer
 from apps.user.utils.sender import EmailSender, SMSSender
 from apps.user.utils.verification import VerificationService
 from apps.user.validaters.validate_token import is_valid_token_format
+from apps.user.views.verification import (
+    SendEmailAPIView,
+    SendSMSVerificationAPIView,
+    VerifyEmailAPIView,
+    VerifySMSAPIView,
+)
 
 
 class BaseMixinValidationTests(TestCase):
@@ -171,3 +178,68 @@ class VerificationSerializersTests(TestCase):
         serializer = SignupEmailRequestSerializer(data={"email": "exists@example.com"})
         self.assertFalse(serializer.is_valid())
         self.assertIn("email", serializer.errors)
+
+
+class VerificationAPIViewTests(TestCase):
+    def setUp(self) -> None:
+        self.factory = APIRequestFactory()
+
+    @patch("apps.user.views.verification.EmailSender.send")
+    def test_send_email_calls_sender(self, send_mock: Any) -> None:
+        request = self.factory.post("/api/v1/accounts/verification/send-email", {"email": "a@test.com"}, format="json")
+
+        response = SendEmailAPIView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        send_mock.assert_called_once_with("a@test.com")
+
+    @patch("apps.user.views.verification.EmailSender.verify_code", return_value="token")
+    def test_verify_email_success_returns_token(self, verify_mock: Any) -> None:
+        payload = {"email": "a@test.com", "email_code": "123456"}
+        request = self.factory.post("/api/v1/accounts/verification/verify-email", payload, format="json")
+
+        response = VerifyEmailAPIView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["email_token"], "token")
+        verify_mock.assert_called_once_with("a@test.com", "123456")
+
+    @patch("apps.user.views.verification.EmailSender.verify_code", side_effect=ValidationError("bad"))
+    def test_verify_email_invalid_returns_400(self, _verify_mock: Any) -> None:
+        payload = {"email": "a@test.com", "email_code": "123456"}
+        request = self.factory.post("/api/v1/accounts/verification/verify-email", payload, format="json")
+
+        response = VerifyEmailAPIView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    @patch("apps.user.views.verification.SMSSender.send")
+    def test_send_sms_calls_sender(self, send_mock: Any) -> None:
+        request = self.factory.post(
+            "/api/v1/accounts/verification/send-sms", {"phone_number": "01012345678"}, format="json"
+        )
+
+        response = SendSMSVerificationAPIView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        send_mock.assert_called_once_with("01012345678")
+
+    @patch("apps.user.views.verification.SMSSender.verify_code", return_value="token")
+    def test_verify_sms_success_returns_token(self, verify_mock: Any) -> None:
+        payload = {"phone_number": "01012345678", "sms_code": "123456"}
+        request = self.factory.post("/api/v1/accounts/verification/verify-sms", payload, format="json")
+
+        response = VerifySMSAPIView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["sms_token"], "token")
+        verify_mock.assert_called_once_with("01012345678", "123456")
+
+    @patch("apps.user.views.verification.SMSSender.verify_code", side_effect=ValidationError("bad"))
+    def test_verify_sms_invalid_returns_400(self, _verify_mock: Any) -> None:
+        payload = {"phone_number": "01012345678", "sms_code": "123456"}
+        request = self.factory.post("/api/v1/accounts/verification/verify-sms", payload, format="json")
+
+        response = VerifySMSAPIView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

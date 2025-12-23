@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import base64
 from datetime import date, timedelta
 from typing import Any
 from unittest.mock import patch
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from django.utils import timezone
@@ -67,6 +69,17 @@ class MeAPIViewTests(TestCase):
         withdrawal = Withdrawal.objects.get(user=self.user)
         expected_due_date = timezone.now().date() + timedelta(days=7)
         self.assertEqual(withdrawal.due_date, expected_due_date)
+
+    def test_me_delete_defaults_reason_and_detail(self) -> None:
+        request = self.factory.delete("/api/v1/accounts/me", {}, format="json")
+        force_authenticate(request, user=self.user)
+
+        response = MeAPIView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        withdrawal = Withdrawal.objects.get(user=self.user)
+        self.assertEqual(withdrawal.reason, WithdrawalReason.OTHER)
+        self.assertEqual(withdrawal.reason_detail, "")
 
 
 class CheckNicknameAPIViewTests(TestCase):
@@ -144,7 +157,8 @@ class ChangePhoneAPIViewTests(TestCase):
 
     @patch("apps.user.serializers.mixins.SMSSender.verify_token", return_value="01099998888")
     def test_change_phone_updates_number(self, verify_mock: Any) -> None:
-        payload = {"sms_token": "token"}
+        token = base64.urlsafe_b64encode(b"a" * settings.VERIFICATION_TOKEN_BYTES).rstrip(b"=").decode()
+        payload = {"sms_token": token}
         request = self.factory.patch("/api/v1/accounts/change-phone", payload, format="json")
         force_authenticate(request, user=self.user)
 
@@ -164,7 +178,8 @@ class ChangePhoneAPIViewTests(TestCase):
             gender=GenderChoices.MALE,
             phone_number="01077778888",
         )
-        payload = {"sms_token": "token"}
+        token = base64.urlsafe_b64encode(b"a" * settings.VERIFICATION_TOKEN_BYTES).rstrip(b"=").decode()
+        payload = {"sms_token": token}
         request = self.factory.patch("/api/v1/accounts/change-phone", payload, format="json")
         force_authenticate(request, user=self.user)
 
