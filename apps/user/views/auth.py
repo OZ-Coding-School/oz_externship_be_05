@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
@@ -15,8 +16,14 @@ from apps.user.utils.tokens import issue_token_pair
 
 
 class SignupAPIView(APIView):
+
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        tags=["Accounts"],
+        summary="회원가입 폼 제출 API",
+        responses={201: None},
+    )
     def post(self, request: Request) -> Response:
         serializer = SignupSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -27,6 +34,11 @@ class SignupAPIView(APIView):
 class LoginAPIView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        tags=["Accounts"],
+        summary="로그인 폼 제출 API",
+        responses={200: None},
+    )
     def post(self, request: Request) -> Response:
         serializer = LoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)

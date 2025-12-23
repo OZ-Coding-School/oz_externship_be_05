@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny
@@ -19,6 +20,11 @@ from apps.user.utils.sender import EmailSender, SMSSender
 class SendEmailAPIView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        tags=["Accounts"],
+        summary="이메일 인증코드 전송 API",
+        responses={200: None},
+    )
     def post(self, request: Request) -> Response:
         serializer = SignupEmailRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -29,6 +35,11 @@ class SendEmailAPIView(APIView):
 class VerifyEmailAPIView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        tags=["Accounts"],
+        summary="이메일 인증코드 검증 API",
+        responses={200: None},
+    )
     def post(self, request: Request) -> Response:
         serializer = EmailCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -42,6 +53,11 @@ class VerifyEmailAPIView(APIView):
 class SendSMSVerificationAPIView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        tags=["Accounts"],
+        summary="SMS 인증코드 검증 API",
+        responses={200: None},
+    )
     def post(self, request: Request) -> Response:
         serializer = SMSRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -52,6 +68,11 @@ class SendSMSVerificationAPIView(APIView):
 class VerifySMSAPIView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        tags=["Accounts"],
+        summary="SMS 인증코드 검증 API",
+        responses={200: None},
+    )
     def post(self, request: Request) -> Response:
         serializer = PhoneCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
