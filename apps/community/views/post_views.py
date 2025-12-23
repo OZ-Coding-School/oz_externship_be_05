@@ -2,6 +2,7 @@ from typing import Any
 
 from django.db import models
 from django.db.models import Count, QuerySet
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.mixins import (
@@ -52,14 +53,21 @@ class OptimizedQuerySetMixin:
 
 
 # C : 생성
+@extend_schema(
+    tags=["커뮤니티"],
+    summary="커뮤니티 게시글 생성 API",
+)
 class PostCreateViewSet(CreateModelMixin, GenericViewSet[Post]):
-
     serializer_class = PostCreateSerializer
     permission_classes = [IsAuthenticated]
     queryset = Post.objects.none()
 
 
 # R : 목록조회
+@extend_schema(
+    tags=["커뮤니티"],
+    summary="커뮤니티 게시글 목록조회 API",
+)
 class PostListViewSet(OptimizedQuerySetMixin, ListModelMixin, GenericViewSet[Post]):
     serializer_class = PostListSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -69,6 +77,10 @@ class PostListViewSet(OptimizedQuerySetMixin, ListModelMixin, GenericViewSet[Pos
 
 
 # R : 상세조회
+@extend_schema(
+    tags=["커뮤니티"],
+    summary="커뮤니티 게시글 상세조회 API",
+)
 class PostDetailViewSet(OptimizedQuerySetMixin, RetrieveModelMixin, GenericViewSet[Post]):
     serializer_class = PostDetailSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
@@ -91,6 +103,10 @@ class PostDetailViewSet(OptimizedQuerySetMixin, RetrieveModelMixin, GenericViewS
 
 
 # U : 수정
+@extend_schema(
+    tags=["커뮤니티"],
+    summary="커뮤니티 게시글 수정 API",
+)
 class PostUpdateViewSet(AuthorPermissionMixin, UpdateModelMixin, GenericViewSet[Post]):
     serializer_class = PostUpdateSerializer
     permission_classes = [IsAuthenticated]
@@ -103,6 +119,10 @@ class PostUpdateViewSet(AuthorPermissionMixin, UpdateModelMixin, GenericViewSet[
 
 
 # D : 삭제
+@extend_schema(
+    tags=["커뮤니티"],
+    summary="커뮤니티 게시글 삭제 API",
+)
 class PostDeleteViewSet(AuthorPermissionMixin, DestroyModelMixin, GenericViewSet[Post]):
     permission_classes = [IsAuthenticated]
     queryset = Post.objects.select_related("author")
