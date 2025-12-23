@@ -1,8 +1,6 @@
 from django.urls import path
 
-from apps.chatbot.views.completion_views import (
-    CompletionStreamAPIView
-)
+from apps.chatbot.views.completion_views import CompletionStreamAPIView
 from apps.chatbot.views.session_views import (
     SessionCreateListAPIView,
     SessionDeleteView,
