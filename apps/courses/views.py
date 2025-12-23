@@ -1,4 +1,5 @@
 from django.db.models import Prefetch, Q
+from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
@@ -11,8 +12,12 @@ from apps.courses.models.cohorts_models import Cohort, CohortStatusChoices
 from apps.courses.serializers.courses_serializers import CourseCohortsSerializer
 
 
+@extend_schema(
+    summary="해당 과정 진행중인 기수 조회 API",
+    tags=["CRGN"],
+)
 class CourseCohortsView(APIView):
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
     def get(self, request: Request) -> Response:
         try:
