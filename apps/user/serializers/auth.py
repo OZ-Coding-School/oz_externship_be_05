@@ -81,7 +81,7 @@ class LoginSerializer(serializers.Serializer[Any], BaseMixin):
         return attrs
 
 
-class TokenRefreshSerializer(serializers.Serializer):
+class TokenRefreshSerializer(serializers.Serializer[Any]):
     refresh_token = serializers.CharField()
     access_token = serializers.CharField(read_only=True)
 

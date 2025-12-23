@@ -1,17 +1,25 @@
 from django.urls import path
 
 from apps.user.views import social_login_views
+<<<<<<< HEAD
 from apps.user.views.admin.accounts import AdminAccountListAPIView
 from apps.user.views.auth import (
     LoginAPIView,
     RefreshAPIView,
     SignupAPIView,
 )
+=======
+>>>>>>> 9471f40 (🎨 style: black, isort 코드 포매터 실행)
 from apps.user.views.account import (
     ChangePasswordAPIView,
     ChangePhoneAPIView,
     CheckNicknameAPIView,
     MeAPIView,
+)
+from apps.user.views.auth import (
+    LoginAPIView,
+    RefreshAPIView,
+    SignupAPIView,
 )
 from apps.user.views.verification import (
     SendEmailAPIView,
