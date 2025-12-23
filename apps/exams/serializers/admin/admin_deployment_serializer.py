@@ -51,7 +51,7 @@ class AdminDeploymentSerializer(serializers.ModelSerializer[ExamDeployment]):
 
         # 시험 시간 최소값
         duration_time = attrs.get("duration_time")
-        if duration_time is not None and duration_time <= 29:
+        if duration_time is not None and duration_time < 30:
             raise serializers.ValidationError({"duration_time": "시험 시간은 30분 이상이어야 합니다."})
 
         # exam - cohort 관계 검증
