@@ -6,7 +6,7 @@ from django.db import transaction
 from django.db.models import Avg, Count, FloatField, QuerySet, Value
 from django.db.models.functions import Coalesce
 from django.utils import timezone
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound
 
 from apps.core.utils.base62 import Base62
 from apps.courses.models import Cohort
@@ -82,7 +82,7 @@ def get_admin_deployment_detail(*, deployment_id: int) -> ExamDeployment:
         )
 
     except ExamDeployment.DoesNotExist as exc:
-        raise ValidationError({"deployment_id": "해당 배포 정보를 찾을 수 없습니다."}) from exc
+        raise NotFound(detail={"deployment_id": "해당 배포 정보를 찾을 수 없습니다."}) from exc
 
     return deployment
 
