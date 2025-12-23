@@ -164,11 +164,10 @@ class AdminDeploymentListResponseSerializer(serializers.Serializer[Any]):
 
 
 # 배포 디테일 응답
-class AdminDeploymentDetailResponseSerializer(serializers.Serializer[Any]):
+class AdminDeploymentDetailResponseSerializer(DeploymentResponseSerializer):
     exam = ExamResponseSerializer()
     subject = SubjectResponseSerializer(source="exam.subject")
-    deployment = DeploymentResponseSerializer(source="*")
 
     class Meta:
         model = ExamDeployment
-        fields = ["exam", "subject", "deployment"]
+        fields = DeploymentResponseSerializer.Meta.fields + ["exam", "subject"]
