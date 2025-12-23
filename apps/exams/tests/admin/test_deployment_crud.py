@@ -80,13 +80,13 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
 
     # APITestCase용 헬퍼 메서드
     def _create_default_deployment(self, **override: Any) -> ExamDeployment:
-        if not hasattr(self, "_deployment_counter"):
-            self._deployment_counter = 0
-        self._deployment_counter += 1
+        self._deployment_counter = getattr(self, "_deployment_counter", 0) + 1
         offset = timedelta(minutes=10 * self._deployment_counter)
 
+        pop = override.pop
+
         # 항상 새로운 cohort를 생성
-        cohort = override.pop("cohort", None)
+        cohort = pop("cohort", None)
         if cohort is None:
             cohort = Cohort.objects.create(
                 course=self.course,
@@ -96,10 +96,10 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
                 end_date=timezone.now().date() + timedelta(days=30),
             )
 
-        exam = override.pop("exam", self.exam)
-        open_at = override.pop("open_at", timezone.now() + offset)
-        close_at = override.pop("close_at", open_at + timedelta(hours=1))
-        duration_time = override.pop("duration_time", 60)
+        exam = pop("exam", self.exam)
+        open_at = pop("open_at", timezone.now() + offset)
+        close_at = pop("close_at", open_at + timedelta(hours=1))
+        duration_time = pop("duration_time", 60)
 
         deployment = create_deployment(
             cohort=cohort,
