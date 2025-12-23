@@ -137,4 +137,10 @@ class AdminDeploymentDetailUpdateDeleteView(AdminUserPermission):
     def get(self, request: Request, deployment_id: int) -> Response:
         deployment = get_admin_deployment_detail(deployment_id=deployment_id)
         serializer = AdminDeploymentDetailResponseSerializer(deployment)
-        return Response(serializer.data)
+
+        data = {
+            "deployment": serializer.data,
+            "exam": serializer.data["exam"],
+            "subject": serializer.data["subject"],
+        }
+        return Response(data)
