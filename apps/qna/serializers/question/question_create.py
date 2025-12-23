@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
-from apps.qna.models import Question
+from apps.qna.models import Question, QuestionCategory
 
 
 class QuestionCreateSerializer(serializers.ModelSerializer[Question]):
-    category = serializers.IntegerField()
+    category = serializers.PrimaryKeyRelatedField(queryset=QuestionCategory.objects.all())
 
     image_urls = serializers.ListField(
         child=serializers.URLField(),
