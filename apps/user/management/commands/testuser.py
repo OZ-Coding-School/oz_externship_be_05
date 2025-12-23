@@ -13,5 +13,5 @@ class Command(BaseCommand):
     
     # testcase
     def handle(self, *args, **options):
-        user = UserStore(self.path,"miku@example.com","cutemiku",is_default=True)
-        sys.stdout.write(str(user))
+        user = UserStore(self.path,is_default=True)
+        sys.stdout.write(f"{str(user)}")
