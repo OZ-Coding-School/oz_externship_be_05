@@ -14,13 +14,13 @@ from apps.user.views.verification import (
 )
 
 urlpatterns = [
-    path("accounts/social-login/kakao", social_login_views.KakaoLoginStartAPIView.as_view(), name="kakao-login-start"),
+    path("social-login/kakao", social_login_views.KakaoLoginStartAPIView.as_view(), name="kakao-login-start"),
     path(
-        "accounts/social-login/kakao/callback", social_login_views.KakaoCallbackAPIView.as_view(), name="kakao-callback"
+        "social-login/kakao/callback", social_login_views.KakaoCallbackAPIView.as_view(), name="kakao-callback"
     ),
-    path("accounts/social-login/naver", social_login_views.NaverLoginStartAPIView.as_view(), name="naver-login-start"),
+    path("social-login/naver", social_login_views.NaverLoginStartAPIView.as_view(), name="naver-login-start"),
     path(
-        "accounts/social-login/naver/callback", social_login_views.NaverCallbackAPIView.as_view(), name="naver-callback"
+        "social-login/naver/callback", social_login_views.NaverCallbackAPIView.as_view(), name="naver-callback"
     ),
     path("signup", SignupAPIView.as_view(), name="signup"),
     path("login", LoginAPIView.as_view(), name="login"),
@@ -28,6 +28,4 @@ urlpatterns = [
     path("verification/verify-sms", VerifySMSAPIView.as_view(), name="verify_sms"),
     path("verification/send-email", SendEmailAPIView.as_view(), name="signup_send_email"),
     path("verification/verify-email", VerifyEmailAPIView.as_view(), name="signup_verify_email"),
-    # 어드민
-    path("admin/accounts", AdminAccountListAPIView.as_view(), name="admin-account-list"),
 ]
