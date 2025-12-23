@@ -15,13 +15,9 @@ from apps.user.views.verification import (
 
 urlpatterns = [
     path("social-login/kakao", social_login_views.KakaoLoginStartAPIView.as_view(), name="kakao-login-start"),
-    path(
-        "social-login/kakao/callback", social_login_views.KakaoCallbackAPIView.as_view(), name="kakao-callback"
-    ),
+    path("social-login/kakao/callback", social_login_views.KakaoCallbackAPIView.as_view(), name="kakao-callback"),
     path("social-login/naver", social_login_views.NaverLoginStartAPIView.as_view(), name="naver-login-start"),
-    path(
-        "social-login/naver/callback", social_login_views.NaverCallbackAPIView.as_view(), name="naver-callback"
-    ),
+    path("social-login/naver/callback", social_login_views.NaverCallbackAPIView.as_view(), name="naver-callback"),
     path("signup", SignupAPIView.as_view(), name="signup"),
     path("login", LoginAPIView.as_view(), name="login"),
     path("verification/send-sms", SendSMSVerificationAPIView.as_view(), name="send_sms"),
