@@ -1,6 +1,7 @@
 from .admin_deployment_serializer import (
     AdminDeploymentCreateResponseSerializer,
     AdminDeploymentListItemSerializer,
+    AdminDeploymentDetailResponseSerializer,
     AdminDeploymentListResponseSerializer,
     AdminDeploymentSerializer,
 )
@@ -19,4 +20,5 @@ __all__ = [
     "AdminDeploymentListItemSerializer",
     "AdminDeploymentListResponseSerializer",
     "AdminDeploymentCreateResponseSerializer",
+    "AdminDeploymentDetailResponseSerializer",
 ]
