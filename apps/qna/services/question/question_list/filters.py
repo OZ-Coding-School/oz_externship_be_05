@@ -36,3 +36,19 @@ def filter_by_search(
         return qs
 
     return qs.filter(Q(title__icontains=search) | Q(content__icontains=search))
+
+
+def filter_by_sort(
+    qs: QuerySet[Question],
+    sort: str,
+) -> QuerySet[Question]:
+    if sort == "latest":
+        return qs.order_by("-created_at", "-id")
+
+    if sort == "oldest":
+        return qs.order_by("created_at", "id")
+
+    if sort == "views":
+        return qs.order_by("-view_count", "-id")
+
+    return qs

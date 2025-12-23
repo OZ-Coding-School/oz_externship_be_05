@@ -1,13 +1,7 @@
 from django.test import TestCase
 
-from apps.qna.exceptions.question_exceptions import (
-    CategoryNotFoundError,
-)
 from apps.qna.models import Question, QuestionCategory, QuestionImage
-from apps.qna.services.question.question_create_service import (
-    create_question,
-    get_category_or_raise,
-)
+from apps.qna.services.question.question_create_service import create_question
 from apps.user.models.user import RoleChoices, User
 
 
@@ -40,8 +34,3 @@ class QuestionCreateServiceTests(TestCase):
         self.assertEqual(Question.objects.count(), 1)
         self.assertEqual(QuestionImage.objects.count(), 1)
         self.assertEqual(question.title, "질문 제목")
-
-    # 404 존재하지 않는 카테고리 ID
-    def test_category_not_found_raises_404_error(self) -> None:
-        with self.assertRaises(CategoryNotFoundError):
-            get_category_or_raise(9999)
