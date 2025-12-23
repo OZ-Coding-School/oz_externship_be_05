@@ -14,7 +14,7 @@ from apps.exams.serializers.student.exam_submit_serializer import (
 
 
 @extend_schema(
-    tags=["Exams - Student"],
+    tags=["쪽지시험"],
     summary="쪽지시험 제출 API",
     description=(
         "수강생이 쪽지시험 문제 풀이를 제출하는 API.\n"

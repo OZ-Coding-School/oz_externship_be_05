@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from drf_spectacular.utils import extend_schema
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -23,6 +24,12 @@ class ExamResultView(APIView):
     # 인증된 사용자만 접근 가능
     permission_classes = [IsAuthenticated, IsSubmissionOwner]
 
+    @extend_schema(
+        tags=["쪽지시험"],
+        summary="쪽지시험 결과 조회 API",
+        description=" ",
+        operation_id="submission_id",
+    )
     def get(
         self,
         request: Request,
