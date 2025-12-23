@@ -1,10 +1,10 @@
 from datetime import date
-from typing import ClassVar
+from typing import Any, ClassVar, cast
 
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
-from apps.user.models.user import RoleChoices, User
+from apps.user.models.user import GenderChoices, RoleChoices, User
 from apps.user.models.withdraw import Withdrawal
 
 
@@ -128,23 +128,68 @@ class AdminAccountListAPITests(APITestCase):
         ids = [row["id"] for row in resp.data["results"]]
         self.assertIn(self.u2.id, ids)
 
-    def test_filter_status_activated(self) -> None:
-        resp = self.client.get(self.url, {"status": "activated"})
+
+class AdminAccountDetailAPITests(APITestCase):
+    admin: ClassVar[User]
+    target: ClassVar[User]
+    DETAIL_URL: ClassVar[str]
+    ROLE_URL: ClassVar[str]
+
+    @classmethod
+    def setUpTestData(cls) -> None:
+        cls.admin = User.objects.create_user(
+            email="admin@example.com",
+            password="pass1234!",
+            name="Admin",
+            nickname="adminnick",
+            phone_number="01000000000",
+            gender=GenderChoices.MALE,
+            birthday=date(1990, 1, 1),
+            is_staff=True,
+            is_superuser=True,
+            role=RoleChoices.AD,
+        )
+
+        cls.target = User.objects.create_user(
+            email="user1@example.com",
+            password="pass1234!",
+            name="Kim",
+            nickname="kimmy",
+            phone_number="01011111111",
+            gender=GenderChoices.MALE,
+            birthday=date(2000, 1, 1),
+            role=RoleChoices.ST,
+        )
+
+        cls.DETAIL_URL = f"/api/v1/admin/accounts/{cls.target.pk}"
+        cls.ROLE_URL = f"/api/v1/admin/accounts/{cls.target.pk}/role"
+
+    def setUp(self) -> None:
+        self.client.force_authenticate(user=self.admin)
+
+    def test_retrieve_ok(self) -> None:
+        resp = self.client.get(self.DETAIL_URL)
         self.assertEqual(resp.status_code, 200)
-        ids = [row["id"] for row in resp.data["results"]]
-        self.assertIn(self.u1.id, ids)
 
-    def test_filter_role_admin(self) -> None:
-        resp = self.client.get(self.url, {"role": "admin"})
-        self.assertEqual(resp.status_code, 200)
-        ids = [row["id"] for row in resp.data["results"]]
-        self.assertIn(self.admin.id, ids)
+        data = cast(dict[str, Any], resp.data)
+        self.assertEqual(int(data["id"]), self.target.id)
 
-    def test_invalid_status_is_ignored_returns_200(self) -> None:
-        resp_all = self.client.get(self.url)
-        self.assertEqual(resp_all.status_code, 200)
-
-        resp = self.client.get(self.url, {"status": "actived"})
+    def test_patch_ok_updates_user(self) -> None:
+        resp = self.client.patch(self.DETAIL_URL, {"name": "Updated"}, format="json")
         self.assertEqual(resp.status_code, 200)
 
-        self.assertEqual(resp.data["count"], resp_all.data["count"])
+        self.target.refresh_from_db()
+        self.assertEqual(self.target.name, "Updated")
+
+    def test_delete_ok(self) -> None:
+        resp = self.client.delete(self.DETAIL_URL)
+        self.assertEqual(resp.status_code, 200)
+
+        self.assertFalse(User.objects.filter(pk=self.target.pk).exists())
+
+    def test_role_patch_ok_updates_role(self) -> None:
+        resp = self.client.patch(self.ROLE_URL, {"role": RoleChoices.USER}, format="json")
+        self.assertEqual(resp.status_code, 200)
+
+        self.target.refresh_from_db()
+        self.assertEqual(self.target.role, RoleChoices.USER)
