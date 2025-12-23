@@ -2,8 +2,9 @@ from typing import Any
 
 from rest_framework import serializers
 
-from apps.user.models import User
-from apps.user.models.user import RoleChoices
+from apps.courses.models.cohorts_models import Cohort
+from apps.courses.models.courses_models import Course
+from apps.user.models.user import RoleChoices, User
 from apps.user.serializers.admin.common import (
     CohortMiniSerializer,
     CourseMiniSerializer,
@@ -55,7 +56,7 @@ class AdminAccountUpdateSerializer(serializers.ModelSerializer[User]):
         fields = ("nickname", "name", "phone_number", "birthday", "gender", "profile_image_url")
 
 
-# 회원 정보 수정 응답 시리얼라이저
+
 class AdminAccountResponseSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
@@ -76,12 +77,42 @@ class AdminAccountResponseSerializer(serializers.ModelSerializer[User]):
 # 회원 권한 변경 시리얼라이저
 class AdminAccountRoleUpdateSerializer(serializers.Serializer[User]):
     role = serializers.ChoiceField(choices=RoleChoices.choices)
-    cohort_id = serializers.IntegerField(required=False, allow_null=True)
-    assigned_courses = serializers.ListField(child=serializers.IntegerField(), required=False, allow_empty=False)
+
+    cohort = serializers.PrimaryKeyRelatedField(
+        queryset=Cohort.objects.all(),
+        required=False,
+        allow_null=True,
+    )
+
+    assigned_courses = serializers.PrimaryKeyRelatedField(
+        queryset=Course.objects.all(),
+        many=True,
+        required=False,
+        allow_empty=False,
+    )
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        role = attrs.get("role")
+        cohort = attrs.get("cohort")
+        courses = attrs.get("assigned_courses")
+
+        if role in (RoleChoices.TA, RoleChoices.ST) and cohort is None:
+            raise serializers.ValidationError({"cohort": ["해당 권한으로 변경 시 필수 값입니다."]})
+
+        if role in (RoleChoices.OM, RoleChoices.LC) and not courses:
+            raise serializers.ValidationError({"assigned_courses": ["해당 권한으로 변경 시 필수 값입니다."]})
+
+        return attrs
 
     def update(self, instance: User, validated_data: dict[str, Any]) -> User:
         role = validated_data.get("role")
         if role is not None:
             instance.role = role
-        instance.save(update_fields=["role"])
+
+        if "cohort" in validated_data:
+            instance.cohort = validated_data["cohort"]
+
+        if "assigned_courses" in validated_data:
+            instance.assigned_courses.set(validated_data["assigned_courses"])
+
+        instance.save()
         return instance
