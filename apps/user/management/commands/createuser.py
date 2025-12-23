@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
 import os
 import sys
+from typing import Any
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
@@ -16,6 +16,7 @@ from apps.user.utils.store import UserStore
 class Command(BaseCommand):
     help = "db에 유저를 만들어줌다"
     path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "testuser.xdat"))
+
     def add_arguments(self, parser: Any) -> None:
         parser.add_argument("email")
         parser.add_argument("password")
