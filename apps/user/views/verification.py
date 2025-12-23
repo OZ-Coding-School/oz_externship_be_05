@@ -37,7 +37,7 @@ class VerifyEmailAPIView(APIView):
 
     @extend_schema(
         tags=["회원관리"],
-        summary="이메일 인증코드 검증 API",
+        summary="이메일 인증코드 전송 API",
         responses={200: None},
     )
     def post(self, request: Request) -> Response:
