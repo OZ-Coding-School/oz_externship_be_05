@@ -20,7 +20,7 @@ class SignupAPIView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Accounts"],
+        tags=["회원관리"],
         summary="회원가입 폼 제출 API",
         responses={201: None},
     )
@@ -35,7 +35,7 @@ class LoginAPIView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Accounts"],
+        tags=["회원관리"],
         summary="로그인 폼 제출 API",
         responses={200: None},
     )

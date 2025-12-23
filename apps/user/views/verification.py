@@ -21,7 +21,7 @@ class SendEmailAPIView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Accounts"],
+        tags=["회원관리"],
         summary="이메일 인증코드 전송 API",
         responses={200: None},
     )
@@ -36,7 +36,7 @@ class VerifyEmailAPIView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Accounts"],
+        tags=["회원관리"],
         summary="이메일 인증코드 검증 API",
         responses={200: None},
     )
@@ -54,7 +54,7 @@ class SendSMSVerificationAPIView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Accounts"],
+        tags=["회원관리"],
         summary="SMS 인증코드 검증 API",
         responses={200: None},
     )
@@ -69,7 +69,7 @@ class VerifySMSAPIView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["Accounts"],
+        tags=["회원관리"],
         summary="SMS 인증코드 검증 API",
         responses={200: None},
     )
