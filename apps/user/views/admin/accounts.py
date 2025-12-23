@@ -9,22 +9,22 @@ from apps.user.models.withdraw import Withdrawal
 from apps.user.pagination import AdminAccountPagination
 from apps.user.serializers.admin.accounts import AdminAccountListSerializer
 
-
 ORDERING_ALLOWED = {"id", "created_at", "birthday"}
 DIRECTION_ALLOWED = {"asc", "desc"}
 
 STATUS_FILTERS = {
-    "withdrew" : Q(is_withdrawing=True),
-    "activated" : Q(is_withdrawing=False, is_active=True),
-    "deactivated" : Q(is_withdrawing=False, is_active=False),
+    "withdrew": Q(is_withdrawing=True),
+    "activated": Q(is_withdrawing=False, is_active=True),
+    "deactivated": Q(is_withdrawing=False, is_active=False),
 }
 
 ROLE_FILTERS = {
     "admin": Q(role=RoleChoices.AD),
     "user": Q(role=RoleChoices.USER),
     "student": Q(role=RoleChoices.ST),
-    "staff": Q(role__in=[RoleChoices.TA, RoleChoices.LC, RoleChoices.OM])
+    "staff": Q(role__in=[RoleChoices.TA, RoleChoices.LC, RoleChoices.OM]),
 }
+
 
 class AdminAccountListAPIView(APIView):
     permission_classes = [IsAdminUser]
@@ -50,7 +50,7 @@ class AdminAccountListAPIView(APIView):
         role_query = ROLE_FILTERS.get(role or "")
         if role_query:
             qs = qs.filter(role_query)
-            
+
         ordering = (request.query_params.get("ordering") or "id").strip()
         direction = (request.query_params.get("direction") or "desc").strip()
 
