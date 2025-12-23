@@ -11,9 +11,9 @@ from apps.exams.permissions.admin_permission import AdminUserPermission
 from apps.exams.serializers.admin import (
     AdminDeploymentCreateResponseSerializer,
     AdminDeploymentDetailResponseSerializer,
-    AdminDeploymentListItemSerializer,
     AdminDeploymentListResponseSerializer,
     AdminDeploymentSerializer,
+    DeploymentListItemSerializer,
 )
 from apps.exams.services.admin.admin_deployment_service import (
     create_deployment,
@@ -73,7 +73,7 @@ class DeploymentListCreateAPIView(AdminUserPermission):
 
         paginator = Pagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = AdminDeploymentListItemSerializer(page, many=True)
+        serializer = DeploymentListItemSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
 
     # --------------------
@@ -136,31 +136,5 @@ class AdminDeploymentDetailUpdateDeleteView(AdminUserPermission):
 
     def get(self, request: Request, deployment_id: int) -> Response:
         deployment = get_admin_deployment_detail(deployment_id=deployment_id)
-
-        exam_access_url = f"{request.scheme}://{request.get_host()}/exams/start/{deployment.id}"
-        submit_count: int = getattr(deployment, "submit_count", 0)
-
-        total_target_count: int = getattr(deployment, "total_target_count", 0)
-
-        not_submitted_count: int = max(total_target_count - submit_count, 0)
-
-        serializer = AdminDeploymentDetailResponseSerializer(
-            {
-                "exam": deployment.exam,
-                "subject": deployment.exam.subject,
-                "deployment": {
-                    "id": deployment.id,
-                    "exam_access_url": exam_access_url,
-                    "access_code": deployment.access_code,
-                    "cohort": deployment.cohort,
-                    "submit_count": submit_count,
-                    "not_submitted_count": not_submitted_count,
-                    "duration_time": deployment.duration_time,
-                    "open_at": deployment.open_at,
-                    "close_at": deployment.close_at,
-                    "created_at": deployment.created_at,
-                },
-            }
-        )
-
+        serializer = AdminDeploymentDetailResponseSerializer(deployment)
         return Response(serializer.data)
