@@ -39,7 +39,7 @@ def auth_cookies(resp: HttpResponseRedirect, *, access: str, refresh: str) -> No
     )  #! 쿠키를 어디까지 허용할지 이것도 환경변수
 
     resp.set_cookie(
-        "access",
+        "access_token",
         access,
         httponly=False,
         secure=secure,
@@ -48,7 +48,7 @@ def auth_cookies(resp: HttpResponseRedirect, *, access: str, refresh: str) -> No
     )
 
     resp.set_cookie(
-        "refresh",
+        "refresh_token",
         refresh,
         httponly=True,
         secure=secure,

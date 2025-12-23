@@ -1,9 +1,15 @@
 from django.urls import path
 
 from apps.user.views import social_login_views
-from apps.user.views.admin.accounts import AdminAccountListAPIView
+from apps.user.views.account import (
+    ChangePasswordAPIView,
+    ChangePhoneAPIView,
+    CheckNicknameAPIView,
+    MeAPIView,
+)
 from apps.user.views.auth import (
     LoginAPIView,
+    RefreshAPIView,
     SignupAPIView,
 )
 from apps.user.views.verification import (
@@ -20,6 +26,11 @@ urlpatterns = [
     path("social-login/naver/callback", social_login_views.NaverCallbackAPIView.as_view(), name="naver-callback"),
     path("signup", SignupAPIView.as_view(), name="signup"),
     path("login", LoginAPIView.as_view(), name="login"),
+    path("refresh", RefreshAPIView.as_view(), name="refresh"),
+    path("me", MeAPIView.as_view(), name="me"),
+    path("change-password", ChangePasswordAPIView.as_view(), name="change_password"),
+    path("change-phone", ChangePhoneAPIView.as_view(), name="change_phone"),
+    path("check-nickname", CheckNicknameAPIView.as_view(), name="check_nickname"),
     path("verification/send-sms", SendSMSVerificationAPIView.as_view(), name="send_sms"),
     path("verification/verify-sms", VerifySMSAPIView.as_view(), name="verify_sms"),
     path("verification/send-email", SendEmailAPIView.as_view(), name="signup_send_email"),

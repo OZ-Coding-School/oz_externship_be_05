@@ -2,15 +2,17 @@ from __future__ import annotations
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.user.models import User
 from apps.user.serializers.auth import (
     LoginSerializer,
     SignupSerializer,
+    TokenRefreshSerializer,
 )
 from apps.user.utils.tokens import issue_token_pair
 
@@ -43,4 +45,18 @@ class LoginAPIView(APIView):
         serializer = LoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
         user: User = serializer.validated_data["user"]
-        return Response(issue_token_pair(user), status=status.HTTP_200_OK)
+        return issue_token_pair(RefreshToken.for_user(user))
+
+
+class RefreshAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request: Request) -> Response:
+        data = dict(request.data)
+        if not data.get("refresh_token"):
+            cookie_refresh = request.COOKIES.get("refresh_token")
+            if cookie_refresh:
+                data["refresh_token"] = cookie_refresh
+        serializer = TokenRefreshSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        return issue_token_pair(RefreshToken(serializer.validated_data["refresh_token"]))
