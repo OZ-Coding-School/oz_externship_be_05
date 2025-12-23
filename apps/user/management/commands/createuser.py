@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from typing import Any
+import os
+import sys
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
@@ -8,11 +10,12 @@ from django.db import IntegrityError
 from django.utils.dateparse import parse_date
 
 from apps.user.models.user import GenderChoices, RoleChoices
+from apps.user.utils.store import UserStore
 
 
 class Command(BaseCommand):
     help = "db에 유저를 만들어줌다"
-
+    path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "testuser.xdat"))
     def add_arguments(self, parser: Any) -> None:
         parser.add_argument("email")
         parser.add_argument("password")
@@ -22,12 +25,16 @@ class Command(BaseCommand):
         parser.add_argument("birthday", help="YYYY-MM-DD")
         parser.add_argument("--nickname")
         parser.add_argument("--role", choices=[choice.value for choice in RoleChoices], default=RoleChoices.USER)
-        parser.add_argument("--profile-image-url")
         parser.add_argument("--inactive", action="store_true")
         parser.add_argument("--staff", action="store_true")
         parser.add_argument("--superuser", action="store_true")
+        parser.add_argument("--make-special", action="store_true")
 
     def handle(self, *args: Any, **options: Any) -> None:
+        if options.get("make_special", False):
+            user = UserStore(self.path, is_default=True)
+            sys.stdout.write(f"{str(user)}")
+            return
         email = options["email"]
         password = options["password"]
         name = options["name"]
@@ -44,7 +51,6 @@ class Command(BaseCommand):
             "phone_number": phone_number,
             "gender": gender,
             "birthday": birthday,
-            "profile_image_url": options.get("profile_image_url"),
             "is_active": not options.get("inactive", False),
         }
 
