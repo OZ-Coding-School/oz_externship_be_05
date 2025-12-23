@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from rest_framework import serializers
 
@@ -56,7 +56,6 @@ class AdminAccountUpdateSerializer(serializers.ModelSerializer[User]):
         fields = ("nickname", "name", "phone_number", "birthday", "gender", "profile_image_url")
 
 
-
 class AdminAccountResponseSerializer(serializers.ModelSerializer[User]):
     class Meta:
         model = User
@@ -90,6 +89,7 @@ class AdminAccountRoleUpdateSerializer(serializers.Serializer[User]):
         required=False,
         allow_empty=False,
     )
+
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         role = attrs.get("role")
         cohort = attrs.get("cohort")
@@ -109,10 +109,10 @@ class AdminAccountRoleUpdateSerializer(serializers.Serializer[User]):
             instance.role = role
 
         if "cohort" in validated_data:
-            instance.cohort = validated_data["cohort"]
+            cast(Any, instance).cohort = validated_data["cohort"]
 
         if "assigned_courses" in validated_data:
-            instance.assigned_courses.set(validated_data["assigned_courses"])
+            cast(Any, instance).assigned_courses.set(validated_data["assigned_courses"])
 
         instance.save()
         return instance
