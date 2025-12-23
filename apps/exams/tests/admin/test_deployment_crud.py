@@ -11,7 +11,9 @@ from apps.core.utils.base62 import Base62
 from apps.courses.models import Cohort, Course, Subject
 from apps.exams.models import Exam, ExamDeployment
 from apps.exams.models.exam_deployment import DeploymentStatus
-from apps.exams.services.admin.admin_deployment_service import create_deployment
+from apps.exams.services.admin.admin_deployment_service import (
+    create_deployment,
+)
 from apps.user.models.user import GenderChoices, RoleChoices, User
 
 
@@ -302,3 +304,46 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
             f"동일한 조건의 배포가 이미 존재합니다: '{existing.exam.title}' - {existing.cohort.number}기",
             response.data["error_detail"],
         )
+
+    # --------------------
+    # GET DETAIL tests
+    # --------------------
+
+    def test_get_deployment_detail_as_admin_success(self) -> None:
+        """관리자 배포 상세 조회 성공"""
+        self.client.force_authenticate(user=self.admin_user)
+
+        deployment = self.deployments[0]
+        url = reverse(
+            "exam-deployment-detail",
+            kwargs={"deployment_id": deployment.id},
+        )
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertIn("exam", response.data)
+        self.assertIn("subject", response.data)
+        self.assertIn("deployment", response.data)
+
+        deployment_data = response.data["deployment"]
+        self.assertEqual(deployment_data["id"], deployment.id)
+        self.assertIn("exam_access_url", deployment_data)
+        self.assertIn("submit_count", deployment_data)
+        self.assertIn("not_submitted_count", deployment_data)
+        self.assertIn("cohort", deployment_data)
+
+    def test_get_deployment_detail_forbidden_for_normal_user(self) -> None:
+        """일반 유저 배포 상세 조회 시 403"""
+        self.client.force_authenticate(user=self.normal_user)
+
+        deployment = self.deployments[0]
+        url = reverse(
+            "exam-deployment-detail",
+            kwargs={"deployment_id": deployment.id},
+        )
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
