@@ -2,7 +2,9 @@ from .admin_deployment_serializer import (
     AdminDeploymentCreateResponseSerializer,
     AdminDeploymentDetailResponseSerializer,
     AdminDeploymentListResponseSerializer,
-    AdminDeploymentSerializer,
+    AdminDeploymentPatchSerializer,
+    AdminDeploymentPostSerializer,
+    AdminDeploymentUpdateResponseSerializer,
     DeploymentListItemSerializer,
 )
 from .admin_exam_serializer import ExamListSerializer, ExamSerializer
@@ -16,9 +18,11 @@ from .admin_exam_serializer import ExamListSerializer, ExamSerializer
 __all__ = [
     "ExamSerializer",
     "ExamListSerializer",
-    "AdminDeploymentSerializer",
+    "AdminDeploymentPostSerializer",
+    "AdminDeploymentPatchSerializer",
     "DeploymentListItemSerializer",
     "AdminDeploymentListResponseSerializer",
     "AdminDeploymentCreateResponseSerializer",
     "AdminDeploymentDetailResponseSerializer",
+    "AdminDeploymentUpdateResponseSerializer",
 ]
