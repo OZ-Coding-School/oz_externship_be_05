@@ -52,8 +52,8 @@ class RefreshAPIView(APIView):
     permission_classes = [AllowAny]
 
     @extend_schema(
-        tags=["리프레시 토큰으로 액세스 토큰 재발급 API"],
-        summary="",
+        tags=["회원관리"],
+        summary="리프레시 토큰으로 액세스 토큰 재발급 API",
         responses={200: None},
     )
     def post(self, request: Request) -> Response:
