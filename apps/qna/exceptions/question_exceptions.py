@@ -16,6 +16,7 @@ class QuestionNotFoundError(APIException):
     status_code = status.HTTP_404_NOT_FOUND
     default_detail = EMS.E404_NOT_FOUND("해당 질문")["error_detail"]
 
+
 ## 수정
 class QuestionUpdateNotAuthenticated(APIException):
     status_code = status.HTTP_401_UNAUTHORIZED

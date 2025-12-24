@@ -1,8 +1,11 @@
 from rest_framework import serializers
-from apps.qna.models import QuestionCategory
+
+from apps.qna.models import QuestionCategory, Question
+
 from .question_image_update import QuestionImagePatchSerializer
 
-class QuestionUpdateSerializer(serializers.Serializer):
+
+class QuestionUpdateSerializer(serializers.Serializer[Question]):
     title = serializers.CharField(required=False)
     content = serializers.CharField(required=False)
     category = serializers.PrimaryKeyRelatedField(

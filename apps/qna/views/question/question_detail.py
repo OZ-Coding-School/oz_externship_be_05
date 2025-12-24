@@ -16,6 +16,7 @@ from apps.qna.services.question.question_detail.service import get_question_deta
 from apps.qna.services.question.question_update.selectors import get_question_for_update
 from apps.qna.services.question.question_update.service import update_question
 
+
 class QuestionDetailAPIView(APIView):
 
     def get_authenticators(self) -> list[BaseAuthentication]:
@@ -53,11 +54,11 @@ class QuestionDetailAPIView(APIView):
         request=QuestionUpdateSerializer,
         responses=QuestionDetailSerializer,
     )
-    def patch(self, request, question_id):
+    def patch(self, request: Request, question_id: int) -> Response:
         self.validation_error_message = EMS.E400_INVALID_REQUEST("질문 수정")["error_detail"]
-        question = get_question_for_update(question_id=question_id) # 존재 확인
+        question = get_question_for_update(question_id=question_id)  # 존재 확인
 
-        self.check_object_permissions(request, question) # 작성자와 사용자가 같은 사람인가 확인
+        self.check_object_permissions(request, question)  # 작성자와 사용자가 같은 사람인가 확인
 
         serializer = QuestionUpdateSerializer(
             instance=question,
@@ -72,6 +73,9 @@ class QuestionDetailAPIView(APIView):
         )
 
         return Response(
-            QuestionDetailSerializer(question,context={"request": request},).data,
+            QuestionDetailSerializer(
+                question,
+                context={"request": request},
+            ).data,
             status=status.HTTP_200_OK,
         )
