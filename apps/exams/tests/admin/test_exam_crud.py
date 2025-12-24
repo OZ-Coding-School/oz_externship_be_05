@@ -82,29 +82,29 @@ class ExamAdminViewTest(APITestCase):
         self.assertIn("question_count", first_result)
         self.assertIn("submit_count", first_result)
         self.assertNotIn("thumbnail_img_url", first_result)
-        self.assertEqual(first_result["exam_title"], "c심화 플라스크 시험")
+        self.assertEqual(first_result["title"], "c심화 플라스크 시험")
 
     def test_list_exams_with_search_filter(self) -> None:
         response = self.client.get(self.base_url, {"search_keyword": "파이썬"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)
-        self.assertEqual(response.data["results"][0]["exam_title"], "a기초 파이썬 시험")
+        self.assertEqual(response.data["results"][0]["title"], "a기초 파이썬 시험")
 
     def test_list_exams_with_subject_id_filter(self) -> None:
         response = self.client.get(self.base_url, {"subject_id": self.subject_django.id})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)
-        self.assertEqual(response.data["results"][0]["exam_title"], "c심화 장고 시험")
+        self.assertEqual(response.data["results"][0]["title"], "c심화 장고 시험")
 
     def test_list_exams_with_sorting_created_at_desc(self) -> None:
         response = self.client.get(self.base_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["results"][0]["exam_title"], "c심화 플라스크 시험")
+        self.assertEqual(response.data["results"][0]["title"], "c심화 플라스크 시험")
 
     def test_list_exams_with_sorting_asc(self) -> None:
         response = self.client.get(self.base_url, {"sort": "title", "order": "asc"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["results"][0]["exam_title"], "a기초 파이썬 시험")
+        self.assertEqual(response.data["results"][0]["title"], "a기초 파이썬 시험")
 
     def test_retrieve_exam_without_list_queryset_optimization(self) -> None:
         response = self.client.get(self.detail_url)
@@ -113,7 +113,7 @@ class ExamAdminViewTest(APITestCase):
     def test_create_exam_success_and_serializer_check(self) -> None:
         data = {
             "subject_id": self.subject_python.id,
-            "exam_title": "새로 만든 시험",
+            "title": "새로 만든 시험",
             "thumbnail_img_url": "http://new.img/url.png",
         }
         response = self.client.post(self.base_url, data, format="json")
@@ -127,7 +127,7 @@ class ExamAdminViewTest(APITestCase):
     def test_update_exam_success(self) -> None:
         data = {
             "subject_id": self.subject_django.id,
-            "exam_title": "수정된 시험 제목",
+            "title": "수정된 시험 제목",
             "thumbnail_img_url": "http://updated.img/url.png",
         }
         response = self.client.put(self.detail_url, data, format="json")
@@ -138,7 +138,7 @@ class ExamAdminViewTest(APITestCase):
     @patch.object(ExamService, "update_exam")
     def test_update_exam_not_found_returns_404(self, mock_update_exam: MagicMock) -> None:
         mock_update_exam.side_effect = Exam.DoesNotExist("Exam not found for update")
-        data = {"subject_id": self.subject_python.id, "exam_title": "오류 테스트"}
+        data = {"subject_id": self.subject_python.id, "title": "오류 테스트"}
         response = self.client.put(self.detail_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data["error_detail"], EMS.E404_NOT_FOUND("수정할 쪽지시험 정보").get("error_detail"))
@@ -163,7 +163,7 @@ class ExamAdminViewTest(APITestCase):
         response = self.client.get(self.base_url, {"search_keyword": "시험", "subject_id": str(self.subject_python.id)})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data["results"]), 1)
-        self.assertEqual(response.data["results"][0]["exam_title"], "a기초 파이썬 시험")
+        self.assertEqual(response.data["results"][0]["title"], "a기초 파이썬 시험")
 
     def test_list_exams_with_invalid_subject_id_format(self) -> None:
         """subject_id가 숫자가 아닐 때 필터링 건너뛰는지 확인"""
@@ -175,11 +175,11 @@ class ExamAdminViewTest(APITestCase):
         """유효하지 않은 정렬 필드 사용 시 기본 정렬(created_at desc) 확인"""
         response = self.client.get(self.base_url, {"sort": "non_existent_field", "order": "asc"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["results"][0]["exam_title"], "c심화 플라스크 시험")
+        self.assertEqual(response.data["results"][0]["title"], "c심화 플라스크 시험")
 
     def test_update_exam_invalid_pk_format_returns_400(self) -> None:
         """PK가 숫자가 아닐 때 400 응답 확인"""
-        data = {"exam_title": "오류 테스트"}
+        data = {"title": "오류 테스트"}
         invalid_url = reverse("exam-detail", kwargs={"pk": "abc"})
         response = self.client.put(invalid_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -203,7 +203,7 @@ class ExamAdminViewTest(APITestCase):
         """POST 시 유효하지 않은 subject_id (404) 테스트"""
         data = {
             "subject_id": 8888,  # 존재하지 않는 과목
-            "exam_title": "에러 테스트",
+            "title": "에러 테스트",
         }
         response = self.client.post(self.base_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
