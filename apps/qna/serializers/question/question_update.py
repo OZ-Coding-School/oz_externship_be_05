@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.qna.models import QuestionCategory, Question
+from apps.qna.models import Question, QuestionCategory
 
 from .question_image_update import QuestionImagePatchSerializer
 

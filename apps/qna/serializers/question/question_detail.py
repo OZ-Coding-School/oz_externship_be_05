@@ -1,5 +1,5 @@
-from rest_framework.request import Request
 from rest_framework import serializers
+from rest_framework.request import Request
 
 from apps.qna.models import Answer, AnswerComment, Question
 from apps.qna.serializers.common.author_serializer import AuthorSerializer
