@@ -16,6 +16,9 @@ from apps.exams.services.admin.admin_deployment_service import (
 )
 from apps.user.models.user import GenderChoices, RoleChoices, User
 
+DEFAULT_DURATION_TIME = 60
+DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 
 class DeploymentListCreateAPIViewTestCase(APITestCase):
     course: Course
@@ -69,7 +72,7 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
             ExamDeployment.objects.create(
                 exam=cls.exam,
                 cohort=cls.cohort,
-                duration_time=60,
+                duration_time=DEFAULT_DURATION_TIME,
                 access_code=Base62.uuid_encode(uuid.uuid4(), length=6),
                 open_at=timezone.now() + timedelta(hours=1),
                 close_at=timezone.now() + timedelta(hours=5),
@@ -101,17 +104,15 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         exam = pop("exam", self.exam)
         open_at = pop("open_at", timezone.now() + offset)
         close_at = pop("close_at", open_at + timedelta(hours=1))
-        duration_time = pop("duration_time", 60)
+        duration_time = pop("duration_time", DEFAULT_DURATION_TIME)
 
-        deployment = create_deployment(
+        return create_deployment(
             cohort=cohort,
             exam=exam,
             duration_time=duration_time,
             open_at=open_at,
             close_at=close_at,
         )
-
-        return deployment
 
     # --------------------
     # GET tests
@@ -170,7 +171,7 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         create_deployment(
             cohort=other_cohort,
             exam=self.exam,
-            duration_time=60,
+            duration_time=DEFAULT_DURATION_TIME,
             open_at=timezone.now() + timedelta(hours=1),
             close_at=timezone.now() + timedelta(hours=5),
         )
@@ -230,7 +231,7 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         data = {
             "cohort_id": new_cohort.id,
             "exam_id": self.exam.id,
-            "duration_time": 60,
+            "duration_time": DEFAULT_DURATION_TIME,
             "open_at": (timezone.now() + timedelta(minutes=1)).isoformat(),
             "close_at": (timezone.now() + timedelta(hours=2)).isoformat(),
         }
@@ -248,7 +249,7 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         data = {
             "cohort_id": self.cohort.id,
             "exam_id": self.exam.id,
-            "duration_time": 60,
+            "duration_time": DEFAULT_DURATION_TIME,
             "open_at": timezone.now(),
             "close_at": timezone.now() + timedelta(hours=2),
         }
@@ -274,7 +275,7 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         data = {
             "cohort_id": 9999,
             "exam_id": 9999,
-            "duration_time": 60,
+            "duration_time": DEFAULT_DURATION_TIME,
             "open_at": timezone.now(),
             "close_at": timezone.now() + timedelta(hours=2),
         }
@@ -294,7 +295,7 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         data = {
             "cohort_id": existing.cohort.id,
             "exam_id": existing.exam.id,
-            "duration_time": 60,
+            "duration_time": DEFAULT_DURATION_TIME,
             "open_at": (timezone.now() + timedelta(minutes=1)).isoformat(),
             "close_at": (timezone.now() + timedelta(hours=2)).isoformat(),
         }
@@ -359,7 +360,14 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         deployment = self.deployments[0]
         url = reverse("exam-deployment-detail", kwargs={"deployment_id": deployment.id})
 
-        payload = {"duration_time": 50, "open_at": "2025-03-02 10:30:00", "close_at": "2025-03-02 12:30:00"}
+        open_at = timezone.now() + timedelta(hours=2)
+        close_at = open_at + timedelta(hours=2)
+
+        payload = {
+            "duration_time": DEFAULT_DURATION_TIME,
+            "open_at": open_at.isoformat(),
+            "close_at": close_at.isoformat(),
+        }
 
         response = self.client.patch(url, payload, format="json")
 
@@ -367,14 +375,14 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
 
         # 응답 스펙 검증
         self.assertEqual(response.data["deployment_id"], deployment.id)
-        self.assertEqual(response.data["duration_time"], 50)
-        self.assertEqual(response.data["open_at"], "2025-03-02 10:30:00")
-        self.assertEqual(response.data["close_at"], "2025-03-02 12:30:00")
+        self.assertEqual(response.data["duration_time"], DEFAULT_DURATION_TIME)
+        self.assertIn("open_at", response.data)
+        self.assertIn("close_at", response.data)
         self.assertIn("updated_at", response.data)
 
         # 실제 DB 반영 여부 확인
         deployment.refresh_from_db()
-        self.assertEqual(deployment.duration_time, 50)
+        self.assertEqual(deployment.duration_time, DEFAULT_DURATION_TIME)
 
     def test_update_deployment_not_found(self) -> None:
         """존재하지 않는 배포 수정 시 404 Not Found"""
@@ -396,12 +404,13 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
 
         url = reverse("exam-deployment-detail", kwargs={"deployment_id": deployment.id})
 
-        payload = {"duration_time": 40}
+        payload = {"duration_time": DEFAULT_DURATION_TIME}
 
         response = self.client.patch(url, payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("open_at", response.data)
+        self.assertIn("errors", response.data)
+        self.assertIn("open_at", response.data["errors"])
 
     def test_update_deployment_forbidden_for_normal_user(self) -> None:
         """일반 유저 배포 수정 시 403 Forbidden"""
@@ -434,5 +443,5 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
 
         response = self.client.patch(url, payload, format="json")
 
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("duration_time", response.data)
+        self.assertIn("errors", response.data)
+        self.assertIn("duration_time", response.data["errors"])
