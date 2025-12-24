@@ -51,6 +51,11 @@ class LoginAPIView(APIView):
 class RefreshAPIView(APIView):
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        tags=["리프레시 토큰으로 액세스 토큰 재발급 API"],
+        summary="",
+        responses={200: None},
+    )
     def post(self, request: Request) -> Response:
         data = dict(request.data)
         if not data.get("refresh_token"):
