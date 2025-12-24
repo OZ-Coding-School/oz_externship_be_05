@@ -36,7 +36,7 @@ class CompletionStreamAPIView(APIView):
             ),
         ],
         responses={
-            "200": {
+            "201": {
                 "type": "string",
                 "description": "SSE 스트리밍 응답",
             },
