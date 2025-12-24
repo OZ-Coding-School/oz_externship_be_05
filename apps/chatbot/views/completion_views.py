@@ -51,22 +51,18 @@ class CompletionStreamAPIView(APIView):
 
     # SSE 스트리밍 응답 생성.
     def post(self, request: Request, session_id: int) -> StreamingHttpResponse:
-        print("error check in views #0")
         session = get_object_or_404(ChatbotSession, id=session_id, user=request.user)
-        print("error check in views #1")
 
         # 요청 데이터 검증
         serializer = CompletionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user_message = serializer.validated_data["message"]
-        print("error check in views #2")
 
         # 사용자 메세지 저장 (service에서 호출해서)
         user_message_save(
             session=session,
             message=user_message,
         )
-        print("error check in views #3")
 
         return create_streaming_response(
             session=session,
