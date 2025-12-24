@@ -39,7 +39,7 @@ ROLE_FILTERS = {
 class AdminAccountListAPIView(APIView):
     permission_classes = [IsAdminUser]
 
-    @extend_schema(tags=["회원관리"], summary="전체 회원 목록 가져오는 API")
+    @extend_schema(tags=["회원관리"], summary="전체 회원 목록 조회 API")
     def get(self, request: Request) -> Response:
         qs = User.objects.all()
 
@@ -85,11 +85,13 @@ class AdminAccountListAPIView(APIView):
 class AdminAccountRetrieveUpdateView(APIView):
     permission_classes = [IsAdminUser]
 
+    @extend_schema(tags=["회원관리"], summary="회원 상세 정보 조회 API")
     def get(self, request: Request, account_id: int) -> Response:
         user = get_object_or_404(User, pk=account_id)
         serializer = AdminAccountRetrieveSerializer(instance=user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(tags=["회원관리"], summary="회원 정보 수정 API")
     def patch(self, request: Request, account_id: int) -> Response:
         user = get_object_or_404(User, pk=account_id)
         serializer = AdminAccountUpdateSerializer(instance=user, data=request.data, partial=True)
@@ -98,6 +100,7 @@ class AdminAccountRetrieveUpdateView(APIView):
         response_serializer = AdminAccountResponseSerializer(instance=user)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(tags=["회원관리"], summary="회원 정보 삭제 API")
     def delete(self, request: Request, account_id: int) -> Response:
         user = get_object_or_404(User, pk=account_id)
         user.delete()
@@ -107,6 +110,7 @@ class AdminAccountRetrieveUpdateView(APIView):
 class AdminAccountRoleUpdateView(APIView):
     permission_classes = [IsAdminUser, AdminAccountRoleUpdatePayloadPermission]
 
+    @extend_schema(tags=["회원관리"], summary="회원 권한 수정 API")
     def patch(self, request: Request, account_id: int) -> Response:
         user = get_object_or_404(User, pk=account_id)
         serializer = AdminAccountRoleUpdateSerializer(instance=user, data=request.data)
