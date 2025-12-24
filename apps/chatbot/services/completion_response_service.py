@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any, cast
 import json
 import logging
 import os
@@ -15,12 +16,19 @@ from apps.chatbot.models.chatbot_sessions import ChatbotSession
 logger = logging.getLogger(__name__)
 
 # Gemini API 설정
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 DEFAULT_MODEL = "gemini-2.0-flash"
+
+# environ vs getenv?
+def _get_api_key() -> str:
+    api_key = os.getenv("GEMINI_API_KEY")
+    # api_key 없을 때, 잘못됐을 때
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY not set")
+    return api_key
 
 
 def _get_client() -> genai.Client:
-    return genai.Client(api_key=GEMINI_API_KEY)
+    return genai.Client(api_key=_get_api_key())
 
 
 # SSE 포멧 인코딩
@@ -86,9 +94,10 @@ def _build_contents(*, session: ChatbotSession, user_message: str) -> list[types
 # (제너레이터에서 분리) Gemini Streaming 결과: 텍스트 chunk만 뽑아 동기 iterator로 제공
 def _iter_gemini_text_stream(*, contents: list[types.Content]) -> Iterator[str]:
     client = _get_client()
+    api_contents = cast(Any, contents) # 타입 넓혀서 전달
     for chunk in client.models.generate_content_stream(
         model=DEFAULT_MODEL,
-        contents=contents,  # type: ignore[arg-type]
+        contents=api_contents,
     ):
         text = getattr(chunk, "text", None)
         if text:
@@ -112,7 +121,6 @@ def generate_streaming_response(*, session: ChatbotSession, user_message: str) -
 
     except Exception as e:
         logger.exception("Gemini Streaming Error: %s: %s", type(e).__name__, e)
-        print(f"Gemini Streaming Error: {type(e).__name__}: {e}")
         yield _sse_json("", error=True)
         yield _sse_json("", done=True)
 
