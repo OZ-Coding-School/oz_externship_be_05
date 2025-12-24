@@ -1,4 +1,5 @@
 from django.db import IntegrityError
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound, ValidationError
@@ -21,6 +22,7 @@ from apps.exams.serializers.admin import (
 )
 from apps.exams.services.admin.admin_deployment_service import (
     create_deployment,
+    delete_deployment,
     get_admin_deployment_detail,
     list_admin_deployments,
     update_deployment,
@@ -39,9 +41,8 @@ class DeploymentListCreateAPIView(AdminUserPermission):
     @extend_schema(
         summary="쪽지시험 배포 목록 조회 API",
         description=(
-            "관리자가 배포된 쪽지시험 목록을 조회합니다. "
-            "페이지네이션을 지원하며, 기수(cohort) 및 검색 키워드를 통해 "
-            "배포 내역을 필터링할 수 있습니다."
+            "관리자가 배포된 쪽지시험 목록을 조회합니다. \n"
+            "  - 페이지네이션을 지원하며, 기수(cohort) 및 검색 키워드를 통해 배포 내역을 필터링할 수 있습니다."
         ),
         parameters=[
             OpenApiParameter("page", int, required=False),
@@ -123,6 +124,7 @@ class AdminDeploymentDetailUpdateDeleteView(AdminUserPermission):
     """
     GET - 배포 상세 조회
     PATCH - 배포 수정
+    DELETE - 배포 삭제
     """
 
     @extend_schema(
@@ -137,8 +139,6 @@ class AdminDeploymentDetailUpdateDeleteView(AdminUserPermission):
         },
         tags=["쪽지시험 관리"],
     )
-    # DELETE - 배포 삭제
-
     def get(self, request: Request, deployment_id: int) -> Response:
         deployment = get_admin_deployment_detail(deployment_id=deployment_id)
         serializer = AdminDeploymentDetailResponseSerializer(deployment)
@@ -176,3 +176,25 @@ class AdminDeploymentDetailUpdateDeleteView(AdminUserPermission):
 
         response_serializer = AdminDeploymentUpdateResponseSerializer(updated_deployment)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        summary="쪽지시험 배포 삭제 API",
+        description=(
+            "관리자가 쪽지시험 배포를 삭제합니다.\n"
+            "  - 배포 내역과 해당 배포에 대한 수강생의 시험 응시 데이터가 함께 삭제됩니다.\n"
+            "  - 삭제된 데이터는 복구할 수 없습니다."
+        ),
+        responses={
+            200: OpenApiResponse(description="쪽지시험 배포 삭제가 성공했습니다."),
+            400: OpenApiResponse(description="유효하지 않은 배포 삭제 요청입니다."),
+            401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
+            403: OpenApiResponse(description="쪽지시험 배포 삭제 권한이 없습니다."),
+            404: OpenApiResponse(description="삭제할 배포 정보를 찾을 수 없습니다."),
+        },
+        tags=["쪽지시험 관리"],
+    )
+    def delete(self, request: Request, deployment_id: int) -> Response:
+        deployment = get_object_or_404(ExamDeployment, pk=deployment_id)
+        delete_deployment(deployment=deployment)
+
+        return Response({"deployment_id": deployment_id}, status=status.HTTP_200_OK)
