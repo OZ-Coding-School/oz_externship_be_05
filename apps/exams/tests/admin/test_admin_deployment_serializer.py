@@ -7,7 +7,8 @@ from django.utils import timezone
 from apps.courses.models import Cohort, Course, Subject
 from apps.exams.models import Exam, ExamDeployment
 from apps.exams.serializers.admin.admin_deployment_serializer import (
-    AdminDeploymentSerializer,
+    AdminDeploymentPatchSerializer,
+    AdminDeploymentPostSerializer,
 )
 
 
@@ -52,30 +53,30 @@ class AdminDeploymentSerializerTest(TestCase):
     def test_create_valid(self) -> None:
         # 정상 데이터는 serializer.is_valid() == True
         data: Dict[str, Any] = {
-            "cohort": self.cohort.id,
-            "exam": self.exam.id,
+            "cohort_id": self.cohort.id,
+            "exam_id": self.exam.id,
             "duration_time": 60,
             "open_at": timezone.now() + timedelta(hours=1),
             "close_at": timezone.now() + timedelta(hours=2),
             "status": "activated",
         }
 
-        serializer = AdminDeploymentSerializer(data=data)
+        serializer = AdminDeploymentPostSerializer(data=data)
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
     def test_create_invalid_open_in_past(self) -> None:
         # 생성 시 open_at 이 과거면 실패
 
         data: Dict[str, Any] = {
-            "cohort": self.cohort.id,
-            "exam": self.exam.id,
+            "cohort_id": self.cohort.id,
+            "exam_id": self.exam.id,
             "duration_time": 60,
             "open_at": timezone.now() - timedelta(hours=1),  # 과거 = 오류
             "close_at": timezone.now() + timedelta(hours=1),
             "status": "activated",
         }
 
-        serializer = AdminDeploymentSerializer(data=data)
+        serializer = AdminDeploymentPostSerializer(data=data)
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("open_at", serializer.errors)
@@ -93,7 +94,7 @@ class AdminDeploymentSerializerTest(TestCase):
             questions_snapshot={},
         )
 
-        serializer = AdminDeploymentSerializer(
+        serializer = AdminDeploymentPatchSerializer(
             instance=deployment,
             data={},
             partial=True,
@@ -105,15 +106,15 @@ class AdminDeploymentSerializerTest(TestCase):
         # open_at >= close_at 일 경우 ValidationError
 
         data: Dict[str, Any] = {
-            "cohort": self.cohort.id,
-            "exam": self.exam.id,
+            "cohort_id": self.cohort.id,
+            "exam_id": self.exam.id,
             "duration_time": 60,
             "open_at": timezone.now() + timedelta(hours=2),
             "close_at": timezone.now() + timedelta(hours=1),
             "status": "activated",
         }
 
-        serializer = AdminDeploymentSerializer(data=data)
+        serializer = AdminDeploymentPostSerializer(data=data)
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("open_at", serializer.errors)
@@ -135,18 +136,18 @@ class AdminDeploymentSerializerTest(TestCase):
         )
 
         data: Dict[str, Any] = {
-            "cohort": other_cohort.id,
-            "exam": self.exam.id,  # 다른 코스의 exam
+            "cohort_id": other_cohort.id,
+            "exam_id": self.exam.id,  # 다른 코스의 exam
             "duration_time": 60,
             "open_at": timezone.now() + timedelta(hours=1),
             "close_at": timezone.now() + timedelta(hours=2),
             "status": "activated",
         }
 
-        serializer = AdminDeploymentSerializer(data=data)
+        serializer = AdminDeploymentPostSerializer(data=data)
 
         self.assertFalse(serializer.is_valid())
-        self.assertIn("cohort", serializer.errors)
+        self.assertIn("cohort_id", serializer.errors)
 
     def test_update_time_order_validation(self) -> None:
         # 수정 - 시간 검증
@@ -162,7 +163,7 @@ class AdminDeploymentSerializerTest(TestCase):
         )
 
         # close_at < open_at 시도
-        serializer = AdminDeploymentSerializer(
+        serializer = AdminDeploymentPatchSerializer(
             instance=deployment,
             data={"close_at": timezone.now() - timedelta(hours=1)},
             partial=True,
