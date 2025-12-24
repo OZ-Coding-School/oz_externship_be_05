@@ -52,3 +52,21 @@ class QuestionUpdateServiceTest(TestCase):
         )
 
         self.assertEqual(self.question.images.count(), 1)
+
+    # 변경된 부분만 업데이트
+    def test_only_updated_field_is_changed(self) -> None:
+        update_question(
+            question=self.question,
+            validated_data={
+                "title": "변경된 제목",
+            },
+        )
+
+        self.question.refresh_from_db()
+
+        # 변경된 필드
+        self.assertEqual(self.question.title, "변경된 제목")
+
+        # 변경되지 않은 필드
+        self.assertEqual(self.question.content, "기존 내용")
+        self.assertEqual(self.question.category, self.category)

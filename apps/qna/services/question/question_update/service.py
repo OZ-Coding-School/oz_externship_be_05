@@ -12,10 +12,13 @@ def update_question(
     validated_data: dict[str, Any],
 ) -> Question:
 
+    update_fields: list[str] = []
+
     # 일반 필드 수정
     for field in ("title", "content", "category"):
         if field in validated_data:
             setattr(question, field, validated_data[field])
+            update_fields.append(field)
 
     question.save()
 
