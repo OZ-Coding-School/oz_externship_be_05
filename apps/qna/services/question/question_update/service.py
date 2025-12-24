@@ -1,7 +1,9 @@
-from django.db import transaction
 from typing import Any
 
+from django.db import transaction
+
 from apps.qna.models import Question, QuestionImage
+
 
 @transaction.atomic
 def update_question(

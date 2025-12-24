@@ -1,3 +1,4 @@
+from rest_framework.request import Request
 from rest_framework import serializers
 
 from apps.qna.models import Answer, AnswerComment, Question
@@ -67,8 +68,14 @@ class QuestionDetailSerializer(serializers.ModelSerializer[Question]):
     def get_category(self, obj: Question) -> CategoryInfo:
         return build_category_info(obj.category)
 
-    def get_is_editable(self, obj):
+    def get_is_editable(self, obj: Question) -> bool:
         request = self.context.get("request")
-        if not request or not request.user.is_authenticated:
+
+        if not isinstance(request, Request):
             return False
-        return obj.author_id == request.user.id
+
+        user = request.user
+        if not user.is_authenticated:
+            return False
+
+        return obj.author_id == user.id

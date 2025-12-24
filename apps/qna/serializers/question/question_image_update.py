@@ -1,6 +1,9 @@
 from rest_framework import serializers
 
-class QuestionImagePatchSerializer(serializers.Serializer):
+from apps.qna.models import QuestionImage
+
+
+class QuestionImagePatchSerializer(serializers.Serializer[QuestionImage]):
     delete_ids = serializers.ListField(
         child=serializers.IntegerField(),
         required=False,
