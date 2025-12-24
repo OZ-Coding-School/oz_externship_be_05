@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 from rest_framework import serializers
 
@@ -78,8 +78,7 @@ class AdminDeploymentPatchSerializer(serializers.ModelSerializer[ExamDeployment]
         ]
 
     def validate(self, attrs: Dict[str, Any]) -> Dict[str, Any]:
-        instance = self.instance
-        assert instance is not None
+        instance = cast(ExamDeployment, self.instance)
 
         open_at = attrs.get("open_at", instance.open_at)
         close_at = attrs.get("close_at", instance.close_at)
