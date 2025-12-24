@@ -16,8 +16,8 @@ from apps.chatbot.serializers.completion_serializers import (
     CompletionCreateSerializer,
 )
 from apps.chatbot.services.completion_response_service import (
-    async_user_message_save,
     create_streaming_response,
+    user_message_save,
 )
 
 # # 기존 레거시, 삭제 예정
@@ -122,25 +122,25 @@ class CompletionStreamAPIView(APIView):
     )
 
     # SSE 스트리밍 응답 생성.
-    async def post(self, request: Request, session_id: int) -> StreamingHttpResponse:
-        @sync_to_async
-        def get_session() -> ChatbotSession:
-            return get_object_or_404(ChatbotSession, id=session_id, user=request.user)
-
-        session = await get_session()
+    def post(self, request: Request, session_id: int) -> StreamingHttpResponse:
+        print("error check in views #0")
+        session = get_object_or_404(ChatbotSession, id=session_id, user=request.user)
+        print("error check in views #1")
 
         # 요청 데이터 검증
         serializer = CompletionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user_message = serializer.validated_data["message"]
+        print("error check in views #2")
 
         # 사용자 메세지 저장 (service에서 호출해서)
-        await async_user_message_save(
+        user_message_save(
             session=session,
             message=user_message,
         )
+        print("error check in views #3")
 
-        return await create_streaming_response(
+        return create_streaming_response(
             session=session,
             user_message=user_message,
         )
