@@ -1,4 +1,4 @@
-from .admin_deployment_serializer import (
+from apps.exams.serializers.admin.admin_deployment_serializer import (
     AdminDeploymentCreateResponseSerializer,
     AdminDeploymentDetailResponseSerializer,
     AdminDeploymentListResponseSerializer,
@@ -7,7 +7,11 @@ from .admin_deployment_serializer import (
     AdminDeploymentUpdateResponseSerializer,
     DeploymentListItemSerializer,
 )
-from .admin_exam_serializer import ExamListSerializer, ExamSerializer
+from apps.exams.serializers.admin.admin_exam_serializer import (
+    ExamListSerializer,
+    ExamQuestionsListSerializer,
+    ExamSerializer,
+)
 
 # from .admin_deployment_serializer import
 # from .admin_exam_detail_serializer import
