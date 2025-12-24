@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, cast
 import json
 import logging
 import os
 from collections.abc import Iterator
+from typing import Any, cast
 
 from django.http import StreamingHttpResponse
 from google import genai
@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 # Gemini API 설정
 DEFAULT_MODEL = "gemini-2.0-flash"
+
 
 # environ vs getenv?
 def _get_api_key() -> str:
@@ -94,7 +95,7 @@ def _build_contents(*, session: ChatbotSession, user_message: str) -> list[types
 # (제너레이터에서 분리) Gemini Streaming 결과: 텍스트 chunk만 뽑아 동기 iterator로 제공
 def _iter_gemini_text_stream(*, contents: list[types.Content]) -> Iterator[str]:
     client = _get_client()
-    api_contents = cast(Any, contents) # 타입 넓혀서 전달
+    api_contents = cast(Any, contents)  # 타입 넓혀서 전달
     for chunk in client.models.generate_content_stream(
         model=DEFAULT_MODEL,
         contents=api_contents,
