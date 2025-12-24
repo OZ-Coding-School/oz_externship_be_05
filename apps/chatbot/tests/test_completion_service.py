@@ -2,13 +2,13 @@ from __future__ import annotations
 
 from datetime import date
 from unittest.mock import MagicMock, patch
+
 from django.http import StreamingHttpResponse
+from google.genai import types
 from rest_framework.test import APITestCase
 
-from google.genai import types
-
 from apps.chatbot.models.chatbot_completions import ChatbotCompletion, UserRole
-from apps.chatbot.models.chatbot_sessions import ChatModel, ChatbotSession
+from apps.chatbot.models.chatbot_sessions import ChatbotSession, ChatModel
 from apps.chatbot.services import completion_response_service as svc
 from apps.qna.models import Question, QuestionCategory
 from apps.user.models import User
@@ -105,7 +105,7 @@ class CompletionResponseServiceTests(APITestCase):
 
         parts = last.parts
         self.assertIsNotNone(parts)
-        assert parts is not None #mypy용
+        assert parts is not None  # mypy용
 
         self.assertGreaterEqual(len(parts), 1)
         self.assertEqual(parts[0].text, "새 메시지")
@@ -139,7 +139,7 @@ class CompletionResponseServiceTests(APITestCase):
 
         saved = ChatbotCompletion.objects.filter(session=self.session, role=UserRole.ASSISTANT).first()
         self.assertIsNotNone(saved)
-        assert saved is not None # mypy용
+        assert saved is not None  # mypy용
         self.assertEqual(saved.message, "Hello World")
 
     @patch("apps.chatbot.services.completion_response_service._iter_gemini_text_stream")
