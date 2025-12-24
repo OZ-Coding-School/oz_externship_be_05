@@ -46,6 +46,9 @@ class QuestionDetailSerializer(serializers.ModelSerializer[Question]):
     author = AuthorSerializer(read_only=True)
     answers = AnswerSerializer(many=True, read_only=True)
 
+    # 이 값을 기준으로 수정 버튼이 보이게 함
+    is_editable = serializers.SerializerMethodField()
+
     class Meta:
         model = Question
         fields = [
@@ -58,7 +61,14 @@ class QuestionDetailSerializer(serializers.ModelSerializer[Question]):
             "created_at",
             "author",
             "answers",
+            "is_editable",
         ]
 
     def get_category(self, obj: Question) -> CategoryInfo:
         return build_category_info(obj.category)
+
+    def get_is_editable(self, obj):
+        request = self.context.get("request")
+        if not request or not request.user.is_authenticated:
+            return False
+        return obj.author_id == request.user.id
