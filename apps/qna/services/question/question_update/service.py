@@ -20,7 +20,8 @@ def update_question(
             setattr(question, field, validated_data[field])
             update_fields.append(field)
 
-    question.save()
+    if update_fields:
+        question.save(update_fields=update_fields)
 
     # 이미지 수정
     images_data = validated_data.get("images")
