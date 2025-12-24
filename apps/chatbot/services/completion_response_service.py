@@ -93,7 +93,7 @@ def _iter_gemini_text_stream(*, contents: list[types.Content]) -> Iterator[str]:
     client = _get_client()
     for chunk in client.models.generate_content_stream(
         model=DEFAULT_MODEL,
-        contents=contents,
+        contents=contents,  # type: ignore[arg-type]
     ):
         text = getattr(chunk, "text", None)
         if text:
