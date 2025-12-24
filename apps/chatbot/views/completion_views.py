@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-from asgiref.sync import sync_to_async
 from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.chatbot.models.chatbot_sessions import ChatbotSession
@@ -19,6 +16,7 @@ from apps.chatbot.services.completion_response_service import (
     create_streaming_response,
     user_message_save,
 )
+
 
 # SSE 스트리밍 AI 응답 생성 API
 class CompletionStreamAPIView(APIView):
