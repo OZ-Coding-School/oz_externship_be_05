@@ -14,4 +14,9 @@ class QuestionCreateNotAuthenticated(APIException):
 ## 상세조회
 class QuestionNotFoundError(APIException):
     status_code = status.HTTP_404_NOT_FOUND
-    default_detail = EMS.E404_NOT_FOUND("질문")["error_detail"]
+    default_detail = EMS.E404_NOT_FOUND("해당 질문")["error_detail"]
+
+## 수정
+class QuestionUpdateNotAuthenticated(APIException):
+    status_code = status.HTTP_401_UNAUTHORIZED
+    default_detail = EMS.E401_USER_ONLY_ACTION("질문을 수정")["error_detail"]
