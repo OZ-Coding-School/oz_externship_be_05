@@ -171,11 +171,8 @@ class AdminDeploymentDetailUpdateDeleteView(AdminUserPermission):
 
         serializer = AdminDeploymentPatchSerializer(instance=deployment, data=request.data, partial=True)
 
-        try:
-            serializer.is_valid(raise_exception=True)
-            updated_deployment = update_deployment(deployment=deployment, data=serializer.validated_data)
-        except ValidationError as e:
-            return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        updated_deployment = update_deployment(deployment=deployment, data=serializer.validated_data)
 
         response_serializer = AdminDeploymentUpdateResponseSerializer(updated_deployment)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
