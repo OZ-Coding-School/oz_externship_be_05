@@ -445,3 +445,54 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
 
         self.assertIn("errors", response.data)
         self.assertIn("duration_time", response.data["errors"])
+
+    # --------------------
+    # DELETE tests
+    # --------------------
+    def test_delete_deployment_success(self) -> None:
+        """배포 삭제 시 200 OK 및 데이터 삭제 확인"""
+        self.client.force_authenticate(user=self.admin_user)
+        deployment = self.deployments[0]
+        deployment_id = deployment.id
+        url = reverse("exam-deployment-detail", kwargs={"deployment_id": deployment_id})
+
+        response = self.client.delete(url)
+
+        # 응답 상태 및 데이터 확인
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["deployment_id"], deployment_id)
+
+        # 실제 DB에서 삭제되었는지 확인
+        self.assertFalse(ExamDeployment.objects.filter(id=deployment_id).exists())
+
+    def test_delete_deployment_not_found(self) -> None:
+        """존재하지 않는 배포 삭제 시 404 확인"""
+        self.client.force_authenticate(user=self.admin_user)
+        url = reverse("exam-deployment-detail", kwargs={"deployment_id": 999999})
+
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_deployment_forbidden_for_normal_user(self) -> None:
+        """일반 유저가 배포 삭제 시도 시 403 확인"""
+        self.client.force_authenticate(user=self.normal_user)
+        deployment = self.deployments[1]
+        url = reverse("exam-deployment-detail", kwargs={"deployment_id": deployment.id})
+
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+        # 데이터가 삭제되지 않고 남아있는지 확인
+        self.assertTrue(ExamDeployment.objects.filter(id=deployment.id).exists())
+
+    def test_delete_deployment_unauthorized(self) -> None:
+        """비인증 사용자가 배포 삭제 시도 시 401 확인"""
+        self.client.force_authenticate(user=None)
+        deployment = self.deployments[2]
+        url = reverse("exam-deployment-detail", kwargs={"deployment_id": deployment.id})
+
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
