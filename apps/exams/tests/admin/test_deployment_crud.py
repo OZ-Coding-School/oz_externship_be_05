@@ -16,6 +16,9 @@ from apps.exams.services.admin.admin_deployment_service import (
 )
 from apps.user.models.user import GenderChoices, RoleChoices, User
 
+DEFAULT_DURATION_TIME = 60
+DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+
 
 class DeploymentListCreateAPIViewTestCase(APITestCase):
     course: Course
@@ -69,7 +72,7 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
             ExamDeployment.objects.create(
                 exam=cls.exam,
                 cohort=cls.cohort,
-                duration_time=60,
+                duration_time=DEFAULT_DURATION_TIME,
                 access_code=Base62.uuid_encode(uuid.uuid4(), length=6),
                 open_at=timezone.now() + timedelta(hours=1),
                 close_at=timezone.now() + timedelta(hours=5),
@@ -101,17 +104,15 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         exam = pop("exam", self.exam)
         open_at = pop("open_at", timezone.now() + offset)
         close_at = pop("close_at", open_at + timedelta(hours=1))
-        duration_time = pop("duration_time", 60)
+        duration_time = pop("duration_time", DEFAULT_DURATION_TIME)
 
-        deployment = create_deployment(
+        return create_deployment(
             cohort=cohort,
             exam=exam,
             duration_time=duration_time,
             open_at=open_at,
             close_at=close_at,
         )
-
-        return deployment
 
     # --------------------
     # GET tests
@@ -170,7 +171,7 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         create_deployment(
             cohort=other_cohort,
             exam=self.exam,
-            duration_time=60,
+            duration_time=DEFAULT_DURATION_TIME,
             open_at=timezone.now() + timedelta(hours=1),
             close_at=timezone.now() + timedelta(hours=5),
         )
@@ -228,9 +229,9 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         )
 
         data = {
-            "cohort": new_cohort.id,
-            "exam": self.exam.id,
-            "duration_time": 60,
+            "cohort_id": new_cohort.id,
+            "exam_id": self.exam.id,
+            "duration_time": DEFAULT_DURATION_TIME,
             "open_at": (timezone.now() + timedelta(minutes=1)).isoformat(),
             "close_at": (timezone.now() + timedelta(hours=2)).isoformat(),
         }
@@ -246,9 +247,9 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         """일반 유저가 배포 생성 시 403 Forbidden 확인"""
         self.client.force_authenticate(user=self.normal_user)
         data = {
-            "cohort": self.cohort.id,
-            "exam": self.exam.id,
-            "duration_time": 60,
+            "cohort_id": self.cohort.id,
+            "exam_id": self.exam.id,
+            "duration_time": DEFAULT_DURATION_TIME,
             "open_at": timezone.now(),
             "close_at": timezone.now() + timedelta(hours=2),
         }
@@ -259,8 +260,8 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         """유효하지 않은 데이터 입력 시 400 Bad Request 확인"""
         self.client.force_authenticate(user=self.admin_user)
         data = {
-            "cohort": "",
-            "exam": self.exam.id,
+            "cohort_id": "",
+            "exam_id": self.exam.id,
             "duration_time": "abc",
             "open_at": timezone.now(),
             "close_at": timezone.now() + timedelta(hours=2),
@@ -272,9 +273,9 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         """존재하지 않는 cohort 또는 exam으로 생성 시 404 Not Found 확인"""
         self.client.force_authenticate(user=self.admin_user)
         data = {
-            "cohort": 9999,
-            "exam": 9999,
-            "duration_time": 60,
+            "cohort_id": 9999,
+            "exam_id": 9999,
+            "duration_time": DEFAULT_DURATION_TIME,
             "open_at": timezone.now(),
             "close_at": timezone.now() + timedelta(hours=2),
         }
@@ -292,9 +293,9 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         existing.save(update_fields=["status", "open_at"])
 
         data = {
-            "cohort": existing.cohort.id,
-            "exam": existing.exam.id,
-            "duration_time": 60,
+            "cohort_id": existing.cohort.id,
+            "exam_id": existing.exam.id,
+            "duration_time": DEFAULT_DURATION_TIME,
             "open_at": (timezone.now() + timedelta(minutes=1)).isoformat(),
             "close_at": (timezone.now() + timedelta(hours=2)).isoformat(),
         }
@@ -347,3 +348,100 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    # --------------------
+    # PATCH tests (Update Deployment)
+    # --------------------
+
+    def test_update_deployment_success(self) -> None:
+        """관리자가 배포 수정 시 200 OK 및 응답값 확인"""
+        self.client.force_authenticate(user=self.admin_user)
+
+        deployment = self.deployments[0]
+        url = reverse("exam-deployment-detail", kwargs={"deployment_id": deployment.id})
+
+        open_at = timezone.now() + timedelta(hours=2)
+        close_at = open_at + timedelta(hours=2)
+
+        payload = {
+            "duration_time": DEFAULT_DURATION_TIME,
+            "open_at": open_at.isoformat(),
+            "close_at": close_at.isoformat(),
+        }
+
+        response = self.client.patch(url, payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # 응답 스펙 검증
+        self.assertEqual(response.data["deployment_id"], deployment.id)
+        self.assertEqual(response.data["duration_time"], DEFAULT_DURATION_TIME)
+        self.assertIn("open_at", response.data)
+        self.assertIn("close_at", response.data)
+        self.assertIn("updated_at", response.data)
+
+        # 실제 DB 반영 여부 확인
+        deployment.refresh_from_db()
+        self.assertEqual(deployment.duration_time, DEFAULT_DURATION_TIME)
+
+    def test_update_deployment_not_found(self) -> None:
+        """존재하지 않는 배포 수정 시 404 Not Found"""
+        self.client.force_authenticate(user=self.admin_user)
+
+        url = reverse("exam-deployment-detail", kwargs={"deployment_id": 999999})
+
+        response = self.client.patch(url, {}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_started_deployment_fail(self) -> None:
+        """이미 시작된 시험 수정 시 400 Bad Request"""
+        self.client.force_authenticate(user=self.admin_user)
+
+        deployment = self.deployments[0]
+        deployment.open_at = timezone.now() - timedelta(minutes=10)
+        deployment.status = DeploymentStatus.ACTIVATED
+        deployment.save(update_fields=["open_at", "status"])
+
+        url = reverse("exam-deployment-detail", kwargs={"deployment_id": deployment.id})
+
+        payload = {"duration_time": DEFAULT_DURATION_TIME}
+
+        response = self.client.patch(url, payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("errors", response.data)
+        self.assertIn("open_at", response.data["errors"])
+
+    def test_update_deployment_forbidden_for_normal_user(self) -> None:
+        """일반 유저 배포 수정 시 403 Forbidden"""
+        self.client.force_authenticate(user=self.normal_user)
+
+        deployment = self.deployments[0]
+        url = reverse("exam-deployment-detail", kwargs={"deployment_id": deployment.id})
+
+        response = self.client.patch(url, {}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_update_deployment_unauthorized(self) -> None:
+        """인증 없이 배포 수정 시 401 Unauthorized"""
+        self.client.force_authenticate(user=None)
+
+        deployment = self.deployments[0]
+        url = reverse("exam-deployment-detail", kwargs={"deployment_id": deployment.id})
+
+        response = self.client.patch(url, {}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_update_duration_time_less_than_30(self) -> None:
+        """시험 시간(duration_time) 30분 미만이면 배포 수정 실패 확인"""
+        self.client.force_authenticate(user=self.admin_user)
+
+        deployment = self.deployments[0]
+        url = reverse("exam-deployment-detail", kwargs={"deployment_id": deployment.id})
+
+        payload = {"duration_time": 20}
+
+        response = self.client.patch(url, payload, format="json")
+
+        self.assertIn("errors", response.data)
+        self.assertIn("duration_time", response.data["errors"])
