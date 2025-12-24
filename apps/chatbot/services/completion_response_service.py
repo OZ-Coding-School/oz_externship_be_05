@@ -20,19 +20,16 @@ DEFAULT_MODEL = "gemini-2.0-flash"
 
 
 def _get_client() -> genai.Client:
-    print("error check in service #1")
     return genai.Client(api_key=GEMINI_API_KEY)
 
 
 # SSE 포멧 인코딩
 def _sse_encode(data: str) -> str:
-    print("error check in service #2")
     return f"data: {data}\n\n"
 
 
 # SSE 메세지, JSON 형태로 생성
 def _sse_json(content: str, *, done: bool = False, error: bool = False) -> str:
-    print("error check in service #3")
     if done:
         return _sse_encode("[DONE]")
     if error:
@@ -42,7 +39,6 @@ def _sse_json(content: str, *, done: bool = False, error: bool = False) -> str:
 
 # 유저 메세지 DB 저장
 def user_message_save(*, session: ChatbotSession, message: str) -> ChatbotCompletion:
-    print("error check in service #4")
     return ChatbotCompletion.objects.create(
         session=session,
         message=message,
@@ -61,7 +57,6 @@ def ai_message_save(*, session: ChatbotSession, message: str) -> ChatbotCompleti
 
 # 세션 대화 이력 Gemini API 형식으로 변환
 def get_chat_history(session: ChatbotSession) -> list[types.Content]:
-    print("error check in service #5")
     completions = session.messages.all().order_by("created_at")
     history = []
 
@@ -124,7 +119,6 @@ def generate_streaming_response(*, session: ChatbotSession, user_message: str) -
 
 # StreamingHttpResponse 생성 (async 삭제)
 def create_streaming_response(*, session: ChatbotSession, user_message: str) -> StreamingHttpResponse:
-    print("error check in service #7")
     response = StreamingHttpResponse(
         streaming_content=generate_streaming_response(session=session, user_message=user_message),
         content_type="text/event-stream; charset=utf-8",
