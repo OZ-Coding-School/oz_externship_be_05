@@ -7,7 +7,7 @@ from apps.exams.serializers.admin.admin_question_serializer import (
 )
 
 
-class ExamSerializer(serializers.ModelSerializer[Exam]):
+class AdminExamSerializer(serializers.ModelSerializer[Exam]):
     """
     쪽지시험 생성(POST) 및 수정(PUT) 시 사용하는 시리얼라이저입니다.
     """
@@ -19,10 +19,10 @@ class ExamSerializer(serializers.ModelSerializer[Exam]):
     class Meta:
         model = Exam
         fields = ["id", "title", "subject_id", "subject_name", "thumbnail_img_url", "created_at", "updated_at"]
-        read_only_fields = ["id", "subject_id", "subject_name", "created_at", "updated_at"]
+        read_only_fields = ["id", "subject_name", "created_at", "updated_at"]
 
 
-class ExamListSerializer(serializers.ModelSerializer[Exam]):
+class AdminExamListSerializer(serializers.ModelSerializer[Exam]):
     """
     GET /api/v1/admin/exams 요청 시 사용되는 목록 조회 시리얼라이저입니다.
     subject_name: subject.title
@@ -51,7 +51,7 @@ class ExamListSerializer(serializers.ModelSerializer[Exam]):
         ]
 
 
-class ExamQuestionsListSerializer(serializers.ModelSerializer[Exam]):
+class AdminExamQuestionsListSerializer(serializers.ModelSerializer[Exam]):
     """
     관리자용 쪽지시험 상세 조회 시리얼라이저입니다.
     GET /api/v1/admin/exams/{exam_id} 요청 시 사용됩니다.
