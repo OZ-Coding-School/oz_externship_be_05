@@ -10,10 +10,10 @@ from rest_framework.test import APITestCase
 from apps.core.exceptions.exception_messages import EMS
 from apps.courses.models import Course, Subject
 from apps.exams.models import Exam
-from apps.exams.services.admin import ExamService
+from apps.exams.services.admin import AdminExamService
 
 # 서비스 인스턴스 생성
-exam_service = ExamService()
+exam_service = AdminExamService()
 
 
 class ExamAdminViewTest(APITestCase):
@@ -135,7 +135,7 @@ class ExamAdminViewTest(APITestCase):
         self.exam_a.refresh_from_db()
         self.assertEqual(self.exam_a.title, "수정된 시험 제목")
 
-    @patch.object(ExamService, "update_exam")
+    @patch.object(AdminExamService, "update_exam")
     def test_update_exam_not_found_returns_404(self, mock_update_exam: MagicMock) -> None:
         mock_update_exam.side_effect = Exam.DoesNotExist("Exam not found for update")
         data = {"subject_id": self.subject_python.id, "title": "오류 테스트"}
@@ -148,7 +148,7 @@ class ExamAdminViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Exam.objects.count(), 2)
 
-    @patch.object(ExamService, "delete_exam")
+    @patch.object(AdminExamService, "delete_exam")
     def test_destroy_exam_not_found_returns_404(self, mock_delete_exam: MagicMock) -> None:
         mock_delete_exam.side_effect = ValueError(
             "Exam not found for delete"
