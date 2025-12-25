@@ -103,7 +103,7 @@ class AdminExamService:
             exam: 업데이트할 Exam 인스턴스 (이미 뷰에서 조회됨)
             validated_data: 시리얼라이저를 통과한 데이터
         """
-        subject_id = validated_data.pop("subject_id", None)  # KeyError 방지
+        subject_id = validated_data.pop("subject_id", None) # KeyError 방지
 
         with transaction.atomic():
             if subject_id is not None:
