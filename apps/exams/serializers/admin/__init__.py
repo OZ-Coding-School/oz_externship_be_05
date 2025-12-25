@@ -9,9 +9,9 @@ from apps.exams.serializers.admin.admin_deployment_serializer import (
     DeploymentListItemSerializer,
 )
 from apps.exams.serializers.admin.admin_exam_serializer import (
-    ExamListSerializer,
-    ExamQuestionsListSerializer,
-    ExamSerializer,
+    AdminExamListSerializer,
+    AdminExamQuestionsListSerializer,
+    AdminExamSerializer,
 )
 
 # from .admin_deployment_serializer import
@@ -21,8 +21,8 @@ from apps.exams.serializers.admin.admin_exam_serializer import (
 # from .admin_submission_serializer import
 
 __all__ = [
-    "ExamSerializer",
-    "ExamListSerializer",
+    "AdminExamSerializer",
+    "AdminExamListSerializer",
     "AdminDeploymentPostSerializer",
     "AdminDeploymentPatchSerializer",
     "DeploymentListItemSerializer",
