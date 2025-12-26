@@ -6,6 +6,7 @@ from apps.exams.views.admin.admin_exam_view import (
 from .admin_deployment_view import (
     AdminDeploymentDetailUpdateDeleteView,
     DeploymentListCreateAPIView,
+    ExamDeploymentStatusAPIView,
 )
 
 # from .admin_question_view import
@@ -16,4 +17,5 @@ __all__ = [
     "ExamAdminRetrieveUpdateDestroyAPIView",
     "DeploymentListCreateAPIView",
     "AdminDeploymentDetailUpdateDeleteView",
+    "ExamDeploymentStatusAPIView",
 ]
