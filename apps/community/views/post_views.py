@@ -111,7 +111,13 @@ class PostListCreateAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         post = serializer.save()
 
-        return Response(serializer.to_representation(post), status=status.HTTP_201_CREATED)
+        return Response(
+            {
+                "detail": "게시글이 성공적 등록됨.",
+                "data": serializer.to_representation(post),
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class PostRetrieveUpdateDestroyAPIView(APIView):
