@@ -4,6 +4,7 @@ from apps.exams.serializers.admin.admin_deployment_serializer import (
     AdminDeploymentListResponseSerializer,
     AdminDeploymentPatchSerializer,
     AdminDeploymentPostSerializer,
+    AdminDeploymentStatusPatchSerializer,
     AdminDeploymentUpdateResponseSerializer,
     DeploymentListItemSerializer,
 )
@@ -29,4 +30,5 @@ __all__ = [
     "AdminDeploymentCreateResponseSerializer",
     "AdminDeploymentDetailResponseSerializer",
     "AdminDeploymentUpdateResponseSerializer",
+    "AdminDeploymentStatusPatchSerializer",
 ]
