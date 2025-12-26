@@ -156,8 +156,8 @@ class ExamAdminQuestionUpdateDestroyAPIView(AdminUserPermissionView):
             409: OpenApiResponse(description="문제 수 또는 총 배점 초과"),
         },
     )
-    def put(self, request: Request, question_id: int) -> Response:
-        # partial=True를 통해 일부 필드만 수정하는 것도 허용
+    def patch(self, request: Request, question_id: int) -> Response:
+        # partial=True를 통해 일부 필드만 수정하는 것 허용
         serializer = AdminExamQuestionSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
