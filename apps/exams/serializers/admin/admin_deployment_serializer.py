@@ -180,7 +180,7 @@ class DeploymentListItemSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     submit_count = serializers.IntegerField()
     avg_score = serializers.FloatField(allow_null=True)
-    status = serializers.CharField()
+    status = serializers.ChoiceField(choices=DeploymentStatus.choices)
     exam = ExamResponseSerializer()
     subject = SubjectResponseSerializer(source="exam.subject")
     cohort = CohortResponseSerializer()
