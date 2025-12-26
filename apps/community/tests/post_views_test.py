@@ -88,46 +88,48 @@ class PostAPIViewTestCase(TestCase):
     def test_post_list_search_by_title(self) -> None:
         self.create_post(author=self.user, title="Django 튜토리얼")
         self.create_post(author=self.user, title="Python 기초")
-        params: dict[str, str] = {"search": "Django"}
-        response = self.client.get(self.list_url, params)
+        response = self.client.get(self.list_url, {"search": "Django"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
         self.assertIn("Django", response.data[0]["title"])
 
     def test_post_list_search_no_results(self) -> None:
         self.create_post(author=self.user, title="Django 튜토리얼")
-        params: dict[str, str] = {"search": "Flask"}
-        response = self.client.get(self.list_url, params)
+        response = self.client.get(self.list_url, {"search": "Flask"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
 
     def test_post_list_filter_by_category(self) -> None:
         self.create_post(author=self.user, category=self.category)
         self.create_post(author=self.user, category=self.category2)
-        params: dict[str, str] = {"category_id": str(self.category.id)}
-        response = self.client.get(self.list_url, params)
+        response = self.client.get(self.list_url, {"category_id": str(self.category.id)})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 1)
 
     def test_post_list_invalid_category_id(self) -> None:
-        params: dict[str, str] = {"category_id": "abc"}
-        response = self.client.get(self.list_url, params)
+        response = self.client.get(self.list_url, {"category_id": "abc"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("category_id는 정수여야 합니다", str(response.data))
 
     def test_post_list_filter_nonexistent_category(self) -> None:
         self.create_post(author=self.user)
-        params: dict[str, str] = {"category_id": "9999"}
-        response = self.client.get(self.list_url, params)
+        response = self.client.get(self.list_url, {"category_id": "9999"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 0)
+
+    def test_post_list_search_and_filter_combined(self) -> None:
+        self.create_post(author=self.user, title="A제목", category=self.category)
+        self.create_post(author=self.user, title="B제목", category=self.category2)
+        response = self.client.get(self.list_url, {"search": "A", "category_id": str(self.category.id)})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["title"], "A제목")
 
     def test_post_list_sort_by_title_asc(self) -> None:
         self.create_post(author=self.user, title="C제목")
         self.create_post(author=self.user, title="A제목")
         self.create_post(author=self.user, title="B제목")
-        params: dict[str, str] = {"sort": "title", "order": "asc"}
-        response = self.client.get(self.list_url, params)
+        response = self.client.get(self.list_url, {"sort": "title", "order": "asc"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data[0]["title"], "A제목")
 
@@ -139,21 +141,18 @@ class PostAPIViewTestCase(TestCase):
         self.assertEqual(response.data[0]["id"], post2.id)
 
     def test_post_list_invalid_sort_field(self) -> None:
-        params: dict[str, str] = {"sort": "invalid"}
-        response = self.client.get(self.list_url, params)
+        response = self.client.get(self.list_url, {"sort": "invalid"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("정렬 기준이 올바르지 않습니다", str(response.data))
 
     def test_post_list_sort_order_invalid(self) -> None:
         self.create_post(author=self.user, title="A제목")
-        params: dict[str, str] = {"sort": "title", "order": "invalid"}
-        response = self.client.get(self.list_url, params)
+        response = self.client.get(self.list_url, {"sort": "title", "order": "invalid"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_post_list_sort_order_invalid_edge(self) -> None:
         self.create_post(author=self.user)
-        params: dict[str, str] = {"sort": "title", "order": "notexist"}
-        response = self.client.get(self.list_url, params)
+        response = self.client.get(self.list_url, {"sort": "title", "order": "notexist"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     # ====================
@@ -163,45 +162,35 @@ class PostAPIViewTestCase(TestCase):
     def test_post_create_success(self) -> None:
         self.authenticate(self.user)
         response = self.client.post(
-            self.list_url,
-            {
-                "title": "새 게시글",
-                "content": "새 내용",
-                "category_id": self.category.id,
-            },
+            self.list_url, {"title": "새 게시글", "content": "새 내용", "category_id": self.category.id}
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Post.objects.count(), 1)
 
     def test_post_create_unauthenticated(self) -> None:
         response = self.client.post(
-            self.list_url,
-            {"title": "제목", "content": "내용", "category_id": self.category.id},
+            self.list_url, {"title": "제목", "content": "내용", "category_id": self.category.id}
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_post_create_missing_title(self) -> None:
         self.authenticate(self.user)
-        response = self.client.post(
-            self.list_url,
-            {"content": "내용", "category_id": self.category.id},
-        )
+        response = self.client.post(self.list_url, {"content": "내용", "category_id": self.category.id})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_post_create_missing_content(self) -> None:
         self.authenticate(self.user)
-        response = self.client.post(
-            self.list_url,
-            {"title": "제목", "category_id": self.category.id},
-        )
+        response = self.client.post(self.list_url, {"title": "제목", "category_id": self.category.id})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_post_create_missing_category_id(self) -> None:
+        self.authenticate(self.user)
+        response = self.client.post(self.list_url, {"title": "제목", "content": "내용"})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_post_create_invalid_category_id(self) -> None:
         self.authenticate(self.user)
-        response = self.client.post(
-            self.list_url,
-            {"title": "제목", "content": "내용", "category_id": 9999},
-        )
+        response = self.client.post(self.list_url, {"title": "제목", "content": "내용", "category_id": 9999})
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("없는 카테고리입니다", str(response.data))
 
@@ -260,8 +249,7 @@ class PostAPIViewTestCase(TestCase):
     def test_post_update_not_found(self) -> None:
         self.authenticate(self.user)
         response = self.client.put(
-            reverse("post-detail", args=[9999]),
-            {"title": "x", "content": "x", "category_id": self.category.id},
+            reverse("post-detail", args=[9999]), {"title": "x", "content": "x", "category_id": self.category.id}
         )
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -277,12 +265,33 @@ class PostAPIViewTestCase(TestCase):
         self.assertEqual(post.title, "부분 수정된 제목")
         self.assertEqual(post.content, "내용")
 
-    def test_post_update_invalid_category_id(self) -> None:
+    def test_post_partial_update_content_only(self) -> None:
         post = self.create_post(author=self.user)
         self.authenticate(self.user)
         response = self.client.put(
             reverse("post-detail", args=[post.id]),
-            {"title": "수정", "content": "수정", "category_id": 9999},
+            {"title": post.title, "content": "내용만 수정", "category_id": self.category.id},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        post.refresh_from_db()
+        self.assertEqual(post.content, "내용만 수정")
+
+    def test_post_update_title_only(self) -> None:
+        post = self.create_post(author=self.user)
+        self.authenticate(self.user)
+        response = self.client.put(
+            reverse("post-detail", args=[post.id]),
+            {"title": "제목만 수정", "content": post.content, "category_id": self.category.id},
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        post.refresh_from_db()
+        self.assertEqual(post.title, "제목만 수정")
+
+    def test_post_update_invalid_category_id(self) -> None:
+        post = self.create_post(author=self.user)
+        self.authenticate(self.user)
+        response = self.client.put(
+            reverse("post-detail", args=[post.id]), {"title": "수정", "content": "수정", "category_id": 9999}
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("없는 카테고리입니다", str(response.data))
@@ -304,6 +313,12 @@ class PostAPIViewTestCase(TestCase):
         response = self.client.delete(reverse("post-detail", args=[post.id]))
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertIn("삭제 권한이 없습니다", str(response.data))
+        self.assertEqual(Post.objects.count(), 1)
+
+    def test_post_delete_unauthenticated(self) -> None:
+        post = self.create_post(author=self.user)
+        response = self.client.delete(reverse("post-detail", args=[post.id]))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertEqual(Post.objects.count(), 1)
 
     # ====================
