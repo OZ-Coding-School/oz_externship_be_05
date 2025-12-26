@@ -1,4 +1,6 @@
 from typing import Any, cast
+from unittest import mock
+from unittest.mock import MagicMock
 
 from django.urls import reverse
 from rest_framework import status
@@ -35,124 +37,75 @@ class QuestionUpdateAPITest(APITestCase):
         )
 
         # 이미지 3개 생성
-        self.image1 = QuestionImage.objects.create(
-            question=self.question,
-            img_url="https://img.com/1.png",
-        )
-        self.image2 = QuestionImage.objects.create(
-            question=self.question,
-            img_url="https://img.com/2.png",
-        )
-        self.image3 = QuestionImage.objects.create(
-            question=self.question,
-            img_url="https://img.com/3.png",
-        )
+        self.urls = [
+            "https://img.com/1.png",
+            "https://img.com/2.png",
+            "https://img.com/3.png",
+        ]
+        self.images = [QuestionImage.objects.create(question=self.question, img_url=url) for url in self.urls]
 
         self.url = reverse("question_detail", args=[self.question.id])
 
-    # 200: 부분 수정
+    # 200: 부분 수정 (제목만)
     def test_partial_update_title(self) -> None:
         response = self.client.patch(
             self.url,
             {"title": "수정된 제목"},
             format="json",
         )
-
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.question.refresh_from_db()
+        self.assertEqual(self.question.title, "수정된 제목")
 
-        data = cast(dict[str, Any], response.data)
-        self.assertEqual(data["title"], "수정된 제목")
+    # 200: 이미지 1개 삭제, 1개 등록
+    @mock.patch("apps.qna.services.common.image_service.S3Client")
+    def test_update_image_delete_and_add(self, mock_s3_client_class: MagicMock) -> None:
+        mock_s3_instance = mock_s3_client_class.return_value
+        mock_s3_instance.is_valid_s3_url.return_value = True
 
-    # 200: 이미지 1개 삭제 1개 등록
-    def test_update_image_delete_and_add(self) -> None:
-        image = QuestionImage.objects.create(
-            question=self.question,
-            img_url="https://old.com/1.png",
-        )
+        # 기존 이미지 1번 삭제 / 2,3번 유지 / 4번 추가
+        new_url = "https://new.com/4.png"
+
+        # 1번(urls[0]) 제외, 2번(urls[1]), 3번(urls[2]) 유지, 4번 추가
+        new_content = f"""
+            <p>내용 수정</p>
+            <img src="{self.urls[1]}">
+            <img src="{self.urls[2]}">
+            <img src="{new_url}">
+        """
 
         response = self.client.patch(
             self.url,
-            {
-                "images": {
-                    "delete_ids": [image.id],
-                    "add_urls": ["https://new.com/2.png"],
-                }
-            },
+            {"content": new_content},
             format="json",
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        data = cast(dict[str, Any], response.data)
-        images = cast(list[dict[str, Any]], data["images"])
-        urls = [img["img_url"] for img in images]
-
-        self.assertIn("https://new.com/2.png", urls)
-
-    # 200: 이미지 3개 중 1개 삭제 2개 유지
-    def test_delete_one_image_out_of_three(self) -> None:
-        response = self.client.patch(
-            self.url,
-            {
-                "images": {
-                    "delete_ids": [self.image2.id],
-                }
-            },
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        data = cast(dict[str, Any], response.data)
-        images = cast(list[dict[str, Any]], data["images"])
-
-        # 응답 기준 검증
-        returned_ids = {img["id"] for img in images}
-
-        self.assertNotIn(self.image2.id, returned_ids)
-        self.assertIn(self.image1.id, returned_ids)
-        self.assertIn(self.image3.id, returned_ids)
-
-        # DB 기준 검증
-        remaining_ids = set(QuestionImage.objects.filter(question=self.question).values_list("id", flat=True))
-
-        self.assertEqual(remaining_ids, {self.image1.id, self.image3.id})
-
-    # 200: 이미지 전부 삭제 이미지 1개 등록
-    def test_delete_all_images_and_add_one(self) -> None:
-        response = self.client.patch(
-            self.url,
-            {
-                "images": {
-                    "delete_ids": [
-                        self.image1.id,
-                        self.image2.id,
-                        self.image3.id,
-                    ],
-                    "add_urls": ["https://img.com/new.png"],
-                }
-            },
-            format="json",
-        )
-
-        # 상태 코드 검증
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        # 응답 검증
-        data = cast(dict[str, Any], response.data)
-        images = cast(list[dict[str, Any]], data["images"])
-
-        self.assertEqual(len(images), 1)
-        self.assertEqual(images[0]["img_url"], "https://img.com/new.png")
 
         # DB 검증
-        remaining_images = QuestionImage.objects.filter(question=self.question)
-        self.assertEqual(remaining_images.count(), 1)
+        current_urls = set(QuestionImage.objects.filter(question=self.question).values_list("img_url", flat=True))
 
-        remaining_image = remaining_images.first()
-        assert remaining_image is not None  # mypy
+        self.assertNotIn(self.urls[0], current_urls)  # 1번 삭제됨
+        self.assertIn(self.urls[1], current_urls)  # 2번 유지
+        self.assertIn(self.urls[2], current_urls)  # 3번 유지
+        self.assertIn(new_url, current_urls)  # 4번 추가됨
 
-        self.assertEqual(
-            remaining_image.img_url,
-            "https://img.com/new.png",
+        # S3 삭제 호출 검증
+        mock_s3_instance.delete_from_url.assert_called_with(self.urls[0])
+
+    # 200: 이미지 전부 삭제
+    @mock.patch("apps.qna.services.common.image_service.S3Client")
+    def test_delete_all_images(self, mock_s3_client_class: MagicMock) -> None:
+        mock_s3_instance = mock_s3_client_class.return_value
+
+        response = self.client.patch(
+            self.url,
+            {"content": "이미지 싹 지움"},
+            format="json",
         )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.question.images.count(), 0)
+
+        # 3개 모두 삭제 호출되었는지 확인
+        self.assertEqual(mock_s3_instance.delete_from_url.call_count, 3)
