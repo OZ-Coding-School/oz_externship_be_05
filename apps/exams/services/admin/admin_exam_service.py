@@ -8,7 +8,7 @@ from apps.courses.models import Subject
 from apps.exams.models import Exam
 
 
-class ExamService:
+class AdminExamService:
     """쪽지시험(Exam) 관련 비즈니스 로직을 처리하는 서비스 계층."""
 
     # ----------------------------------------------------------------------
@@ -103,7 +103,7 @@ class ExamService:
             exam: 업데이트할 Exam 인스턴스 (이미 뷰에서 조회됨)
             validated_data: 시리얼라이저를 통과한 데이터
         """
-        subject_id = validated_data.pop("subject_id")
+        subject_id = validated_data.pop("subject_id", None)  # KeyError 방지
 
         with transaction.atomic():
             if subject_id is not None:
