@@ -53,3 +53,15 @@ class ExamAdminQuestionViewTest(APITestCase):
         self.question_a.refresh_from_db()
         self.assertEqual(self.question_a.question, "수정된 질문 내용")
         self.assertEqual(self.question_a.point, 7)
+
+    def test_delete_question_success(self) -> None:
+        """문제 삭제 성공 테스트"""
+        response = self.client.delete(self.detail_url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(ExamQuestion.objects.count(), 0)
+
+    def test_delete_non_existent_question_fails(self) -> None:
+        """존재하지 않는 문제 삭제 시 404 확인"""
+        url = reverse("exam-questions-detail", kwargs={"question_id": 9999})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
