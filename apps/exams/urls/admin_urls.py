@@ -5,6 +5,7 @@ from apps.exams.views.admin import (
     DeploymentListCreateAPIView,
     ExamAdminListCreateAPIView,
     ExamAdminRetrieveUpdateDestroyAPIView,
+    ExamDeploymentStatusAPIView,
 )
 
 urlpatterns: list[URLPattern | URLResolver] = [
@@ -15,6 +16,9 @@ urlpatterns: list[URLPattern | URLResolver] = [
         "deployments/<int:deployment_id>/",
         AdminDeploymentDetailUpdateDeleteView.as_view(),
         name="exam-deployment-detail",
+    ),
+    path(
+        "deployments/<int:deployment_id>/status/", ExamDeploymentStatusAPIView.as_view(), name="exam-deployment-status"
     ),
     path("<str:pk>/", ExamAdminRetrieveUpdateDestroyAPIView.as_view(), name="exam-detail"),
 ]
