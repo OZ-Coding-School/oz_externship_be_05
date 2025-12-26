@@ -2,7 +2,7 @@ from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -17,6 +17,7 @@ from apps.exams.serializers.admin import (
     AdminDeploymentListResponseSerializer,
     AdminDeploymentPatchSerializer,
     AdminDeploymentPostSerializer,
+    AdminDeploymentStatusPatchSerializer,
     AdminDeploymentUpdateResponseSerializer,
     DeploymentListItemSerializer,
 )
@@ -25,6 +26,7 @@ from apps.exams.services.admin.admin_deployment_service import (
     delete_deployment,
     get_admin_deployment_detail,
     list_admin_deployments,
+    set_deployment_status,
     update_deployment,
 )
 
@@ -198,3 +200,37 @@ class AdminDeploymentDetailUpdateDeleteView(AdminUserPermission):
         delete_deployment(deployment=deployment)
 
         return Response({"deployment_id": deployment_id}, status=status.HTTP_200_OK)
+
+
+class ExamDeploymentStatusAPIView(AdminUserPermission):
+    """
+    PATCH - 쪽지시험 상태 변경
+    """
+
+    @extend_schema(
+        summary="쪽지시험 배포 on/off API",
+        description="쪽지시험 배포 상태를 활성화 또는 비활성화합니다.",
+        request=AdminDeploymentStatusPatchSerializer,
+        responses={
+            200: OpenApiResponse(description="쪽지시험 배포 상태 변경이 성공했습니다."),
+            400: OpenApiResponse(description="유효하지 않은 배포 상태 변경 요청입니다."),
+            401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
+            403: OpenApiResponse(description="쪽지시험 배포 상태 변경 권한이 없습니다."),
+            404: OpenApiResponse(description="상태 변경할 배포 정보를 찾을 수 없습니다."),
+            409: OpenApiResponse(description="배포 상태 변경 중 충돌이 발생했습니다."),
+        },
+        tags=["쪽지시험 관리"],
+    )
+    def patch(self, request: Request, deployment_id: int) -> Response:
+
+        # 없으면 404
+        deployment = get_admin_deployment_detail(deployment_id=deployment_id)
+
+        # 데이터 형식 이상하면 400
+        serializer = AdminDeploymentStatusPatchSerializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        # 이미 처리됨 409
+        deployment = set_deployment_status(deployment=deployment, status=serializer.validated_data["status"])
+
+        return Response({"deployment_id": deployment_id, "status": deployment.status}, status=status.HTTP_200_OK)
