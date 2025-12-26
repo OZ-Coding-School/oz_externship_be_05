@@ -1,6 +1,7 @@
 from typing import Any
 
-from apps.qna.models import Question, QuestionCategory, QuestionImage
+from apps.qna.models import Question, QuestionCategory
+from apps.qna.services.common.image_service import sync_question_images
 from apps.user.models import User
 
 
@@ -17,10 +18,6 @@ def create_question(
         category=category,
     )
 
-    for url in validated_data.get("image_urls", []):
-        QuestionImage.objects.create(
-            question=question,
-            img_url=url,
-        )
+    sync_question_images(question, validated_data["content"])
 
     return question
