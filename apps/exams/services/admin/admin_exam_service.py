@@ -31,6 +31,12 @@ class ExamService:
         """
         return self.get_exam_list().select_related("subject").get(pk=exam_id)
 
+    def get_exam_questions_by_id(self, exam_id: int) -> Exam:
+        """
+        ID로 쪽지시험과 관련 문제 객체를 조회합니다.
+        """
+        return self.get_exam_list().select_related("subject").prefetch_related("questions").get(pk=exam_id)
+
     def get_subject_by_id(self, subject_id: int) -> Subject:
         return Subject.objects.get(pk=subject_id)
 

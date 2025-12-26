@@ -17,6 +17,10 @@ class IsStaffOrAdmin(BasePermission):
     def has_permission(self, request: Request, view: APIView) -> bool:
         user = request.user
 
+        # 인증된 사용자 확인
+        if not user or not user.is_authenticated:
+            return False
+
         # 슈퍼유저는 항상 허용
         if user.is_superuser:
             return True
