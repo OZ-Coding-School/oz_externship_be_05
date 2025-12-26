@@ -3,6 +3,7 @@ from datetime import datetime
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
+from apps.exams.exceptions import DeploymentConflictException
 from apps.exams.models.exam_deployment import DeploymentStatus
 
 
@@ -36,3 +37,9 @@ class DeploymentValidator:
     def validate_not_finished(*, close_at: datetime, status: str) -> None:
         if close_at <= DeploymentValidator._now() and status == DeploymentStatus.DEACTIVATED:
             raise ValidationError({"status": "종료된 시험은 변경할 수 없습니다."})
+
+    # 상태 기반 규칙 - 충돌 검증
+    @staticmethod
+    def validate_status_conflict(current_status: str, requested_status: str) -> None:
+        if current_status == requested_status:
+            raise DeploymentConflictException(detail=f"해당 배포는 이미 {requested_status} 상태입니다.")

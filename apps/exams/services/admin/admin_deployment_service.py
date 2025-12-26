@@ -151,24 +151,20 @@ def update_deployment(*, deployment: ExamDeployment, data: Dict[str, Any]) -> Ex
 
 # 시험 배포 상태 on/off (activated / deactivated) --------------------------
 @transaction.atomic
-def set_deployment_status(
-    *,
-    deployment: ExamDeployment,
-    status: str,
-) -> ExamDeployment:
+def set_deployment_status(*, deployment: ExamDeployment, status: str) -> ExamDeployment:
+
+    # 동일 상태 409 체크
+    DeploymentValidator.validate_status_conflict(current_status=deployment.status, requested_status=status)
 
     # 종료된 시험 상태 변경 불가
-    DeploymentValidator.validate_not_finished(
-        close_at=deployment.close_at,
-        status=deployment.status,
-    )
+    DeploymentValidator.validate_not_finished(close_at=deployment.close_at, status=deployment.status)
 
     # 비활성화시 응시 중인 시험은 즉시 종료되어야 함
-    if deployment.status == DeploymentStatus.ACTIVATED and status == DeploymentStatus.DEACTIVATED:
-        pass
+    if status == DeploymentStatus.DEACTIVATED:
+        deployment.close_at = timezone.now()
 
     deployment.status = status
-    deployment.save(update_fields=["status", "updated_at"])
+    deployment.save(update_fields=["status", "close_at", "updated_at"])
     return deployment
 
 
