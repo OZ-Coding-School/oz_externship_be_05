@@ -192,3 +192,68 @@ class ExamAdminViewTest(APITestCase):
         response = self.client.post(self.base_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(response.data["error_detail"], EMS.E404_NOT_FOUND("해당 과목 정보").get("error_detail"))
+
+    def test_create_exam_invalid_serializer_data(self) -> None:
+        """필수 필드 누락 등 시리얼라이저 에러 시 400 반환 확인"""
+        data = {"title": ""}  # subject_id 누락 및 제목 빈값
+        response = self.client.post(self.base_url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_exam_with_invalid_subject_returns_404(self) -> None:
+        """수정 시 존재하지 않는 subject_id를 넣었을 때 404 확인"""
+        data = {
+            "subject_id": 99999,
+            "title": "제목 수정",
+        }
+        response = self.client.put(self.detail_url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data["error_detail"], EMS.E404_NOT_FOUND("해당 과목 정보").get("error_detail"))
+
+    @patch.object(AdminExamService, "apply_filters_and_sorting")
+    def test_list_exams_value_error_returns_400(self, mock_filter: MagicMock) -> None:
+        """목록 조회 시 ValueError 발생 시 400 반환 확인"""
+        mock_filter.side_effect = ValueError("Invalid sorting or filter")
+        response = self.client.get(self.base_url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["error_detail"], EMS.E400_INVALID_REQUEST("조회").get("error_detail"))
+
+    def test_retrieve_exam_invalid_pk_format(self) -> None:
+        """상세 조회 시 PK가 숫자가 아닌 경우 400 반환 확인 (ValueError 대응)"""
+        # 이 테스트는 url 패턴이 <int:pk>라면 404가 먼저 뜨겠지만,
+        # 뷰의 get_object_for_detail에서 ValueError를 직접 raise 하므로
+        # 서비스에서 raise하도록 모킹하거나 경로를 우회해서 체크할 수 있습니다.
+        with patch.object(AdminExamService, "get_exam_questions_by_id", side_effect=ValueError):
+            response = self.client.get(self.detail_url)
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_exam_serializer_validation_fail(self) -> None:
+        """시리얼라이저 검증 실패 시 400 반환 확인 (커스텀 메시지 블록 검증)"""
+        # 필수 필드인 title을 누락하거나 빈 값으로 전송
+        data = {"subject_id": self.subject_python.id, "title": ""}
+        response = self.client.post(self.base_url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # 뷰의 except Exception as e 블록 내 EMS.E400_INVALID_REQUEST 확인
+        self.assertEqual(response.data["error_detail"], EMS.E400_INVALID_REQUEST("시험 생성").get("error_detail"))
+
+    @patch.object(AdminExamService, "update_exam")
+    def test_update_exam_generic_exception_handling(self, mock_update: MagicMock) -> None:
+        """수정 시 예상치 못한 에러 발생 시 뷰의 예외 처리 확인"""
+        # 에러 객체에 detail 속성이 있는 경우 (DRF 스타일 에러)
+        mock_error: Any = Exception("Unexpected Error")
+        mock_error.detail = {"field": ["error"]}
+        mock_update.side_effect = mock_error
+
+        data = {"subject_id": self.subject_python.id, "title": "에러 테스트"}
+        response = self.client.put(self.detail_url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["error_detail"], EMS.E400_INVALID_DATA("요청").get("error_detail"))
+
+    def test_list_exams_pagination_check(self) -> None:
+        """커스텀 페이지네이션 작동 확인 (size 파라미터 등)"""
+        response = self.client.get(self.base_url, {"size": 1})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # 한 페이지에 1개만 나오는지 확인
+        self.assertEqual(len(response.data["results"]), 1)
+        self.assertIn("next", response.data)  # 다음 페이지 링크 존재 여부
