@@ -1,9 +1,12 @@
+from unittest import mock
+from unittest.mock import MagicMock
+
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from apps.core.exceptions.exception_messages import EMS
-from apps.qna.models import QuestionCategory
+from apps.qna.models import QuestionCategory, QuestionImage
 from apps.user.models.user import RoleChoices, User
 
 
@@ -24,21 +27,31 @@ class QuestionCreateAPITests(APITestCase):
         )
 
     # 질문 생성 성공
-    def test_question_create_success(self) -> None:
+    @mock.patch("apps.qna.services.common.image_service.S3Client")
+    def test_question_create_success(self, mock_s3_client_class: MagicMock) -> None:
+        mock_s3_instance = mock_s3_client_class.return_value
+        mock_s3_instance.is_valid_s3_url.return_value = True
+
         user = self.create_user(RoleChoices.ST)
         self.client.force_authenticate(user=user)
 
+        img_url = "https://test.com/img.png"
         payload = {
             "title": "질문 등록",
-            "content": "내용입니다",
+            "content": f'내용입니다 <img src="{img_url}">',
             "category": self.category.id,
-            "image_urls": ["https://test.com/img.png"],
         }
 
         response = self.client.post(self.url, payload, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn("question_id", response.data)
+
+        # 실제 DB에 이미지가 생성되었는지 확인
+        self.assertEqual(QuestionImage.objects.count(), 1)
+        image = QuestionImage.objects.first()
+        assert image is not None
+        self.assertEqual(image.img_url, img_url)
 
     # 401 로그인 체크
     def test_unauthenticated_user_gets_401(self) -> None:
