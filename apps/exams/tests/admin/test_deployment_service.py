@@ -231,22 +231,17 @@ class DeploymentServiceTests(TestCase):
 
         self.assertIn("status", ve.exception.detail)
 
-    def test_set_status_early_termination_allows_reactivation(self) -> None:
+    def test_set_status_early_termination_raises_error(self) -> None:
         deployment = self._create_default_deployment()
+        deployment.close_at = timezone.now() - timedelta(minutes=1)
+        deployment.status = DeploymentStatus.DEACTIVATED
+        deployment.save()
 
-        # 조기 종료(close_at 전에 DEACTIVATED)
-        set_deployment_status(
-            deployment=deployment,
-            status=DeploymentStatus.DEACTIVATED,
-        )
-
-        # 재활성화
-        updated = set_deployment_status(
-            deployment=deployment,
-            status=DeploymentStatus.ACTIVATED,
-        )
-
-        self.assertEqual(updated.status, DeploymentStatus.ACTIVATED)
+        with self.assertRaises(ValidationError):
+            set_deployment_status(
+                deployment=deployment,
+                status=DeploymentStatus.ACTIVATED,
+            )
 
     # DELETE ---------------------------------------------------------
 
