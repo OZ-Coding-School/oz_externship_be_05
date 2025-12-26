@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from apps.courses.models.cohorts_models import Cohort
 from apps.exams.models import Exam, ExamDeployment
+from apps.exams.models.exam_deployment import DeploymentStatus
 from apps.exams.services.admin.validators.deployment_validator import (
     DeploymentValidator,
 )
@@ -96,6 +97,21 @@ class AdminDeploymentPatchSerializer(serializers.ModelSerializer[ExamDeployment]
         if duration_time is not None and duration_time < 30:
             raise serializers.ValidationError({"duration_time": "시험 시간은 30분 이상이어야 합니다."})
 
+        return attrs
+
+
+# 배포 상태 수정 검증
+class AdminDeploymentStatusPatchSerializer(serializers.Serializer[Any]):
+    """
+    시험 배포 상태 수정 검증용 시리얼라이저
+    """
+
+    status = serializers.CharField()
+
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        status_value = attrs.get("status")
+        if status_value not in [DeploymentStatus.ACTIVATED, DeploymentStatus.DEACTIVATED]:
+            raise serializers.ValidationError("유효하지 않은 배포 상태입니다.")
         return attrs
 
 
