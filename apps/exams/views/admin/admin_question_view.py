@@ -105,6 +105,39 @@ QUESTION_EXAMPLES = [
 ]
 
 
+class ExamAdminQuestionCreateAPIView(AdminUserPermissionView):
+    """쪽지시험 문제 등록 API"""
+
+    service = AdminQuestionService()
+
+    @extend_schema(
+        tags="쪽지시험 관리",
+        summary="쪽지시험 문제 등록",
+        description="특정 쪽지시험에 새로운 문제를 추가합니다. 한 시험당 최대 20개, 총 배점 100점 제한이 있습니다.",
+        request=AdminExamQuestionSerializer,
+        examples=QUESTION_EXAMPLES,
+        responses={
+            201: AdminExamQuestionSerializer,
+            400: OpenApiResponse(description="유효하지 않은 문제 등록 데이터입니다."),
+            404: OpenApiResponse(description="해당 쪽지시험 정보를 찾을 수 없습니다."),
+            409: OpenApiResponse(description="문제 수 또는 총 배점 초과"),
+        },
+    )
+    def post(self, request: Request, exam_id: int) -> Response:
+        serializer = AdminExamQuestionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            # 서비스 레이어에서 비즈니스 로직(제한 사항 체크) 수행
+            question = self.service.create_question(exam_id, serializer.validated_data)
+            # 반환 시에는 최신 데이터가 반영된 시리얼라이저 사용
+            return Response(AdminExamQuestionSerializer(question).data, status=status.HTTP_201_CREATED)
+        except NotFound:
+            return Response(EMS.E404_NOT_FOUND("해당 쪽지시험 정보"), status=status.HTTP_404_NOT_FOUND)
+        except ValidationError:
+            return Response(EMS.E409_QUIZ_LIMIT_EXCEEDED_REG, status=status.HTTP_409_CONFLICT)
+
+
 class ExamAdminQuestionUpdateDestroyAPIView(AdminUserPermissionView):
     """쪽지시험 문제 수정 및 삭제 API"""
 

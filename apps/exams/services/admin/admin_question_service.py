@@ -17,6 +17,7 @@ class AdminQuestionService:
         if exclude_question_id is None:
             if query.count() >= 20:
                 raise ValidationError()  # 409
+
         # 총 배점 체크
         if exclude_question_id:
             query = query.exclude(id=exclude_question_id)
@@ -31,6 +32,17 @@ class AdminQuestionService:
             return ExamQuestion.objects.select_for_update().get(id=question_id)
         except ExamQuestion.DoesNotExist:
             raise NotFound()
+
+    @transaction.atomic
+    def create_question(self, exam_id: int, validated_data: dict[str, Any]) -> ExamQuestion:
+        # 시험 존재 여부 확인 (404 대응)
+        try:
+            Exam.objects.select_for_update().get(id=exam_id)
+        except Exam.DoesNotExist:
+            raise NotFound()
+
+        self._check_limits(exam_id, validated_data.get("point", 0))
+        return ExamQuestion.objects.create(exam_id=exam_id, **validated_data)
 
     @transaction.atomic
     def update_question(self, question_id: int, validated_data: dict[str, Any]) -> ExamQuestion:
