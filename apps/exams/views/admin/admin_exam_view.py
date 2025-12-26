@@ -49,7 +49,7 @@ class ExamAdminListCreateAPIView(AdminUserPermissionView):
     """
 
     pagination_class = ExamCustomPageNumberPagination
-    serializer_class: Type[BaseSerializer[Any]] = AdminExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
+    serializer_class = AdminExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
 
     @extend_schema(
         tags=["쪽지시험 관리"],
@@ -227,6 +227,6 @@ class ExamAdminRetrieveUpdateDestroyAPIView(AdminUserPermissionView):
         except ValueError:
             return Response(EMS.E400_INVALID_DATA("요청"), status=status.HTTP_400_BAD_REQUEST)
         except Exam.DoesNotExist:
-            return Response(EMS.E404_NOT_FOUND("수정할 쪽지시험 정보"), status=status.HTTP_404_NOT_FOUND)
+            return Response(EMS.E404_NOT_FOUND("삭제할 쪽지시험 정보"), status=status.HTTP_404_NOT_FOUND)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
