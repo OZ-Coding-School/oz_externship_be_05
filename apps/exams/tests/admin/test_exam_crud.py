@@ -150,13 +150,12 @@ class ExamAdminViewTest(APITestCase):
 
     @patch.object(AdminExamService, "delete_exam")
     def test_destroy_exam_not_found_returns_404(self, mock_delete_exam: MagicMock) -> None:
-        mock_delete_exam.side_effect = ValueError(
-            "Exam not found for delete"
-        )  # View 단에서 명시되었기에 메시지값 무시됨
+        # ValueError 대신 Exam.DoesNotExist로 변경
+        mock_delete_exam.side_effect = Exam.DoesNotExist
         non_existent_url = reverse("exam-detail", kwargs={"pk": 9999})
         response = self.client.delete(non_existent_url)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["error_detail"], EMS.E400_INVALID_DATA("요청").get("error_detail"))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(response.data["error_detail"], EMS.E404_NOT_FOUND("수정할 쪽지시험 정보").get("error_detail"))
 
     def test_list_exams_with_search_and_subject_filter(self) -> None:
         """키워드(search_keyword)와 subject_id 필터링 조합 확인"""
@@ -176,21 +175,6 @@ class ExamAdminViewTest(APITestCase):
         response = self.client.get(self.base_url, {"sort": "non_existent_field", "order": "asc"})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["results"][0]["title"], "c심화 플라스크 시험")
-
-    def test_update_exam_invalid_pk_format_returns_400(self) -> None:
-        """PK가 숫자가 아닐 때 400 응답 확인"""
-        data = {"title": "오류 테스트"}
-        invalid_url = reverse("exam-detail", kwargs={"pk": "abc"})
-        response = self.client.put(invalid_url, data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["error_detail"], EMS.E400_INVALID_DATA("요청").get("error_detail"))
-
-    def test_destroy_exam_invalid_pk_format_returns_400(self) -> None:
-        """PK가 숫자가 아닐 때 400 응답 확인"""
-        invalid_url = reverse("exam-detail", kwargs={"pk": "xyz"})
-        response = self.client.delete(invalid_url)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data["error_detail"], EMS.E400_INVALID_DATA("요청").get("error_detail"))
 
     def test_retrieve_non_existent_exam_returns_404(self) -> None:
         """존재하지 않는 ID 조회 시 404 확인"""

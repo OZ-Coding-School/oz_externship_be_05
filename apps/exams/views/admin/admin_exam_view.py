@@ -144,15 +144,13 @@ class ExamAdminRetrieveUpdateDestroyAPIView(AdminUserPermissionView):
 
     serializer_class: Type[BaseSerializer[Any]] = AdminExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
 
-    def get_object_for_detail(self, pk: str) -> Exam:
+    def get_object_for_detail(self, pk: int) -> Exam:
         """
         PK를 사용하여 Exam 객체를 가져옵니다.
         subject_id의 title을 가져옵니다.
-        400 에러를 처리하기 위해 pk: str 처리합니다. (pk: int = 404)
         """
         try:
-            exam_id: int = int(pk)
-            return exam_service.get_exam_by_id(exam_id)
+            return exam_service.get_exam_by_id(pk)
         except ValueError:
             raise ValueError  # PK 포맷 오류 (호출단에 메시지 존재)
         except Exam.DoesNotExist:
@@ -164,10 +162,10 @@ class ExamAdminRetrieveUpdateDestroyAPIView(AdminUserPermissionView):
         description="특정 ID의 쪽지시험 상세 정보와 속한 문제를 조회합니다.",
         responses={200: AdminExamQuestionsListSerializer},
     )
-    def get(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> Response:
+    def get(self, request: Request, pk: int, *args: Any, **kwargs: Any) -> Response:
         """GET: 시험 상세 조회 view (retrieve)"""
         try:
-            exam = exam_service.get_exam_questions_by_id(int(pk))
+            exam = exam_service.get_exam_questions_by_id(pk)
 
             serializer = AdminExamQuestionsListSerializer(exam)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -187,7 +185,7 @@ class ExamAdminRetrieveUpdateDestroyAPIView(AdminUserPermissionView):
             404: OpenApiResponse(description="수정할 쪽지시험 정보을(를) 찾을 수 없습니다."),
         },
     )
-    def put(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> Response:
+    def put(self, request: Request, pk: int, *args: Any, **kwargs: Any) -> Response:
         """PUT: 시험 수정 view (update)"""
         try:
             instance = self.get_object_for_detail(pk)
@@ -222,12 +220,10 @@ class ExamAdminRetrieveUpdateDestroyAPIView(AdminUserPermissionView):
             404: OpenApiResponse(description="삭제할 쪽지시험 정보을(를) 찾을 수 없습니다."),
         },
     )
-    def delete(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> Response:
+    def delete(self, request: Request, pk: int, *args: Any, **kwargs: Any) -> Response:
         """DELETE: 시험 삭제 view (destroy)"""
         try:
-            exam_id: int = int(pk)
-
-            exam_service.delete_exam(exam_id)
+            exam_service.delete_exam(pk)
         except ValueError:
             return Response(EMS.E400_INVALID_DATA("요청"), status=status.HTTP_400_BAD_REQUEST)
         except Exam.DoesNotExist:
