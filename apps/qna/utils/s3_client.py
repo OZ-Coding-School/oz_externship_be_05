@@ -1,6 +1,7 @@
 import logging
 import uuid
 from typing import Any, Dict, Optional
+from urllib.parse import urlparse
 
 import boto3
 from botocore.exceptions import ClientError
@@ -79,3 +80,28 @@ class S3Client:
         except ClientError as e:
             logger.error(f"Failed to generate presigned URL (Key: {key}): {e}", exc_info=True)
             raise e
+
+    def delete_from_url(self, url: str) -> None:
+        """
+        전체 URL을 받아서 Key를 추출하고 삭제를 수행
+        예: https://my-bucket.s3.ap-northeast-2.amazonaws.com/uploads/uuid.jpg -> uploads/uuid.jpg 삭제
+        """
+        if not url:
+            return
+
+        # URL에서 도메인 부분 제거하고 Key만 추출하는 로직
+        try:
+            parsed = urlparse(url)
+            key = parsed.path.lstrip("/")
+            self.delete(key)
+        except Exception as e:
+            logger.error(f"Failed to parse key from URL {url}: {e}")
+
+    def is_valid_s3_url(self, url: str) -> bool:
+        """
+        이 URL이 우리 버킷의 URL인지 검증
+        """
+        if not url:
+            return False
+
+        return self.bucket_name in url and "amazonaws.com" in url
