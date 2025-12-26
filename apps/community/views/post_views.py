@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing import Any
 
 from django.db.models import QuerySet
 from django.shortcuts import get_object_or_404
