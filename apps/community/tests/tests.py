@@ -74,7 +74,7 @@ class PostCreateSerializerTest(TestCase):
         self.assertIn("detail", response_data)
         self.assertIn("post_id", response_data)
         self.assertEqual(response_data["post_id"], post.id)
-        self.assertEqual(response_data["detail"], "게시글이 성공적 등록됨.")
+        self.assertEqual(response_data["detail"], "게시글이 성공적으로 등록되었습니다.")
 
     # 게시글 필수 필드 누락 시 실패할때 테스트
     def test_create_post_missing_required_fields(self) -> None:
