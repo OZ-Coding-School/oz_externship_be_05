@@ -1,3 +1,5 @@
+from typing import Any
+
 from rest_framework import serializers
 
 from apps.core.exceptions.exception_messages import EMS
@@ -53,7 +55,7 @@ class AdminExamQuestionSerializer(serializers.ModelSerializer[ExamQuestion]):
             raise serializers.ValidationError(EMS.E400_LENGTH_LIMIT("배점", 1, 10))
         return value
 
-    def validate(self, attrs: dict) -> dict:
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         """
         문제 유형(type)별 필수 필드 유효성 검사
         """
