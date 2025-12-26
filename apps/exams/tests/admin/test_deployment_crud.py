@@ -496,3 +496,115 @@ class DeploymentListCreateAPIViewTestCase(APITestCase):
         response = self.client.delete(url)
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    # --------------------
+    # PATCH tests
+    # --------------------
+
+    def test_patch_deployment_status_success(self) -> None:
+        """관리자 배포 상태 변경 성공 (Activated -> Deactivated)"""
+        self.client.force_authenticate(user=self.admin_user)
+
+        deployment = self.deployments[0]
+        deployment.close_at = timezone.now() + timedelta(days=1)
+        deployment.status = DeploymentStatus.ACTIVATED
+        deployment.save()
+
+        url = reverse("exam-deployment-status", kwargs={"deployment_id": deployment.id})
+        payload = {"status": DeploymentStatus.DEACTIVATED}
+
+        response = self.client.patch(url, payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["deployment_id"], deployment.id)
+        self.assertEqual(response.data["status"], DeploymentStatus.DEACTIVATED)
+
+        # DB 반영 및 즉시 종료 로직(close_at 업데이트) 확인
+        deployment.refresh_from_db()
+        self.assertEqual(deployment.status, DeploymentStatus.DEACTIVATED)
+        # 즉시 종료 요구사항에 의해 close_at이 과거 혹은 현재로 당겨졌는지 확인
+        self.assertTrue(deployment.close_at <= timezone.now())
+
+    def test_patch_deployment_status_invalid_data_400(self) -> None:
+        """잘못된 상태 값 입력 400 확인"""
+        self.client.force_authenticate(user=self.admin_user)
+
+        deployment = self.deployments[4]
+        url = reverse("exam-deployment-status", kwargs={"deployment_id": deployment.id})
+        payload = {"status": "invalid_status_string"}
+
+        response = self.client.patch(url, payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_patch_deployment_status_unauthorized_401(self) -> None:
+        """비인증 유저 접근 시 401 확인"""
+        deployment = self.deployments[5]
+        url = reverse("exam-deployment-status", kwargs={"deployment_id": deployment.id})
+
+        response = self.client.patch(url, {"status": DeploymentStatus.ACTIVATED}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_patch_deployment_status_forbidden_403(self) -> None:
+        """일반 유저 접근 시 403 확인"""
+        self.client.force_authenticate(user=self.normal_user)
+
+        deployment = self.deployments[6]
+        url = reverse("exam-deployment-status", kwargs={"deployment_id": deployment.id})
+
+        response = self.client.patch(url, {"status": DeploymentStatus.ACTIVATED}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_patch_deployment_status_not_found_404(self) -> None:
+        """존재하지 않는 배포 ID로 요청 시 404 확인"""
+        self.client.force_authenticate(user=self.admin_user)
+
+        url = reverse("exam-deployment-status", kwargs={"deployment_id": 999999})
+
+        response = self.client.patch(url, {"status": DeploymentStatus.ACTIVATED}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_patch_deployment_status_conflict_already_set_409(self) -> None:
+        """이미 동일한 상태인 경우 409 확인"""
+        self.client.force_authenticate(user=self.admin_user)
+
+        deployment = self.deployments[7]
+        deployment.status = DeploymentStatus.ACTIVATED
+        deployment.save()
+
+        url = reverse("exam-deployment-status", kwargs={"deployment_id": deployment.id})
+        payload = {"status": DeploymentStatus.ACTIVATED}  # 동일한 상태 요청
+
+        response = self.client.patch(url, payload, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+
+
+def test_patch_deployment_status_fail_if_already_finished(self: Any) -> None:
+    """이미 종료된 시험은 상태 변경 불가 400 확인"""
+    self.client.force_authenticate(user=self.admin_user)
+    deployment = self.deployments[8]
+    url = reverse("exam-deployment-status", kwargs={"deployment_id": deployment.id})
+
+    # 시간이 이미 지나서 종료된 경우
+    deployment.close_at = timezone.now() - timedelta(days=1)
+    deployment.status = DeploymentStatus.ACTIVATED
+    deployment.save()
+
+    response_1 = self.client.patch(url, {"status": DeploymentStatus.DEACTIVATED}, format="json")
+    self.assertEqual(response_1.status_code, status.HTTP_400_BAD_REQUEST)
+    self.assertIn("이미 종료된 시험은 상태를 변경할 수 없습니다.", str(response_1.data))
+
+    # 관리자가 비활성화하여 즉시 종료된 경우
+    deployment.close_at = timezone.now() + timedelta(days=1)
+    deployment.save()
+
+    self.client.patch(url, {"status": DeploymentStatus.DEACTIVATED}, format="json")
+
+    # 다시 활성화 시도하면 400 에러
+    response_2 = self.client.patch(url, {"status": DeploymentStatus.ACTIVATED}, format="json")
+    self.assertEqual(response_2.status_code, status.HTTP_400_BAD_REQUEST)
+    self.assertIn("이미 종료된 시험은 상태를 변경할 수 없습니다.", str(response_2.data))
