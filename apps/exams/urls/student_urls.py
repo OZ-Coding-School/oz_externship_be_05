@@ -12,7 +12,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
     ),
     path(
         # student/result
-        "submissions/<int:submission_id>",
+        "submissions/<int:submission_id>/",
         ExamResultView.as_view(),
         name="exam_result",
     ),
