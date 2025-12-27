@@ -3,7 +3,7 @@ from datetime import datetime
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
-from apps.exams.exceptions import DeploymentConflictException
+from apps.core.exceptions.custom_exceptions import ConflictException
 from apps.exams.models.exam_deployment import DeploymentStatus
 
 
@@ -42,4 +42,4 @@ class DeploymentValidator:
     @staticmethod
     def validate_status_conflict(current_status: str, requested_status: str) -> None:
         if current_status == requested_status:
-            raise DeploymentConflictException(detail=f"해당 배포는 이미 {requested_status} 상태입니다.")
+            raise ConflictException(detail=f"해당 배포는 이미 {requested_status} 상태입니다.")

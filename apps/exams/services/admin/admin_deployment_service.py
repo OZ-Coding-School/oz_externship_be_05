@@ -8,10 +8,10 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 from rest_framework.exceptions import NotFound
 
+from apps.core.exceptions.custom_exceptions import ConflictException
 from apps.core.utils.base62 import Base62
 from apps.courses.models import Cohort
 from apps.exams.constants import DEFAULT_DEPLOYMENT_SORT, DEPLOYMENT_SORT_OPTIONS
-from apps.exams.exceptions import DeploymentConflictException
 from apps.exams.models import Exam, ExamDeployment, ExamQuestion
 from apps.exams.models.exam_deployment import DeploymentStatus
 from apps.exams.services.admin.validators.deployment_validator import (
@@ -102,15 +102,13 @@ def create_deployment(
 
     # 중복 배포 확인
     if ExamDeployment.objects.filter(cohort=cohort, exam=exam).exists():
-        raise DeploymentConflictException(
-            detail=f"동일한 조건의 배포가 이미 존재합니다: '{exam.title}' - {cohort.number}기 "
-        )
+        raise ConflictException(detail=f"동일한 조건의 배포가 이미 존재합니다: '{exam.title}' - {cohort.number}기 ")
 
     # 이미 해당 기수에 활성화된 배포내역이 있는지 확인
     active_deployments = ExamDeployment.objects.filter(cohort=cohort, exam=exam, status=DeploymentStatus.ACTIVATED)
     for dep in active_deployments:
         if dep.open_at <= now:
-            raise DeploymentConflictException(detail=f"이미 활성화된 시험입니다: '{exam.title}' - {cohort.number}기")
+            raise ConflictException(detail=f"이미 활성화된 시험입니다: '{exam.title}' - {cohort.number}기")
 
     # 정상 생성
     deployment = ExamDeployment.objects.create(
