@@ -5,8 +5,8 @@ from django.test import TestCase
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
 
+from apps.core.exceptions.custom_exceptions import ConflictException
 from apps.courses.models import Cohort, Course, Subject
-from apps.exams.exceptions import DeploymentConflictException
 from apps.exams.models import Exam, ExamDeployment, ExamQuestion
 from apps.exams.models.exam_deployment import DeploymentStatus
 from apps.exams.models.exam_question import QuestionType
@@ -151,7 +151,7 @@ class DeploymentServiceTests(TestCase):
         deployment = self._create_default_deployment()
 
         # 중복 배포 시도
-        with self.assertRaises(DeploymentConflictException) as cm:
+        with self.assertRaises(ConflictException) as cm:
             self._create_default_deployment(cohort=deployment.cohort, exam=deployment.exam)
 
         self.assertIn(
@@ -167,7 +167,7 @@ class DeploymentServiceTests(TestCase):
         deployment.open_at = timezone.now() - timedelta(hours=1)
         deployment.save(update_fields=["status", "open_at"])
 
-        with self.assertRaises(DeploymentConflictException) as cm:
+        with self.assertRaises(ConflictException) as cm:
             self._create_default_deployment(cohort=deployment.cohort, exam=deployment.exam)
 
         self.assertIn(

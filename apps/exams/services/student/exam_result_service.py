@@ -1,9 +1,6 @@
-from __future__ import annotations
-
-from datetime import timedelta
 from typing import Any, Dict, List, Optional, TypedDict, cast
 
-from django.utils import timezone
+from apps.exams.models.exam_question import QuestionType
 
 
 class SnapshotQuestion(TypedDict, total=False):
@@ -57,6 +54,29 @@ def _format_hhmmss(seconds: int) -> str:
     return f"{hh:02d}:{mm:02d}:{ss:02d}"
 
 
+# 제출 API와 동일한 타입별 정답 판정 로직 분리
+def _is_correct_answer(q_type: str, submitted: Any, correct: Any) -> bool:
+    if q_type == QuestionType.SINGLE_CHOICE:
+        return bool(submitted == correct)
+
+    if q_type == QuestionType.MULTIPLE_CHOICE:
+        return isinstance(submitted, list) and set(submitted) == set(correct or [])
+
+    if q_type == QuestionType.OX:
+        return bool(submitted == correct)
+
+    if q_type == QuestionType.SHORT_ANSWER:
+        return isinstance(submitted, str) and submitted.strip() == str(correct).strip()
+
+    if q_type == QuestionType.ORDERING:
+        return bool(submitted == correct)
+
+    if q_type == QuestionType.FILL_BLANK:
+        return isinstance(submitted, list) and submitted == correct
+
+    return False
+
+
 def build_exam_result(submission: Any) -> ResultResponse:
     # 시험 결과 조회용 응답 데이터 조립
     deployment = submission.deployment
@@ -100,7 +120,7 @@ def build_exam_result(submission: Any) -> ResultResponse:
                     if qid is None:
                         continue
                     try:
-                        answers_map[int(qid)] = item.get("answer")
+                        answers_map[int(qid)] = item.get("submitted_answer")
                     except (TypeError, ValueError):
                         continue
 
@@ -119,8 +139,8 @@ def build_exam_result(submission: Any) -> ResultResponse:
         correct_answer = q.get("answer")
         submitted_answer = answers_map.get(int(qid))
 
-        # 정답 비교
-        is_correct = submitted_answer == correct_answer
+        # 정답 비교(타입별 판정 함수 사용)
+        is_correct = _is_correct_answer(str(q.get("type", "")), submitted_answer, correct_answer)
 
         questions.append(
             {
@@ -138,7 +158,6 @@ def build_exam_result(submission: Any) -> ResultResponse:
             }
         )
 
-    # 시험 기본 정보 + 결과 요약 반환
     thumbnail = getattr(exam, "thumbnail_img_url", "") or ""
 
     return {

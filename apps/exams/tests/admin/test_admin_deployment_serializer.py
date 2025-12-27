@@ -7,8 +7,8 @@ from django.utils import timezone
 from apps.courses.models import Cohort, Course, Subject
 from apps.exams.models import Exam, ExamDeployment
 from apps.exams.serializers.admin.admin_deployment_serializer import (
-    AdminDeploymentPatchSerializer,
-    AdminDeploymentPostSerializer,
+    ExamDeploymentPatchSerializer,
+    ExamDeploymentPostSerializer,
 )
 
 
@@ -61,7 +61,7 @@ class AdminDeploymentSerializerTest(TestCase):
             "status": "activated",
         }
 
-        serializer = AdminDeploymentPostSerializer(data=data)
+        serializer = ExamDeploymentPostSerializer(data=data)
         self.assertTrue(serializer.is_valid(), serializer.errors)
 
     def test_create_invalid_open_in_past(self) -> None:
@@ -76,7 +76,7 @@ class AdminDeploymentSerializerTest(TestCase):
             "status": "activated",
         }
 
-        serializer = AdminDeploymentPostSerializer(data=data)
+        serializer = ExamDeploymentPostSerializer(data=data)
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("open_at", serializer.errors)
@@ -94,7 +94,7 @@ class AdminDeploymentSerializerTest(TestCase):
             questions_snapshot={},
         )
 
-        serializer = AdminDeploymentPatchSerializer(
+        serializer = ExamDeploymentPatchSerializer(
             instance=deployment,
             data={},
             partial=True,
@@ -114,7 +114,7 @@ class AdminDeploymentSerializerTest(TestCase):
             "status": "activated",
         }
 
-        serializer = AdminDeploymentPostSerializer(data=data)
+        serializer = ExamDeploymentPostSerializer(data=data)
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("open_at", serializer.errors)
@@ -144,7 +144,7 @@ class AdminDeploymentSerializerTest(TestCase):
             "status": "activated",
         }
 
-        serializer = AdminDeploymentPostSerializer(data=data)
+        serializer = ExamDeploymentPostSerializer(data=data)
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("cohort_id", serializer.errors)
@@ -163,7 +163,7 @@ class AdminDeploymentSerializerTest(TestCase):
         )
 
         # close_at < open_at 시도
-        serializer = AdminDeploymentPatchSerializer(
+        serializer = ExamDeploymentPatchSerializer(
             instance=deployment,
             data={"close_at": timezone.now() - timedelta(hours=1)},
             partial=True,

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from typing import Any
+
 from rest_framework import serializers
 
 
-class ExamResultQuestionSerializer(serializers.Serializer):  # type: ignore[type-arg]
+class ExamResultQuestionSerializer(serializers.Serializer[Any]):
     """
     결과 화면에서 문제 1개를 표현하는 Serializer
     - DB 모델과 1:1 매핑이 아니라, 결과 응답 JSON 형태를 맞추기 위한 용도

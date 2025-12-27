@@ -9,24 +9,20 @@ from apps.courses.models import Cohort, Course, Subject
 from apps.exams.models.exam import Exam
 from apps.exams.models.exam_deployment import ExamDeployment
 from apps.exams.models.exam_question import ExamQuestion, QuestionType
+from apps.exams.models.exam_submission import ExamSubmission
 from apps.exams.services.student.exam_submit_service import create_exam_submission
 from apps.user.models import User
+from apps.user.models.user import RoleChoices
 
 
 class ExamSubmissionResultViewTest(APITestCase):
     def setUp(self) -> None:
         # 테스트용 사용자
         self.user = User.objects.create_user(
-            email="owner@test.com",
-            name="응시자",
-            password="1234",
-            birthday=date(2000, 1, 1),
+            email="owner@test.com", name="응시자", password="1234", birthday=date(2000, 1, 1), role=RoleChoices.ST
         )
         self.other = User.objects.create_user(
-            email="other@test.com",
-            name="다른사람",
-            password="1234",
-            birthday=date(2000, 1, 1),
+            email="other@test.com", name="다른사람", password="1234", birthday=date(2000, 1, 1), role=RoleChoices.ST
         )
 
         # 시험 기본 구조
@@ -118,10 +114,11 @@ class ExamSubmissionResultViewTest(APITestCase):
             raw_answers=raw_answers,
         )
 
+        self.client.force_authenticate(user=self.user)
+
     def test_result_success_200(self) -> None:
         # 본인 제출 결과 정상 조회
         url = reverse("exam_result", kwargs={"submission_id": self.submission.id})
-        self.client.force_authenticate(user=self.user)
 
         res = self.client.get(url)
         self.assertEqual(res.status_code, 200)
@@ -153,14 +150,35 @@ class ExamSubmissionResultViewTest(APITestCase):
     def test_result_not_found_404(self) -> None:
         # 존재하지 않는 submission_id
         url = reverse("exam_result", kwargs={"submission_id": 99999999})
-        self.client.force_authenticate(user=self.user)
 
         res = self.client.get(url)
         self.assertEqual(res.status_code, 404)
 
     def test_result_unauthorized_401(self) -> None:
         # 인증 없이 접근
+        self.client.force_authenticate(user=None)
         url = reverse("exam_result", kwargs={"submission_id": self.submission.id})
 
         res = self.client.get(url)
         self.assertEqual(res.status_code, 401)
+
+    def test_result_invalid_session_400(self) -> None:
+        # started_at > created_at 인 비정상 세션
+        invalid_submission = ExamSubmission.objects.create(
+            deployment=self.deployment,
+            submitter=self.user,
+            started_at=timezone.now(),
+            created_at=timezone.now() - timedelta(seconds=10),
+            cheating_count=0,
+            answers=[],
+            score=0,
+            correct_answer_count=0,
+        )
+
+        # auto_now_add를 우회하기 위해 update 사용
+        ExamSubmission.objects.filter(id=invalid_submission.id).update(created_at=timezone.now() - timedelta(days=1))
+
+        url = reverse("exam_result", kwargs={"submission_id": invalid_submission.id})
+
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 400)

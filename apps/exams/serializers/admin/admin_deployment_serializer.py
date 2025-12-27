@@ -12,7 +12,7 @@ from config.settings.base import FRONTEND_DOMAIN
 
 
 # 시험 배포 데이터 검증
-class AdminDeploymentPostSerializer(serializers.ModelSerializer[ExamDeployment]):
+class ExamDeploymentPostSerializer(serializers.ModelSerializer[ExamDeployment]):
     """
     시험 배포 데이터 생성 검증용 시리얼라이저
     - 시간 검증
@@ -65,7 +65,7 @@ class AdminDeploymentPostSerializer(serializers.ModelSerializer[ExamDeployment])
         return attrs
 
 
-class AdminDeploymentPatchSerializer(serializers.ModelSerializer[ExamDeployment]):
+class ExamDeploymentPatchSerializer(serializers.ModelSerializer[ExamDeployment]):
     """
     시험 배포 데이터 수정 검증용 시리얼라이저
     """
@@ -101,7 +101,7 @@ class AdminDeploymentPatchSerializer(serializers.ModelSerializer[ExamDeployment]
 
 
 # 배포 상태 수정 검증
-class AdminDeploymentStatusPatchSerializer(serializers.Serializer[Any]):
+class ExamDeploymentStatusPatchSerializer(serializers.Serializer[Any]):
     """
     시험 배포 상태 수정 검증용 시리얼라이저
     """
@@ -145,7 +145,7 @@ class CohortResponseSerializer(serializers.Serializer[Any]):
         return f"{obj.course.name} {obj.number}기"
 
 
-class DeploymentResponseSerializer(serializers.ModelSerializer[ExamDeployment]):
+class ExamDeploymentResponseSerializer(serializers.ModelSerializer[ExamDeployment]):
     exam_access_url = serializers.SerializerMethodField()
     submit_count = serializers.SerializerMethodField()
     not_submitted_count = serializers.SerializerMethodField()
@@ -176,7 +176,7 @@ class DeploymentResponseSerializer(serializers.ModelSerializer[ExamDeployment]):
         return getattr(obj, "not_submitted_count", 0)
 
 
-class DeploymentListItemSerializer(serializers.Serializer[Any]):
+class ExamDeploymentListItemSerializer(serializers.Serializer[Any]):
     id = serializers.IntegerField()
     submit_count = serializers.IntegerField()
     avg_score = serializers.FloatField(allow_null=True)
@@ -193,30 +193,30 @@ class DeploymentListItemSerializer(serializers.Serializer[Any]):
 
 
 # 배포 생성 응답
-class AdminDeploymentCreateResponseSerializer(serializers.Serializer[Any]):
+class ExamDeploymentCreateResponseSerializer(serializers.Serializer[Any]):
     pk = serializers.IntegerField()
 
 
 # 배포 리스트 응답
-class AdminDeploymentListResponseSerializer(serializers.Serializer[Any]):
+class ExamDeploymentListResponseSerializer(serializers.Serializer[Any]):
     count = serializers.IntegerField()
     previous = serializers.CharField(allow_null=True)
     next = serializers.CharField(allow_null=True)
-    results = DeploymentListItemSerializer(many=True)
+    results = ExamDeploymentListItemSerializer(many=True)
 
 
 # 배포 디테일 응답
-class AdminDeploymentDetailResponseSerializer(DeploymentResponseSerializer):
+class ExamDeploymentDetailResponseSerializer(ExamDeploymentResponseSerializer):
     exam = ExamResponseSerializer()
     subject = SubjectResponseSerializer(source="exam.subject")
 
     class Meta:
         model = ExamDeployment
-        fields = DeploymentResponseSerializer.Meta.fields + ["exam", "subject"]
+        fields = ExamDeploymentResponseSerializer.Meta.fields + ["exam", "subject"]
 
 
 # 배포 수정 응답
-class AdminDeploymentUpdateResponseSerializer(serializers.Serializer[Any]):
+class ExamDeploymentUpdateResponseSerializer(serializers.Serializer[Any]):
     deployment_id = serializers.IntegerField(source="id")
     duration_time = serializers.IntegerField()
     open_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")

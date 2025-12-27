@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 from datetime import datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 from django.db import transaction
 from rest_framework import serializers
 
+from apps.core.exceptions.exception_messages import EMS
 from apps.exams.models.exam_deployment import ExamDeployment
 from apps.exams.models.exam_question import QuestionType
 from apps.exams.models.exam_submission import ExamSubmission
@@ -13,43 +12,35 @@ from apps.user.models import User
 
 
 # 시험 제출 2회 제한
-def validate_exam_submission_limit(
-    *,
-    deployment: ExamDeployment,
-    submitter: User,
-) -> None:
+def validate_exam_submission_limit(*, deployment: ExamDeployment, submitter: User) -> None:
     # 시험은 최대 2회까지 제출 가능
-    existing_count = ExamSubmission.objects.filter(
-        deployment=deployment,
-        submitter=submitter,
-    ).count()
+    existing_count = ExamSubmission.objects.filter(deployment=deployment, submitter=submitter).count()
 
     if existing_count >= 2:
-        raise serializers.ValidationError({"error_detail": "이미 제출된 시험입니다."})
+        raise serializers.ValidationError(EMS.E409_ALREADY_SUBMITTED("시험"))
 
 
 def _snapshot_questions(deployment: ExamDeployment) -> List[Dict[str, Any]]:
     # 배포 스냅샷에서 문항 가져오기
-    snapshot_json = deployment.questions_snapshot or {}
-    # snapshot = json.loads(cast(str, snapshot_json))
-
-    questions = snapshot_json.get("questions", [])
-    if not isinstance(questions, list):
-        return []
-    return questions
+    snapshot = deployment.questions_snapshot or {}
+    questions = snapshot.get("questions", [])
+    return questions if isinstance(questions, list) else []
 
 
 def normalize_answers(
-    deployment: ExamDeployment,
-    raw_answers: Dict[str, Any],
+    *, deployment: ExamDeployment, raw_answers: Union[Dict[str, Any], List[Dict[str, Any]]]
 ) -> Dict[int, Any]:
-    # FE answers -> qid 기준 dict
-    answers_by_qid: Dict[int, Any] = {}
-    for item in raw_answers.get("questions", []):
-        if "question_id" in item:
-            answers_by_qid[int(item["question_id"])] = item.get("answer")
 
-    # deployment에 포함된 모든 문항 qid를 채워넣기 (없는 건 None)
+    if isinstance(raw_answers, dict) and "questions" in raw_answers:
+        raw_answers = raw_answers["questions"]
+
+    answers_by_qid = {
+        int(item["question_id"]): item.get("answer")
+        for item in raw_answers
+        if isinstance(item, dict) and "question_id" in item
+    }
+
+    # deployment에 포함된 모든 문항 qid를 채워넣기
     normalized: Dict[int, Any] = {}
     for q in _snapshot_questions(deployment):
         qid = int(q["question_id"])
@@ -58,10 +49,7 @@ def normalize_answers(
     return normalized
 
 
-def evaluate_submission(
-    deployment: ExamDeployment,
-    normalized_answers: Dict[int, Any],
-) -> Tuple[int, int]:
+def evaluate_submission(*, deployment: ExamDeployment, normalized_answers: Dict[int, Any]) -> Tuple[int, int]:
     total_score = 0
     correct_count = 0
 
@@ -112,22 +100,31 @@ def evaluate_submission(
 def create_exam_submission(
     *,
     deployment: ExamDeployment,
-    submitter: Any,
+    submitter: User,
     started_at: datetime,
     cheating_count: int,
-    raw_answers: Dict[str, Any],
+    raw_answers: Union[Dict[str, Any], List[Dict[str, Any]]],
+    is_auto_submitted: bool = False,
 ) -> ExamSubmission:
-    validate_exam_submission_limit(deployment=deployment, submitter=submitter)
 
-    normalized_answers = normalize_answers(deployment, raw_answers)
-    score, correct_answer_count = evaluate_submission(deployment, normalized_answers)
+    # raw_answers 가 dict 형태면 list 로 변환
+    if isinstance(raw_answers, dict) and "questions" in raw_answers:
+        raw_answers = raw_answers["questions"]
+
+    normalized_answers = normalize_answers(deployment=deployment, raw_answers=raw_answers)
+
+    score, correct_answer_count = evaluate_submission(deployment=deployment, normalized_answers=normalized_answers)
 
     submission = ExamSubmission.objects.create(
         submitter=submitter,
         deployment=deployment,
         started_at=started_at,
         cheating_count=cheating_count,
-        answers={"questions": [{"question_id": qid, "answer": answer} for qid, answer in normalized_answers.items()]},
+        answers={
+            "questions": [
+                {"question_id": qid, "submitted_answer": answer} for qid, answer in normalized_answers.items()
+            ]
+        },
         score=score,
         correct_answer_count=correct_answer_count,
     )

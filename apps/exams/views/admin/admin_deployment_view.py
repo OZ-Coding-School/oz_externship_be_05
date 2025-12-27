@@ -6,20 +6,21 @@ from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from apps.core.exceptions.custom_exceptions import ConflictException
+from apps.core.exceptions.exception_messages import EMS
 from apps.core.utils.paginations import Pagination
 from apps.core.utils.types import to_int
-from apps.exams.exceptions import DeploymentConflictException
 from apps.exams.models import ExamDeployment
 from apps.exams.permissions.admin_permission import AdminUserPermission
 from apps.exams.serializers.admin import (
-    AdminDeploymentCreateResponseSerializer,
-    AdminDeploymentDetailResponseSerializer,
-    AdminDeploymentListResponseSerializer,
-    AdminDeploymentPatchSerializer,
-    AdminDeploymentPostSerializer,
-    AdminDeploymentStatusPatchSerializer,
-    AdminDeploymentUpdateResponseSerializer,
-    DeploymentListItemSerializer,
+    ExamDeploymentCreateResponseSerializer,
+    ExamDeploymentDetailResponseSerializer,
+    ExamDeploymentListItemSerializer,
+    ExamDeploymentListResponseSerializer,
+    ExamDeploymentPatchSerializer,
+    ExamDeploymentPostSerializer,
+    ExamDeploymentStatusPatchSerializer,
+    ExamDeploymentUpdateResponseSerializer,
 )
 from apps.exams.services.admin.admin_deployment_service import (
     create_deployment,
@@ -31,7 +32,7 @@ from apps.exams.services.admin.admin_deployment_service import (
 )
 
 
-class DeploymentListCreateAPIView(AdminUserPermission):
+class ExamDeploymentListCreateAPIView(AdminUserPermission):
     """
     GET - 배포 목록 조회
     POST - 배포 생성
@@ -61,7 +62,7 @@ class DeploymentListCreateAPIView(AdminUserPermission):
             OpenApiParameter("order", str, required=False, description="asc | desc"),
         ],
         responses={
-            200: AdminDeploymentListResponseSerializer,
+            200: ExamDeploymentListResponseSerializer,
             400: OpenApiResponse(description="유효하지 않은 요청입니다."),
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="쪽지시험 배포 조회 권한이 없습니다."),
@@ -81,7 +82,7 @@ class DeploymentListCreateAPIView(AdminUserPermission):
 
         paginator = Pagination()
         page = paginator.paginate_queryset(queryset, request)
-        serializer = DeploymentListItemSerializer(page, many=True)
+        serializer = ExamDeploymentListItemSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
 
     # --------------------
@@ -90,10 +91,10 @@ class DeploymentListCreateAPIView(AdminUserPermission):
     @extend_schema(
         summary="쪽지시험 배포 생성 API",
         description="관리자가 새로운 쪽지시험 배포를 생성합니다.",
-        request=AdminDeploymentPostSerializer,
+        request=ExamDeploymentPostSerializer,
         responses={
             201: OpenApiResponse(
-                response=AdminDeploymentCreateResponseSerializer,
+                response=ExamDeploymentCreateResponseSerializer,
                 description="쪽지시험 배포가 생성되었습니다.",
             ),
             400: OpenApiResponse(description="유효하지 않은 배포 생성 요청입니다."),
@@ -105,7 +106,7 @@ class DeploymentListCreateAPIView(AdminUserPermission):
         tags=["쪽지시험 관리"],
     )
     def post(self, request: Request) -> Response:
-        serializer = AdminDeploymentPostSerializer(data=request.data)
+        serializer = ExamDeploymentPostSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         try:
@@ -117,12 +118,12 @@ class DeploymentListCreateAPIView(AdminUserPermission):
                 close_at=serializer.validated_data["close_at"],
             )
         except IntegrityError:
-            raise DeploymentConflictException(detail="이미 처리되었습니다.")
+            raise ConflictException(detail=EMS.E409_DUPLICATE_DISTRIBUTION["error_detail"])
 
         return Response({"pk": deployment.pk}, status=status.HTTP_201_CREATED)
 
 
-class AdminDeploymentDetailUpdateDeleteView(AdminUserPermission):
+class ExamDeploymentDetailUpdateDeleteView(AdminUserPermission):
     """
     GET - 배포 상세 조회
     PATCH - 배포 수정
@@ -133,7 +134,7 @@ class AdminDeploymentDetailUpdateDeleteView(AdminUserPermission):
         summary="쪽지시험 배포 상세 조회 API",
         description="특정 쪽지시험 배포의 시험 정보, 문항 스냅샷 및 배포 정보를 상세 조회합니다.",
         responses={
-            200: AdminDeploymentDetailResponseSerializer,
+            200: ExamDeploymentDetailResponseSerializer,
             400: OpenApiResponse(description="유효하지 않은 배포 상세 조회 요청입니다."),
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="쪽지시험 배포 상세 조회 권한이 없습니다."),
@@ -143,7 +144,7 @@ class AdminDeploymentDetailUpdateDeleteView(AdminUserPermission):
     )
     def get(self, request: Request, deployment_id: int) -> Response:
         deployment = get_admin_deployment_detail(deployment_id=deployment_id)
-        serializer = AdminDeploymentDetailResponseSerializer(deployment)
+        serializer = ExamDeploymentDetailResponseSerializer(deployment)
 
         data = {
             "deployment": serializer.data,
@@ -155,13 +156,13 @@ class AdminDeploymentDetailUpdateDeleteView(AdminUserPermission):
     @extend_schema(
         summary="쪽지시험 배포 정보 수정 API",
         description="쪽지시험의 공개 시간 또는 시험 시간을 수정합니다.",
-        request=AdminDeploymentPatchSerializer,
+        request=ExamDeploymentPatchSerializer,
         responses={
-            200: AdminDeploymentUpdateResponseSerializer,
+            200: ExamDeploymentUpdateResponseSerializer,
             400: OpenApiResponse(description="유효하지 않은 배포 수정 요청입니다."),
             401: OpenApiResponse(description="자격 인증 데이터가 제공되지 않았습니다."),
             403: OpenApiResponse(description="쪽지시험 배포 수정 권한이 없습니다."),
-            404: OpenApiResponse(description="수정할 배포 정보를 찾을 수 없습니다."),
+            404: OpenApiResponse(description="배포 정보를 찾을 수 없습니다."),
         },
         tags=["쪽지시험 관리"],
     )
@@ -169,14 +170,14 @@ class AdminDeploymentDetailUpdateDeleteView(AdminUserPermission):
         try:
             deployment = ExamDeployment.objects.get(pk=deployment_id)
         except ExamDeployment.DoesNotExist:
-            raise NotFound({"deployment_id": "수정할 배포 정보를 찾을 수 없습니다."})
+            raise NotFound(detail=EMS.E404_NOT_FOUND("배포 정보"))
 
-        serializer = AdminDeploymentPatchSerializer(instance=deployment, data=request.data, partial=True)
+        serializer = ExamDeploymentPatchSerializer(instance=deployment, data=request.data, partial=True)
 
         serializer.is_valid(raise_exception=True)
         updated_deployment = update_deployment(deployment=deployment, data=serializer.validated_data)
 
-        response_serializer = AdminDeploymentUpdateResponseSerializer(updated_deployment)
+        response_serializer = ExamDeploymentUpdateResponseSerializer(updated_deployment)
         return Response(response_serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
@@ -210,7 +211,7 @@ class ExamDeploymentStatusAPIView(AdminUserPermission):
     @extend_schema(
         summary="쪽지시험 배포 on/off API",
         description="쪽지시험 배포 상태를 활성화 또는 비활성화합니다.",
-        request=AdminDeploymentStatusPatchSerializer,
+        request=ExamDeploymentStatusPatchSerializer,
         responses={
             200: OpenApiResponse(description="쪽지시험 배포 상태 변경이 성공했습니다."),
             400: OpenApiResponse(description="유효하지 않은 배포 상태 변경 요청입니다."),
@@ -227,7 +228,7 @@ class ExamDeploymentStatusAPIView(AdminUserPermission):
         deployment = get_admin_deployment_detail(deployment_id=deployment_id)
 
         # 데이터 형식 이상하면 400
-        serializer = AdminDeploymentStatusPatchSerializer(data=request.data, partial=True)
+        serializer = ExamDeploymentStatusPatchSerializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
         # 이미 처리됨 409
