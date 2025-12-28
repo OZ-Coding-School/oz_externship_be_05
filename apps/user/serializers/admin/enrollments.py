@@ -1,5 +1,6 @@
 from typing import Any
 
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from apps.user.models import User
@@ -35,6 +36,7 @@ class AdminStudentSerializer(serializers.ModelSerializer[User]):
             "created_at",
         )
 
+    @extend_schema_field(InProgressCourseSerializer)
     def get_in_progress_course(self, obj: User) -> dict[str, Any]:
         for cs in obj.cohortstudent_set.all():
             cohort = cs.cohort
@@ -62,6 +64,7 @@ class AdminStudentEnrollRequestSerializer(serializers.Serializer[dict[str, list[
     # id 중복 제거
     def validate_enrollments(self, value: list[int]) -> list[int]:
         return list(dict.fromkeys(value))
+
 
 # 수강생 등록 요청 승인 시리얼라이저
 class AdminStudentEnrollAcceptSerializer(serializers.Serializer[dict[str, str | int]]):
