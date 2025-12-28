@@ -92,7 +92,12 @@ class AdminAccountRetrieveUpdateView(APIView):
         serializer = AdminAccountRetrieveSerializer(instance=user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(tags=["회원관리"], summary="회원 정보 수정 API")
+    @extend_schema(
+            tags=["회원관리"],
+            summary="회원 정보 수정 API",
+            request=AdminAccountUpdateSerializer,
+            responses=AdminAccountResponseSerializer,
+            )
     def patch(self, request: Request, account_id: int) -> Response:
         user = get_object_or_404(User, pk=account_id)
         serializer = AdminAccountUpdateSerializer(instance=user, data=request.data, partial=True)
@@ -111,7 +116,11 @@ class AdminAccountRetrieveUpdateView(APIView):
 class AdminAccountRoleUpdateView(APIView):
     permission_classes = [IsAdminUser, AdminAccountRoleUpdatePayloadPermission]
 
-    @extend_schema(tags=["회원관리"], summary="회원 권한 수정 API")
+    @extend_schema(
+            tags=["회원관리"], 
+            summary="회원 권한 수정 API",
+            request=AdminAccountRoleUpdateSerializer,
+            )
     def patch(self, request: Request, account_id: int) -> Response:
         user = get_object_or_404(User, pk=account_id)
         serializer = AdminAccountRoleUpdateSerializer(instance=user, data=request.data)
