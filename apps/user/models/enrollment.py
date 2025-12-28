@@ -6,9 +6,16 @@ from apps.user.models.user import User
 
 
 class EnrollmentStatus(models.TextChoices):
+    """
+    등록 요청 상태를 수정했는데 배포환경 더미데이터에 영향이 갈지 걱정이됨. 내일 물어볼 것
+    """
+    #! PENDING = "PENDING"
+    #! IN_PROGRESS = "IN_PROGRESS"
+    #! COMPLETED = "COMPLETED"
     PENDING = "PENDING"
-    IN_PROGRESS = "IN_PROGRESS"
-    COMPLETED = "COMPLETED"
+    ACCEPTED = "ACCEPTED"
+    REJECTED = "REJECTED"
+    CANCELED = "CANCELED"
 
 
 class StudentEnrollmentRequest(TimeStampedModel):
