@@ -5,7 +5,7 @@ from typing import Literal, cast
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from apps.exams.permissions.admin_permission import AdminUserPermission
+from apps.exams.permissions.admin_permission import AdminUserPermissionView
 from apps.exams.serializers.admin.admin_submission_serializer import (
     AdminExamSubmissionListSerializer,
 )
@@ -17,7 +17,7 @@ from apps.exams.services.admin.admin_submission_service import (
 Order = Literal["asc", "desc"]
 
 
-class AdminSubmissionListAPIView(AdminUserPermission):
+class AdminSubmissionListAPIView(AdminUserPermissionView):
     def get(self, request: Request) -> Response:
         qp = request.query_params
 
