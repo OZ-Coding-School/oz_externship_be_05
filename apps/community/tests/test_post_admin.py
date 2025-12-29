@@ -1,11 +1,13 @@
 from django.contrib.admin import AdminSite
 from django.http import QueryDict
+from django.utils.safestring import SafeString
 
 from apps.community.admin.post_admin import PostAdmin
 from apps.community.admin.utils.filter import (
     CustomSearchFilter,
     PostOrderingFilter,
 )
+from apps.community.admin.utils.inlines import ImageInline
 from apps.community.models.post import Post
 from apps.community.tests.test_base import BasePostTestCase
 
@@ -120,3 +122,9 @@ class PostAdminTest(BasePostTestCase):
 
         self.assertEqual(filtered_qs.count(), 1)
         self.assertEqual(filtered_qs.first().title, "testpost2")
+
+    def test_ImageInline(self) -> None:
+        self.inline = ImageInline(Post, self.site)
+        preview_html = self.inline.get_preview(self.image)
+        self.assertIn('src="http://testimage.com/test.jpg"', preview_html)
+        self.assertIsInstance(preview_html, SafeString)
