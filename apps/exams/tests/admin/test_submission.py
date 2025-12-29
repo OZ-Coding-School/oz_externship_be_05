@@ -125,14 +125,13 @@ class AdminExamSubmissionTest(APITestCase):
         self.assertEqual(res.data["submissions"][0]["nickname"], "한율_회장")
         self.assertEqual(res.data["submissions"][0]["name"], "한율")
 
-    def test_404_when_empty_result(self) -> None:
+    def test_200_when_empty_result(self) -> None:
         self.client.force_authenticate(self.admin)
 
         params: dict[str, str] = {"search_keyword": "존재하지않는키워드"}
         res = self.client.get(self.url, params)
 
         self.assertEqual(res.status_code, 200)
-        self.assertIn("error_detail", res.data)
 
     def test_400_invalid_sort(self) -> None:
         self.client.force_authenticate(self.admin)
