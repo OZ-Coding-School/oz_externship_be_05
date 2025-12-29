@@ -37,7 +37,6 @@ ROLE_FILTERS = {
 
 
 class AdminAccountListAPIView(APIView):
-    #! 정렬 기준이 ID순과 가입순 생년월일 순이기 때문에 paginator 수정하기.
     permission_classes = [IsAdminUser]
 
     @extend_schema(tags=["회원관리"], summary="전체 회원 목록 조회 API")
@@ -93,11 +92,11 @@ class AdminAccountRetrieveUpdateView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
-            tags=["회원관리"],
-            summary="회원 정보 수정 API",
-            request=AdminAccountUpdateSerializer,
-            responses=AdminAccountResponseSerializer,
-            )
+        tags=["회원관리"],
+        summary="회원 정보 수정 API",
+        request=AdminAccountUpdateSerializer,
+        responses=AdminAccountResponseSerializer,
+    )
     def patch(self, request: Request, account_id: int) -> Response:
         user = get_object_or_404(User, pk=account_id)
         serializer = AdminAccountUpdateSerializer(instance=user, data=request.data, partial=True)
@@ -117,10 +116,10 @@ class AdminAccountRoleUpdateView(APIView):
     permission_classes = [IsAdminUser, AdminAccountRoleUpdatePayloadPermission]
 
     @extend_schema(
-            tags=["회원관리"], 
-            summary="회원 권한 수정 API",
-            request=AdminAccountRoleUpdateSerializer,
-            )
+        tags=["회원관리"],
+        summary="회원 권한 수정 API",
+        request=AdminAccountRoleUpdateSerializer,
+    )
     def patch(self, request: Request, account_id: int) -> Response:
         user = get_object_or_404(User, pk=account_id)
         serializer = AdminAccountRoleUpdateSerializer(instance=user, data=request.data)
