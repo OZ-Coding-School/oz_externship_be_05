@@ -23,6 +23,8 @@ class BaseCourseTestCase(APITestCase):
             birthday=date(2007, 8, 31),
         )
 
+        self.client.force_authenticate(user=self.admin_user)
+
         # 2. 과정 생성
         self.course = Course.objects.create(
             name="테스트 과정",
