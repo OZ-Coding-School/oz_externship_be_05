@@ -2,6 +2,20 @@ from typing import Any
 
 from rest_framework import serializers
 
+from apps.core.utils.s3_client import S3Client
+from apps.qna.models.answer.images import AnswerImage
+
+
+class AnswerImageSerializer(serializers.ModelSerializer[AnswerImage]):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AnswerImage
+        fields = ["id", "image_url"]
+
+    def get_image_url(self, obj: AnswerImage) -> str:
+        return S3Client().build_url(obj.image_url)
+
 
 class AnswerImagePresignedURLSerializer(serializers.Serializer[Any]):
     file_name = serializers.CharField(

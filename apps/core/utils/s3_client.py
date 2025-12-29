@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 
 class S3Client:
     def __init__(self) -> None:
-        aws_access_key_id = getattr(settings, "AWS_ACCESS_KEY_ID", None)
-        aws_secret_access_key = getattr(settings, "AWS_SECRET_ACCESS_KEY", None)
-        aws_region = getattr(settings, "AWS_REGION", "ap-northeast-2")
-        self.bucket_name = getattr(settings, "AWS_STORAGE_BUCKET_NAME", "my-bucket")
+        aws_access_key_id = getattr(settings, "AWS_S3_ACCESS_KEY_ID", None)
+        aws_secret_access_key = getattr(settings, "AWS_S3_SECRET_ACCESS_KEY", None)
+        aws_region = getattr(settings, "AWS_S3_REGION", "ap-northeast-2")
+        self.bucket_name = getattr(settings, "AWS_S3_BUCKET_NAME", "my-bucket")
 
         self.s3: BotoS3Client = boto3.client(
             "s3",
@@ -56,7 +56,7 @@ class S3Client:
         except ClientError as e:
             logger.warning(f"S3 Delete Failed (Key: {key}): {e}", exc_info=True)
 
-    def get_url(self, key: str) -> str:
+    def build_url(self, key: str) -> str:
         if not key:
             return ""
 
@@ -65,7 +65,7 @@ class S3Client:
         if custom_domain:
             domain = custom_domain
         else:
-            region = getattr(settings, "AWS_REGION", "ap-northeast-2")
+            region = getattr(settings, "AWS_S3_REGION", "ap-northeast-2")
             domain = f"{self.bucket_name}.s3.{region}.amazonaws.com"
 
         return f"https://{domain.rstrip('/')}/{key.lstrip('/')}"
