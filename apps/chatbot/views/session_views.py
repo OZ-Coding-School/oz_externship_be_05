@@ -1,54 +1,22 @@
-from django.db.models import QuerySet
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.pagination import CursorPagination
-from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from typing import cast
 
-from apps.user.models import User
 from apps.core.exceptions.exception_messages import EMS
-from apps.chatbot.models.chatbot_sessions import ChatbotSession
+from apps.chatbot.views.mixins import ChatbotCursorPagination, ChatbotSessionMixin
 from apps.chatbot.serializers.session_serializers import (
     SessionCreateSerializer,
     SessionSerializer,
 )
-"""
-ChatbotSession 공통로직 제공 Mixin
-get_user(): 현재 인증된 사용자 반환
-get_queryset(): 사용자의 모든 세션 QuerySet 반환
-get_session(session_id): 특정 세션 조회+ EMS 404 처리
-"""
-class ChatbotSessionMixin:
-    request: Request
-
-    def get_user(self) -> User:
-        return cast(User, self.request.user)
-
-    def get_queryset(self)-> QuerySet[ChatbotSession]:
-        return ChatbotSession.objects.filter(user=self.get_user())
-
-    def get_session(self, session_id: int) -> ChatbotSession:
-        session = self.get_queryset().filter(id=session_id).first()
-        if session is None:
-            raise NotFound(EMS.E404_CHATBOT_SESSION_NOT_FOUND)
-        return session
-
-class CustomCursorPagination(CursorPagination):
-    cursor_query_param = "cursor"
-    page_size_query_param = "page_size"
-    page_size = 10
-    ordering = "-created_at"
-
 
 class SessionCreateListAPIView(ChatbotSessionMixin, APIView):
     serializer_class = SessionSerializer
     permission_classes = [IsAuthenticated]
-    pagination_class = CustomCursorPagination
+    pagination_class = ChatbotCursorPagination
 
     @extend_schema(
         tags=["AI 챗봇"],
@@ -91,7 +59,7 @@ class SessionCreateListAPIView(ChatbotSessionMixin, APIView):
     )
     def get(self, request: Request) -> Response:
         paginator = self.pagination_class()
-        qs = self.get_queryset()
+        qs = self.get_session_queryset()
         page = paginator.paginate_queryset(queryset=qs, request=request)
         serializer = self.serializer_class(page, many=True)
         return paginator.get_paginated_response(serializer.data)
@@ -111,7 +79,7 @@ class SessionDeleteView(ChatbotSessionMixin, APIView):
         },
     )
 
-    def delete(self, request: Request, session_id: int) -> Response:
+    def delete(self, session_id: int) -> Response:
         session = self.get_session(session_id)
         session.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
