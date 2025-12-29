@@ -26,7 +26,7 @@ from apps.user.serializers.admin.enrollments import (
 )
 
 ORDERING_MAP = {"id": "id", "latest": "-created_at", "oldest": "created_at"}
-
+wa
 USER_STATUS_FILTERS = {
     "withdrew": Q(is_withdrawing=True),
     "activated": Q(is_withdrawing=False, is_active=True),
@@ -67,13 +67,13 @@ class AdminStudentView(APIView):
         students = User.objects.filter(role=RoleChoices.ST).order_by("id")
         students = students.annotate(is_withdrawing=Exists(Withdrawal.objects.filter(user_id=OuterRef("pk"))))
 
-        course_id = request.query_params.get("course_id")
-        cohort_number = request.query_params.get("cohort_number")
+        course_id = request.query_params.get("course_id", "")
+        cohort_number = request.query_params.get("cohort_number", "")
 
-        if course_id and str(course_id).isdigit():
+        if course_id.isdigit():
             students = students.filter(cohortstudent__cohort__course_id=int(course_id))
 
-            if cohort_number and str(cohort_number).isdigit():
+            if cohort_number.isdigit():
                 students = students.filter(cohortstudent__cohort__number=int(cohort_number))
 
         students = students.distinct()
