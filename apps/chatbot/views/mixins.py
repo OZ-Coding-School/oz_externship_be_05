@@ -12,6 +12,7 @@ from apps.user.models import User
 if TYPE_CHECKING:
     from rest_framework.request import Request
 
+
 # Chatbot 전용 커서 페이지네이션
 class ChatbotCursorPagination(CursorPagination):
     cursor_query_param = "cursor"
@@ -19,6 +20,7 @@ class ChatbotCursorPagination(CursorPagination):
     page_size = 10
     max_page_size = 50
     ordering = "-created_at"
+
 
 class ChatbotSessionMixin:
     """

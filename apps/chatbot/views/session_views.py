@@ -6,12 +6,13 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.exceptions.exception_messages import EMS
-from apps.chatbot.views.mixins import ChatbotCursorPagination, ChatbotSessionMixin
 from apps.chatbot.serializers.session_serializers import (
     SessionCreateSerializer,
     SessionSerializer,
 )
+from apps.chatbot.views.mixins import ChatbotCursorPagination, ChatbotSessionMixin
+from apps.core.exceptions.exception_messages import EMS
+
 
 class SessionCreateListAPIView(ChatbotSessionMixin, APIView):
     serializer_class = SessionSerializer
@@ -44,10 +45,14 @@ class SessionCreateListAPIView(ChatbotSessionMixin, APIView):
         summary="세션 리스트 확인 API",
         parameters=[
             OpenApiParameter(
-                name="cursor", type=OpenApiTypes.STR, description="커서 페이지 네이션 적용을 위한 커서 값.", required=False, default=None,
+                name="cursor",
+                type=OpenApiTypes.STR,
+                description="커서 페이지 네이션 적용을 위한 커서 값.",
+                required=False,
+                default=None,
             ),
             OpenApiParameter(
-                name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값", default = 10
+                name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값", default=10
             ),
         ],
         responses={
@@ -78,7 +83,6 @@ class SessionDeleteView(ChatbotSessionMixin, APIView):
             404: {"type": "object", "example": EMS.E404_USER_CHATBOT_SESSION_NOT_FOUND},
         },
     )
-
     def delete(self, session_id: int) -> Response:
         session = self.get_session(session_id)
         session.delete()

@@ -28,7 +28,7 @@ class CompletionAPIView(ChatbotCompletionMixin, APIView):
     POST:  /sessions/{session_id}/completion  AI 응답 생성 (SSE 스트리밍)
     DELETE:  /sessions/{session_id}/completion  모든 메세지 삭제
     """
- 
+
     permission_classes = [IsAuthenticated]
     pagination_class = ChatbotCursorPagination
     serializer_class = CompletionSerializer
@@ -86,7 +86,11 @@ class CompletionAPIView(ChatbotCompletionMixin, APIView):
         summary="챗봇 대화 내역 조회 API",
         parameters=[
             OpenApiParameter(
-                name="cursor", type=OpenApiTypes.STR, description="커서 페이지 네이션 적용을 위한 커서 값", required=False, default=None,
+                name="cursor",
+                type=OpenApiTypes.STR,
+                description="커서 페이지 네이션 적용을 위한 커서 값",
+                required=False,
+                default=None,
             ),
             OpenApiParameter(
                 name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값", default=10
