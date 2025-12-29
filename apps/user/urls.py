@@ -12,7 +12,7 @@ from apps.user.views.auth import (
     RefreshAPIView,
     SignupAPIView,
 )
-from apps.user.views.enrollemnt import EnrollStudentAPIView
+from apps.user.views.enrollemnt import EnrolledCoursesAPIView, EnrollStudentAPIView
 from apps.user.views.verification import (
     SendEmailAPIView,
     SendSMSVerificationAPIView,
@@ -29,6 +29,7 @@ urlpatterns = [
     path("login", LoginAPIView.as_view(), name="login"),
     path("refresh", RefreshAPIView.as_view(), name="refresh"),
     path("me", MeAPIView.as_view(), name="me"),
+    path("me/enrolled-courses", EnrolledCoursesAPIView.as_view(), name="me_enrolled_courses"),
     path("enroll-student", EnrollStudentAPIView.as_view(), name="enroll_student"),
     path("change-password", ChangePasswordAPIView.as_view(), name="change_password"),
     path("change-phone", ChangePhoneAPIView.as_view(), name="change_phone"),

@@ -11,8 +11,8 @@ from rest_framework.test import APIRequestFactory, force_authenticate
 from apps.courses.models.cohorts_models import Cohort, CohortStatusChoices
 from apps.courses.models.courses_models import Course
 from apps.courses.views import AvailableCoursesAPIView
-from apps.user.models import StudentEnrollmentRequest
-from apps.user.views.enrollemnt import EnrollStudentAPIView
+from apps.user.models import CohortStudent, StudentEnrollmentRequest
+from apps.user.views.enrollemnt import EnrolledCoursesAPIView, EnrollStudentAPIView
 
 
 class EnrollmentAPIViewTests(TestCase):
@@ -88,3 +88,16 @@ class EnrollmentAPIViewTests(TestCase):
         item = response.data[0]
         self.assertEqual(item["cohort"]["id"], self.available_cohort.id)
         self.assertEqual(item["course"]["id"], self.course.id)
+
+    def test_enrolled_courses_returns_user_cohorts(self) -> None:
+        CohortStudent.objects.create(user=self.user, cohort=self.available_cohort)
+        request = self.factory.get("/api/v1/accounts/me/enrolled-courses")
+        force_authenticate(request, user=self.user)
+
+        response = EnrolledCoursesAPIView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        item = response.data[0]
+        self.assertEqual(item["cohort"]["id"], self.available_cohort.id)
+        self.assertEqual(item["course"]["tag"], "BE")
