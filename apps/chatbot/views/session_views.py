@@ -14,7 +14,7 @@ from apps.chatbot.views.mixins import ChatbotCursorPagination, ChatbotSessionMix
 from apps.core.exceptions.exception_messages import EMS
 
 
-class SessionCreateListAPIView(ChatbotSessionMixin, APIView):
+class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
     serializer_class = SessionSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = ChatbotCursorPagination
@@ -70,7 +70,7 @@ class SessionCreateListAPIView(ChatbotSessionMixin, APIView):
         return paginator.get_paginated_response(serializer.data)
 
 
-class SessionDeleteView(ChatbotSessionMixin, APIView):
+class SessionDeleteView(APIView, ChatbotSessionMixin):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(

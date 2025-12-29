@@ -1,16 +1,14 @@
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 from django.db.models import QuerySet
 from rest_framework.exceptions import NotFound
 from rest_framework.pagination import CursorPagination
+from rest_framework.request import Request
 
 from apps.chatbot.models.chatbot_completions import ChatbotCompletion
 from apps.chatbot.models.chatbot_sessions import ChatbotSession
 from apps.core.exceptions.exception_messages import EMS
 from apps.user.models import User
-
-if TYPE_CHECKING:
-    from rest_framework.request import Request
 
 
 # Chatbot 전용 커서 페이지네이션
@@ -29,8 +27,7 @@ class ChatbotSessionMixin:
         - get_session_queryset(): 사용자의 모든 세션 QuerySet 반환
         - get_session(session_id): 특정 세션 조회 + EMS 404 처리
     """
-
-    request: "Request"
+    request: Request
 
     def get_user(self) -> User:
         return cast(User, self.request.user)
