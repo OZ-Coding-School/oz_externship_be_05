@@ -5,10 +5,12 @@ from rest_framework import serializers
 from apps.qna.models.answer.answers import Answer
 from apps.qna.serializers.answer.author import AnswerAuthorSerializer
 from apps.qna.serializers.answer.comments import AnswerCommentSerializer
+from apps.qna.serializers.answer.images import AnswerImageSerializer
 
 
 class AnswerSerializer(serializers.ModelSerializer[Answer]):
     author = AnswerAuthorSerializer(read_only=True)
+    images = AnswerImageSerializer(many=True, read_only=True)
 
     preview_comments = serializers.SerializerMethodField()
     total_comments_count = serializers.IntegerField(
@@ -22,6 +24,7 @@ class AnswerSerializer(serializers.ModelSerializer[Answer]):
             "id",
             "author",
             "content",
+            "images",
             "is_adopted",
             "created_at",
             "preview_comments",

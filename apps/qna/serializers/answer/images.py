@@ -1,6 +1,22 @@
 from typing import Any
 
+from django.conf import settings
 from rest_framework import serializers
+
+from apps.qna.models.answer.images import AnswerImage
+
+
+class AnswerImageSerializer(serializers.ModelSerializer[AnswerImage]):
+    image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AnswerImage
+        fields = ["id", "image_url"]
+
+    def get_image_url(self, obj: AnswerImage) -> str:
+        domain = getattr(settings, "AWS_S3_CUSTOM_DOMAIN", "")
+        clean_domain = str(domain).rstrip("/")
+        return f"https://{clean_domain}/{obj.image_url}"
 
 
 class AnswerImagePresignedURLSerializer(serializers.Serializer[Any]):
