@@ -36,7 +36,7 @@ class CompletionAPIView(ChatbotCompletionMixin, APIView):
     # POST (메세지 작성, AI 응답 생성)
     @extend_schema(
         tags=["AI 챗봇"],
-        summary="AI 챗봇 응답 생성 API with Streaming",
+        summary="AI 챗봇 응답 생성 API (with Streaming)",
         description="AI 챗봇과 사용자의 메세지를 생성/저장하는 API. user 메세지 저장 → AI 응답 생성·저장, 이후 둘 다 반환",
         request=CompletionCreateSerializer,
         parameters=[
@@ -83,7 +83,7 @@ class CompletionAPIView(ChatbotCompletionMixin, APIView):
     # 메세지 목록 조회
     @extend_schema(
         tags=["AI 챗봇"],
-        summary="챗봇 대화 내역 조회",
+        summary="챗봇 대화 내역 조회 API",
         parameters=[
             OpenApiParameter(
                 name="cursor", type=OpenApiTypes.STR, description="커서 페이지 네이션 적용을 위한 커서 값", required=False, default=None,
@@ -129,7 +129,7 @@ class CompletionAPIView(ChatbotCompletionMixin, APIView):
 
     @extend_schema(
         tags=["AI 챗봇"],
-        summary="",
+        summary="세션 내 메세지 기록 삭제 API",
         request=CompletionSerializer,
         responses={
             200: {"detail": "해당 질문에 대한 챗봇 대화 내용 기록이 삭제되었습니다."},
