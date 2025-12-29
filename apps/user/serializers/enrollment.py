@@ -53,10 +53,10 @@ class EnrollStudentSerializer(serializers.Serializer[Any]):
         cohort = attrs["cohort"]
 
         if CohortStudent.objects.filter(user=user, cohort=cohort).exists():
-            raise serializers.ValidationError("이미 수강 중인 기수입니다.")
+            raise serializers.ValidationError("이미 수강 중인 수업입니다.")
 
         if StudentEnrollmentRequest.objects.filter(user=user, cohort=cohort).exists():
-            raise serializers.ValidationError("이미 수강 신청한 기수입니다.")
+            raise serializers.ValidationError("이미 수강 신청한 수업입니다.")
 
         return attrs
 
