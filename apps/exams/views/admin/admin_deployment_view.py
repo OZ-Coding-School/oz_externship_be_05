@@ -10,7 +10,7 @@ from apps.core.utils.paginations import Pagination
 from apps.core.utils.types import to_int
 from apps.exams.exceptions import DeploymentConflictException
 from apps.exams.models import ExamDeployment
-from apps.exams.permissions.admin_permission import AdminUserPermission
+from apps.exams.permissions.admin_permission import AdminUserPermissionView
 from apps.exams.serializers.admin import (
     AdminDeploymentCreateResponseSerializer,
     AdminDeploymentDetailResponseSerializer,
@@ -31,7 +31,7 @@ from apps.exams.services.admin.admin_deployment_service import (
 )
 
 
-class DeploymentListCreateAPIView(AdminUserPermission):
+class DeploymentListCreateAPIView(AdminUserPermissionView):
     """
     GET - 배포 목록 조회
     POST - 배포 생성
@@ -122,7 +122,7 @@ class DeploymentListCreateAPIView(AdminUserPermission):
         return Response({"pk": deployment.pk}, status=status.HTTP_201_CREATED)
 
 
-class AdminDeploymentDetailUpdateDeleteView(AdminUserPermission):
+class AdminDeploymentDetailUpdateDeleteView(AdminUserPermissionView):
     """
     GET - 배포 상세 조회
     PATCH - 배포 수정
@@ -202,7 +202,7 @@ class AdminDeploymentDetailUpdateDeleteView(AdminUserPermission):
         return Response({"deployment_id": deployment_id}, status=status.HTTP_200_OK)
 
 
-class ExamDeploymentStatusAPIView(AdminUserPermission):
+class ExamDeploymentStatusAPIView(AdminUserPermissionView):
     """
     PATCH - 쪽지시험 상태 변경
     """

@@ -13,7 +13,7 @@ from rest_framework.serializers import BaseSerializer
 
 from apps.core.exceptions.exception_messages import EMS
 from apps.exams.models import Exam
-from apps.exams.permissions.admin_permission import AdminUserPermission
+from apps.exams.permissions.admin_permission import AdminUserPermissionView
 from apps.exams.serializers.admin.admin_exam_serializer import (
     ExamListSerializer,
     ExamQuestionsListSerializer,
@@ -41,7 +41,7 @@ def get_base_queryset() -> QuerySet[Exam]:
     return exam_service.get_exam_list()
 
 
-class ExamAdminListCreateAPIView(AdminUserPermission):
+class ExamAdminListCreateAPIView(AdminUserPermissionView):
     """
     쪽지시험(Exam) 엔티티에 대한 관리자 list APIView입니다.
     GET: 쪽지시험 목록 조회
@@ -135,7 +135,7 @@ class ExamAdminListCreateAPIView(AdminUserPermission):
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 
-class ExamAdminRetrieveUpdateDestroyAPIView(AdminUserPermission):
+class ExamAdminRetrieveUpdateDestroyAPIView(AdminUserPermissionView):
     """
     GET: 쪽지시험 상세 조회
     PUT: 쪽지시험 수정
