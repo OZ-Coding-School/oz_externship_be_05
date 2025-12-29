@@ -1,13 +1,15 @@
 from datetime import datetime, timedelta, timezone
-from typing import Any, Iterable, Iterator, List, Set, TypeVar
+from typing import Any, Iterable, Iterator, List, TypeVar, Tuple, Type
 
-from django.conf import settings
 from django.core.management.base import BaseCommand
+from django.db.models import Model
 from mypy_boto3_s3 import S3Client
 from mypy_boto3_s3.type_defs import DeleteTypeDef, ObjectIdentifierTypeDef
-
+# 관리할 모델 임포트
 from apps.qna.models.answer.images import AnswerImage
-from apps.qna.utils.s3_client import S3Client as MyS3ClientWrapper
+
+
+from apps.core.utils.s3_client import S3Client as MyS3ClientWrapper
 
 T = TypeVar("T")
 
@@ -38,28 +40,48 @@ class Command(BaseCommand):
         bucket_name = wrapper.bucket_name
 
         safety_boundary = datetime.now(timezone.utc) - timedelta(hours=24)
-        paginator = s3_client.get_paginator("list_objects_v2")
-        pages = paginator.paginate(Bucket=bucket_name, Prefix="answer_images/")
+        # 청소대상 목록
+        targets: List[Tuple[str, Type[Model]]] = [
+            ("answer_images/", AnswerImage),
 
+        ]
         total_scanned = 0
         total_deleted = 0
 
-        for page in pages:
-            if "Contents" not in page:
-                continue
+        for prefix, model_class in targets:
+            self.stdout.write(f"\n🚀 [{prefix}] 구역 스캔 중... ({model_class.__name__})")
 
-            orphans, scanned_count = self._find_orphans_in_page(page["Contents"], safety_boundary)
-            total_scanned += scanned_count
 
-            if not orphans:
-                continue
+            paginator = s3_client.get_paginator("list_objects_v2")
+            pages = paginator.paginate(Bucket=bucket_name, Prefix=prefix)
 
-            deleted_count = self._process_batch_deletion(s3_client, bucket_name, orphans, is_dry_run)
-            total_deleted += deleted_count
+            for page in pages:
+                if "Contents" not in page:
+                    continue
+
+                orphans, scanned_count = self._find_orphans_in_page(
+                    page["Contents"], 
+                    safety_boundary,
+                    model_class
+                )
+                
+                total_scanned += scanned_count
+
+                if not orphans:
+                    continue
+
+                deleted_count = self._process_batch_deletion(s3_client, bucket_name, orphans, is_dry_run)
+                total_deleted += deleted_count
 
         self.stdout.write(self.style.SUCCESS(f"작업 종료! 총 스캔: {total_scanned}, 총 삭제: {total_deleted}"))
 
-    def _find_orphans_in_page(self, contents: List[Any], safety_boundary: datetime) -> tuple[List[str], int]:
+    def _find_orphans_in_page(
+            self, 
+            contents: List[Any], 
+            safety_boundary: datetime,
+            model_class: Type[Model]
+    ) -> tuple[List[str], int]:
+        
         candidates: List[str] = []
         scanned = 0
 
@@ -75,7 +97,8 @@ class Command(BaseCommand):
         if not candidates:
             return [], scanned
 
-        existing_keys = set(AnswerImage.objects.filter(image_url__in=candidates).values_list("image_url", flat=True))
+        # 모든 모델의 필드가 image_url
+        existing_keys = set(model_class.objects.filter(image_url__in=candidates).values_list("image_url", flat=True))
         orphan_keys = set(candidates) - existing_keys
         return list(orphan_keys), scanned
 
