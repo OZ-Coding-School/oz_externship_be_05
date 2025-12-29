@@ -11,13 +11,13 @@ from apps.exams.models import Exam, ExamDeployment, ExamSubmission
 from apps.user.models import User
 from apps.user.models.user import RoleChoices
 
-open_at = timezone.make_aware(datetime(2025, 3, 1, 9, 0, 0))
-close_at = timezone.make_aware(datetime(2025, 3, 1, 12, 0, 0))
-started_at = timezone.make_aware(datetime(2025, 3, 1, 10, 3, 12))
-
 
 class AdminExamSubmissionTest(APITestCase):
     def setUp(self) -> None:
+        open_at = timezone.make_aware(datetime(2025, 3, 1, 9, 0, 0))
+        close_at = timezone.make_aware(datetime(2025, 3, 1, 12, 0, 0))
+        started_at = timezone.make_aware(datetime(2025, 3, 1, 10, 3, 12))
+
         self.url = reverse("exam-submission")
 
         self.admin = User.objects.create_user(
@@ -79,7 +79,7 @@ class AdminExamSubmissionTest(APITestCase):
             open_at=open_at,
             close_at=close_at,
             questions_snapshot={},
-            status="activated",
+            status="DeploymentStatus.activated",
         )
 
         self.submission = ExamSubmission.objects.create(
