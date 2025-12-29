@@ -22,7 +22,7 @@ class AdminStudentSerializer(serializers.ModelSerializer[User]):
     in_progress_course = InProgressCourseSerializer(
         source="in_progress_cohortstudent",
         read_only=True,
-        )
+    )
 
     class Meta:
         model = User
@@ -68,4 +68,3 @@ class AdminStudentEnrollAcceptSerializer(serializers.Serializer[dict[str, str | 
 # 수강생 등록 거절/승인 응답 시리얼라이저
 class AdminStudentEnrollRejectSerializer(serializers.Serializer[dict[str, str | int]]):
     detail = serializers.CharField(max_length=255)
-

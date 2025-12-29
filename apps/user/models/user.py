@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
@@ -11,6 +11,7 @@ from apps.user.utils.nickname import generate_nickname
 
 if TYPE_CHECKING:
     from apps.user.models import CohortStudent
+
 
 class UserManager(BaseUserManager["User"]):
     def create_user(self, email: str, password: str, name: str, **extra_fields: Any) -> "User":
@@ -84,7 +85,7 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
         if is_withdrawing:
             return "withdrew"
         return "active" if self.is_active else "inactive"
-    
+
     @property
     def in_progress_cohortstudent(self) -> "CohortStudent | None":
         return self.cohortstudent_set.select_related("cohort__course").first()

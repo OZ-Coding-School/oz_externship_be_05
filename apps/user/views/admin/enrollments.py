@@ -1,6 +1,5 @@
-from django.db.models import QuerySet
 from django.db import transaction
-from django.db.models import Exists, OuterRef, Prefetch, Q
+from django.db.models import Exists, OuterRef, Prefetch, Q, QuerySet
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status as drf_status
@@ -79,9 +78,7 @@ class AdminStudentView(APIView):
 
     def get_students_queryset(self) -> "QuerySet[User]":
         students = User.objects.filter(role=RoleChoices.ST).order_by("id")
-        students = students.annotate(
-            is_withdrawing=Exists(Withdrawal.objects.filter(user_id=OuterRef("pk")))
-        )
+        students = students.annotate(is_withdrawing=Exists(Withdrawal.objects.filter(user_id=OuterRef("pk"))))
         return students
 
     def apply_course_filters(self, students: "QuerySet[User]", request: Request) -> "QuerySet[User]":
@@ -121,7 +118,6 @@ class AdminStudentView(APIView):
         if status_query:
             students = students.filter(status_query)
         return students
-
 
 
 class AdminStudentsEnrollViews(APIView):
