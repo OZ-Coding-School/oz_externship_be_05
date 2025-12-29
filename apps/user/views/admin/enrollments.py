@@ -43,18 +43,22 @@ ENROLLMENT_STATUS_FILTERS = {
 
 class AdminStudentView(APIView):
     permission_classes = [IsAdminUser]
-    #! students에 왜 role이 쿼리파라메터에 있는지 물어보고 불필요 하니깐 삭제 요청.
-    #! 과정별 기수별 필터링을 추가해야함.
-    """
-    과정별, 기수별 필터링이 있는데 쿼리 파라메터에는 없음. 그러면 추가해야하나?
-    그냥 검색 가능하도록 하는건지 아니면...
-    """
 
-    # ? 과정별 필터링 + 기수별 필터링 기능 추가.
     @extend_schema(tags=["회원관리"], summary="수강생 목록 조회 API")
     def get(self, request: Request) -> Response:
         students = User.objects.filter(role=RoleChoices.ST).order_by("id")
         students = students.annotate(is_withdrawing=Exists(Withdrawal.objects.filter(user_id=OuterRef("pk"))))
+
+        course_id = request.query_params.get("course_id")
+        cohort_number = request.query_params.get("cohort_number")
+
+        if course_id and str(course_id).isdigit():
+            students = students.filter(cohortstudent__cohort__course_id=int(course_id))
+
+            if cohort_number and str(cohort_number).isdigit():
+                students = students.filter(cohortstudent__cohort__number=int(cohort_number))
+
+        students = students.distinct()
 
         students = students.prefetch_related(
             Prefetch("cohortstudent_set", queryset=CohortStudent.objects.select_related("cohort__course"))
@@ -80,13 +84,6 @@ class AdminStudentView(APIView):
 
 
 class AdminStudentsEnrollViews(APIView):
-    #! API 명세서랑 status_choices값이 다름.
-    #! 정렬 방식 API명세서 쿼리 파라메터에 수정해야함.
-    """
-    AdminStudentsEnrollViews의 Docstring
-    필터링 조건 : 상태별 필터링
-    정렬 기준 : ID, 최신순, 오래된 순
-    """
     permission_classes = [IsAdminUser]
 
     @extend_schema(tags=["회원관리"], summary="수강생 등록 요청 목록 조회 API")
