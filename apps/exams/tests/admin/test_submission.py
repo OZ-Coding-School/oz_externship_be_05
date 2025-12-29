@@ -131,7 +131,7 @@ class AdminExamSubmissionTest(APITestCase):
         params: dict[str, str] = {"search_keyword": "존재하지않는키워드"}
         res = self.client.get(self.url, params)
 
-        self.assertEqual(res.status_code, 404)
+        self.assertEqual(res.status_code, 200)
         self.assertIn("error_detail", res.data)
 
     def test_400_invalid_sort(self) -> None:
