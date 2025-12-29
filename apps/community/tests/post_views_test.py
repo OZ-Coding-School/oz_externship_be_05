@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Any, Optional
+from typing import Any, Dict
 
 from django.test import TestCase
 from django.urls import reverse
@@ -11,247 +11,573 @@ from apps.community.models.post_category import PostCategory
 from apps.user.models import User
 
 
-class PostAPIViewTestCase(TestCase):
-    user: User
-    other_user: User
-    category: PostCategory
-    category2: PostCategory
-    client: APIClient
+class PostListCreateAdvancedTestCase(TestCase):
 
-    @classmethod
-    # 테스트 클래스 전체에서 사용할 공통 테스트 데이터를 생성
-    def setUpTestData(cls) -> None:
-        cls.user = User.objects.create_user(
-            email="user@test.com",
-            password="password123",
-            name="유저",
-            birthday=date(2000, 1, 1),
-        )
-        cls.other_user = User.objects.create_user(
-            email="other@test.com",
-            password="password123",
-            name="다른유저",
-            birthday=date(2001, 1, 1),
-        )
-        cls.category = PostCategory.objects.create(name="카테고리")
-        cls.category2 = PostCategory.objects.create(name="카테고리2")
-
-    # 각 테스트 메서드 실행 전에 APIClient와 URL을 초기화
     def setUp(self) -> None:
-        self.client = APIClient()
-        self.list_url = reverse("post-list-create")
-
-    # ====================
-    # helpers
-    # ====================
-
-    # 테스트용 사용자를 인증 상태로 만드는 헬퍼 메서드
-    def authenticate(self, user: User) -> None:
-        self.client.force_authenticate(user=user)
-
-    # 테스트용 게시글을 생성하는 헬퍼 메서드
-    def create_post(
-        self,
-        *,
-        author: User,
-        title: str = "제목",
-        content: str = "내용",
-        category: Optional[PostCategory] = None,
-    ) -> Post:
-        kwargs: dict[str, Any] = {
-            "title": title,
-            "content": content,
-            "author": author,
-            "category": category or self.category,
-        }
-        return Post.objects.create(**kwargs)
-
-    # ====================
-    # GET /posts - 목록 조회
-    # ====================
-
-    def test_post_list_success(self) -> None:
-        """게시글 목록 조회가 성공 동작하는지 테스트"""
-        self.create_post(author=self.user)
-        response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-
-    def test_post_list_search(self) -> None:
-        """검색 기능이 정상 동작하는지 테스트"""
-        self.create_post(author=self.user, title="Django 튜토리얼")
-        self.create_post(author=self.user, title="Python 기초")
-        response = self.client.get(self.list_url, {"search": "Django"})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertIn("Django", response.data[0]["title"])
-
-    def test_post_list_filter_by_category(self) -> None:
-        """카테고리 필터링이 정상 동작"""
-        self.create_post(author=self.user, category=self.category)
-        self.create_post(author=self.user, category=self.category2)
-        response = self.client.get(self.list_url, {"category_id": str(self.category.id)})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-
-    def test_post_list_invalid_category_id(self) -> None:
-        """category_id가 정수가 아닐 때 400 에러를 반환 테스트"""
-        response = self.client.get(self.list_url, {"category_id": "abc"})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("category_id는 정수여야 합니다", str(response.data))
-
-    def test_post_list_invalid_sort_field(self) -> None:
-        """허용되지 않은 정렬 필드를 사용할 때 400 에러를 반환테스트"""
-        response = self.client.get(self.list_url, {"sort": "invalid"})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("정렬 기준이 올바르지 않습니다", str(response.data))
-
-    def test_post_list_sort_order_asc(self) -> None:
-        """오름차순 정렬이 정상 동작하는지 테스트"""
-        self.create_post(author=self.user, title="C제목")
-        self.create_post(author=self.user, title="A제목")
-        self.create_post(author=self.user, title="B제목")
-        response = self.client.get(self.list_url, {"sort": "title", "order": "asc"})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data[0]["title"], "A제목")
-
-    def test_post_list_sort_order_desc(self) -> None:
-        """내림차순 정렬이 정상동작하는지 테스트"""
-        self.create_post(author=self.user, title="A제목")
-        self.create_post(author=self.user, title="B제목")
-        self.create_post(author=self.user, title="C제목")
-        response = self.client.get(self.list_url, {"sort": "title", "order": "desc"})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data[0]["title"], "C제목")
-
-    # ====================
-    # POST /posts - 생성
-    # ====================
-
-    def test_post_create_success(self) -> None:
-        """게시글 생성이 성공 동작 테스트"""
-        self.authenticate(self.user)
-        response = self.client.post(
-            self.list_url, {"title": "새 게시글", "content": "새 내용", "category_id": self.category.id}
+        """테스트 환경 설정"""
+        self.client: APIClient = APIClient()
+        self.user: User = User.objects.create_user(
+            name="테스트유저",
+            birthday=date(2000, 11, 21),
+            email="test@example.com",
+            password="testpass123",
         )
+        self.category: PostCategory = PostCategory.objects.create(name="테스트 카테고리")
+        self.url: str = reverse("post-list-create")
+
+    def test_get_post_list_with_order_asc(self) -> None:
+        """
+        게시글 목록 오름차순 정렬 테스트
+        """
+        Post.objects.create(title="C 제목", content="내용", author=self.user, category=self.category)
+        Post.objects.create(title="A 제목", content="내용", author=self.user, category=self.category)
+        Post.objects.create(title="B 제목", content="내용", author=self.user, category=self.category)
+
+        response = self.client.get(self.url, {"sort": "title", "order": "asc"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertIsInstance(response.data, list)
+        self.assertEqual(response.data[0]["title"], "A 제목")
+        self.assertEqual(response.data[1]["title"], "B 제목")
+        self.assertEqual(response.data[2]["title"], "C 제목")
+
+    def test_get_post_list_with_order_not_desc(self) -> None:
+        """
+        정렬 순서가 'desc'가 아닌 경우 테스트
+        """
+        Post.objects.create(title="테스트", content="내용", author=self.user, category=self.category)
+
+        response = self.client.get(self.url, {"sort": "created_at", "order": "asc"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_post_list_without_search_keyword(self) -> None:
+        """
+        검색어 없이 목록 조회 테스트
+        """
+        Post.objects.create(title="게시글 1", content="내용", author=self.user, category=self.category)
+        Post.objects.create(title="게시글 2", content="내용", author=self.user, category=self.category)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data: Any = response.json()
+        self.assertEqual(len(response_data), 2)
+
+    def test_get_post_list_without_category_filter(self) -> None:
+        """
+        카테고리 필터 없이 목록 조회 테스트
+        """
+        category2: PostCategory = PostCategory.objects.create(name="카테고리2")
+        Post.objects.create(title="게시글 1", content="내용", author=self.user, category=self.category)
+        Post.objects.create(title="게시글 2", content="내용", author=self.user, category=category2)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data: Any = response.json()
+        self.assertEqual(len(response_data), 2)
+
+    def test_get_post_list_with_invalid_category_id(self) -> None:
+        """
+        잘못된 category_id 파라미터 테스트
+        """
+        Post.objects.create(title="테스트", content="내용", author=self.user, category=self.category)
+
+        response = self.client.get(self.url, {"category_id": "invalid_string"})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response_data: Any = response.json()
+        self.assertEqual(response_data["detail"], "category_id는 정수여야 합니다.")
+
+    def test_get_post_list_with_invalid_sort_field(self) -> None:
+        """
+        유효하지 않은 정렬 필드 테스트
+        """
+        Post.objects.create(title="테스트", content="내용", author=self.user, category=self.category)
+
+        response = self.client.get(self.url, {"sort": "invalid_field", "order": "asc"})
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response_data: Any = response.json()
+        self.assertEqual(response_data["detail"], "정렬 기준이 올바르지 않습니다.")
+
+    def test_create_post_with_serializer_validation_error(self) -> None:
+        """
+        시리얼라이저 검증 실패 시 raise_exception=True 동작 테스트
+        """
+        self.client.force_authenticate(user=self.user)
+
+        data: Dict[str, Any] = {}
+        response = self.client.post(self.url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_post_response_includes_detail_and_data(self) -> None:
+        """
+        게시글 생성 성공 시 응답 구조 테스트
+        """
+        self.client.force_authenticate(user=self.user)
+
+        data: Dict[str, Any] = {
+            "title": "새 게시글",
+            "content": "새 내용",
+            "category_id": self.category.id,
+        }
+        response = self.client.post(self.url, data, format="json")
+
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Post.objects.count(), 1)
+
         self.assertIn("detail", response.data)
         self.assertIn("data", response.data)
+        self.assertEqual(response.data["detail"], "게시글이 성공적 등록됨.")
+        self.assertIsNotNone(response.data["data"]["post_id"])
 
-    def test_post_create_unauthenticated(self) -> None:
-        """인증되지 않은 사용자가 게시글을 생성하려 할 때 401 에러를 반환"""
-        response = self.client.post(
-            self.list_url, {"title": "제목", "content": "내용", "category_id": self.category.id}
+    def test_create_post_without_authentication(self) -> None:
+        """
+        인증 없이 게시글 생성 시도 테스트
+        """
+        data: Dict[str, Any] = {
+            "title": "새 게시글",
+            "content": "새 내용",
+            "category_id": self.category.id,
+        }
+        response = self.client.post(self.url, data, format="json")
+
+        self.assertIn(
+            response.status_code,
+            [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
         )
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_post_create_validation_error(self) -> None:
-        """validation 실패 시 400 에러를 반환"""
-        self.authenticate(self.user)
-        response = self.client.post(self.list_url, {"title": "", "content": "내용", "category_id": self.category.id})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+    def test_get_post_list_with_search_keyword(self) -> None:
+        """
+        검색어로 목록 조회 테스트
+        """
+        Post.objects.create(title="Django 튜토리얼", content="내용", author=self.user, category=self.category)
+        Post.objects.create(title="Python 가이드", content="내용", author=self.user, category=self.category)
 
-    # ====================
-    # GET /posts/{id} - 상세 조회
-    # ====================
+        response = self.client.get(self.url, {"search": "Django"})
 
-    def test_post_detail_success(self) -> None:
-        """게시글 상세 조회가 성공 동작하는지 테스트"""
-        post = self.create_post(author=self.user)
-        response = self.client.get(reverse("post-detail", args=[post.id]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["id"], post.id)
-        self.assertEqual(response.data["title"], "제목")
+        response_data: Any = response.json()
+        self.assertEqual(len(response_data), 1)
+        self.assertEqual(response_data[0]["title"], "Django 튜토리얼")
 
-    def test_post_detail_invalid_id(self) -> None:
-        """유효하지 않은 ID 형식으로 상세 조회 시도 시 400 에러를 반환하는지 테스트"""
-        response = self.client.get(reverse("post-detail", args=["invalid"]))
+    def test_get_post_list_with_valid_category_filter(self) -> None:
+        """
+        유효한 카테고리 필터로 목록 조회 테스트
+        """
+        category2: PostCategory = PostCategory.objects.create(name="카테고리2")
+        Post.objects.create(title="게시글 1", content="내용", author=self.user, category=self.category)
+        Post.objects.create(title="게시글 2", content="내용", author=self.user, category=category2)
+
+        response = self.client.get(self.url, {"category_id": str(self.category.id)})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data: Any = response.json()
+        self.assertEqual(len(response_data), 1)
+        self.assertEqual(response_data[0]["title"], "게시글 1")
+
+
+class PostRetrieveUpdateDestroyAdvancedTestCase(TestCase):
+
+    def setUp(self) -> None:
+        self.client: APIClient = APIClient()
+        self.user: User = User.objects.create_user(
+            email="test@test.com",
+            name="테스트유저",
+            birthday=date(2000, 1, 1),
+            password="testpass123",
+        )
+
+        self.other_user: User = User.objects.create_user(
+            email="other@test.com",
+            name="다른유저",
+            birthday=date(2000, 1, 1),
+            password="testpass123",
+        )
+
+        self.category: PostCategory = PostCategory.objects.create(name="카테고리")
+
+        self.post: Post = Post.objects.create(
+            title="원래 제목",
+            content="원래 내용",
+            author=self.user,
+            category=self.category,
+        )
+
+        self.url: str = reverse("post-detail", kwargs={"pk": self.post.id})
+
+    def test_get_object_with_valid_pk(self) -> None:
+        """
+        get_object 메서드 정상 동작 테스트
+        """
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["title"], "원래 제목")
+
+    def test_get_object_with_invalid_pk_raises_value_error(self) -> None:
+        """
+        get_object 메서드에서 ValueError 발생 테스트
+        """
+        url: str = reverse("post-detail", kwargs={"pk": "invalid_string"})
+        response = self.client.get(url)
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("잘못된 게시글 ID입니다", str(response.data))
+        response_data: Any = response.json()
+        self.assertIn("잘못된 게시글 ID입니다.", response_data["detail"])
 
-    def test_post_detail_not_found(self) -> None:
-        """존재하지 않는 게시글 ID로 상세 조회 시도 시 404 에러를 반환하는지 테스트"""
-        response = self.client.get(reverse("post-detail", args=[9999]))
+    def test_get_post_detail_success_path(self) -> None:
+        """
+        게시글 상세 조회 성공 경로 테스트
+        """
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data: Any = response.json()
+        self.assertEqual(response_data["title"], "원래 제목")
+
+    def test_get_post_detail_value_error_exception(self) -> None:
+        """
+        게시글 상세 조회 시 ValueError 예외 처리 테스트
+        """
+        url: str = reverse("post-detail", kwargs={"pk": "not_a_number"})
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response_data: Any = response.json()
+        self.assertEqual(response_data["detail"], "잘못된 게시글 ID입니다.")
+
+    def test_get_post_detail_not_found(self) -> None:
+        """
+        존재하지 않는 게시글 조회 테스트
+        """
+        url: str = reverse("post-detail", kwargs={"pk": "99999"})
+        response = self.client.get(url)
+
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    # ====================
-    # PUT /posts/{id} - 수정
-    # ====================
+    def test_update_post_author_check_passes(self) -> None:
+        """
+        게시글 수정 시 작성자 확인 통과 테스트
+        """
+        self.client.force_authenticate(user=self.user)
 
-    def test_post_update_success(self) -> None:
-        """게시글 수정이 성공 동작하는지 테스트"""
-        post = self.create_post(author=self.user)
-        self.authenticate(self.user)
-        response = self.client.put(
-            reverse("post-detail", args=[post.id]),
-            {"title": "수정된 제목", "content": "수정된 내용", "category_id": self.category.id},
-        )
+        data: Dict[str, Any] = {
+            "title": "수정된 제목",
+            "content": "수정된 내용",
+            "category_id": self.category.id,
+        }
+
+        response = self.client.put(self.url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        post.refresh_from_db()
-        self.assertEqual(post.title, "수정된 제목")
+        self.assertEqual(response.data["title"], "수정된 제목")
 
-    def test_post_update_forbidden(self) -> None:
-        """작성자가 아닌 사용자가 게시글을 수정하려 할 때 403 에러를 반환하는지 테스트"""
-        post = self.create_post(author=self.user)
-        self.authenticate(self.other_user)
-        response = self.client.put(
-            reverse("post-detail", args=[post.id]),
-            {"title": "수정 시도", "content": "수정 시도", "category_id": self.category.id},
-        )
+    def test_update_post_author_check_fails(self) -> None:
+        """
+        게시글 수정 시 작성자 확인 실패 테스트
+        """
+        self.client.force_authenticate(user=self.other_user)
+
+        data: Dict[str, Any] = {
+            "title": "수정 시도",
+            "content": "수정 시도",
+            "category_id": self.category.id,
+        }
+        response = self.client.put(self.url, data, format="json")
+
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn("수정 권한이 없습니다", str(response.data))
+        response_data: Any = response.json()
+        self.assertEqual(response_data["detail"], "수정 권한이 없습니다.")
 
-    def test_post_update_invalid_id(self) -> None:
-        """유효하지 않은 ID 형식으로 수정 시도 시 400 에러를 반환하는지 테스트"""
-        self.authenticate(self.user)
-        response = self.client.put(
-            reverse("post-detail", args=["invalid"]),
-            {"title": "수정", "content": "수정", "category_id": self.category.id},
-        )
+    def test_update_post_serializer_validation_success(self) -> None:
+        """
+        게시글 수정 시 시리얼라이저 검증 성공 테스트
+        """
+        self.client.force_authenticate(user=self.user)
+
+        data: Dict[str, Any] = {
+            "title": "검증 성공 제목",
+            "content": "검증 성공 내용",
+            "category_id": self.category.id,
+        }
+
+        response = self.client.put(self.url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["title"], "검증 성공 제목")
+
+    def test_update_post_value_error_exception(self) -> None:
+        """
+        게시글 수정 시 ValueError 예외 처리 테스트
+        """
+        self.client.force_authenticate(user=self.user)
+        url: str = reverse("post-detail", kwargs={"pk": "invalid"})
+
+        data: Dict[str, Any] = {
+            "title": "수정",
+            "content": "내용",
+            "category_id": self.category.id,
+        }
+        response = self.client.put(url, data, format="json")
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("잘못된 게시글 ID입니다", str(response.data))
+        response_data: Any = response.json()
+        self.assertEqual(response_data["detail"], "잘못된 게시글 ID입니다.")
 
-    def test_post_update_validation_error(self) -> None:
-        """수정 시 validation 실패 시 400 에러를 반환하는지 테스트"""
-        post = self.create_post(author=self.user)
-        self.authenticate(self.user)
-        response = self.client.put(
-            reverse("post-detail", args=[post.id]),
-            {"title": "", "content": "내용", "category_id": self.category.id},
+    def test_update_post_without_authentication(self) -> None:
+        """
+        인증 없이 게시글 수정 시도 테스트
+        """
+        data: Dict[str, Any] = {
+            "title": "수정 시도",
+            "content": "수정 시도",
+            "category_id": self.category.id,
+        }
+        response = self.client.put(self.url, data, format="json")
+
+        self.assertIn(
+            response.status_code,
+            [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    # ====================
-    # DELETE /posts/{id} - 삭제
-    # ====================
+    def test_delete_post_author_check_passes(self) -> None:
+        """
+        게시글 삭제 시 작성자 확인 통과 테스트
+        """
+        self.client.force_authenticate(user=self.user)
 
-    def test_post_delete_success(self) -> None:
-        """게시글 삭제가 성공 동작하는지 테스트"""
-        post = self.create_post(author=self.user)
-        self.authenticate(self.user)
-        response = self.client.delete(reverse("post-detail", args=[post.id]))
+        response = self.client.delete(self.url)
+
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(Post.objects.count(), 0)
+        self.assertFalse(Post.objects.filter(id=self.post.id).exists())
 
-    def test_post_delete_forbidden(self) -> None:
-        """작성자가 아닌 사용자가 게시글을 삭제하려 할 때 403 에러를 반환하는지 테스트"""
-        post = self.create_post(author=self.user)
-        self.authenticate(self.other_user)
-        response = self.client.delete(reverse("post-detail", args=[post.id]))
+    def test_delete_post_author_check_fails(self) -> None:
+        """
+        게시글 삭제 시 작성자 확인 실패 테스트
+        """
+        self.client.force_authenticate(user=self.other_user)
+
+        response = self.client.delete(self.url)
+
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertIn("삭제 권한이 없습니다", str(response.data))
-        self.assertEqual(Post.objects.count(), 1)
+        response_data: Any = response.json()
+        self.assertEqual(response_data["detail"], "삭제 권한이 없습니다.")
 
-    def test_post_delete_invalid_id(self) -> None:
-        """유효하지 않은 ID 형식으로 삭제 시도 시 400 에러를 반환하는지 테스트"""
-        self.authenticate(self.user)
-        response = self.client.delete(reverse("post-detail", args=["invalid"]))
+    def test_delete_post_success(self) -> None:
+        """
+        게시글 삭제 성공 테스트
+        """
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.delete(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Post.objects.filter(id=self.post.id).exists())
+
+    def test_delete_post_value_error_exception(self) -> None:
+        """
+        게시글 삭제 시 ValueError 예외 처리 테스트
+        """
+        self.client.force_authenticate(user=self.user)
+        url: str = reverse("post-detail", kwargs={"pk": "invalid_id"})
+
+        response = self.client.delete(url)
+
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("잘못된 게시글 ID입니다", str(response.data))
+        response_data: Any = response.json()
+        self.assertEqual(response_data["detail"], "잘못된 게시글 ID입니다.")
 
-    def test_post_delete_unauthenticated(self) -> None:
-        """인증되지 않은 사용자가 게시글을 삭제하려 할 때 401 에러를 반환하는지 테스트"""
-        post = self.create_post(author=self.user)
-        response = self.client.delete(reverse("post-detail", args=[post.id]))
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    def test_delete_post_without_authentication(self) -> None:
+        """
+        인증 없이 게시글 삭제 시도 테스트
+        """
+        response = self.client.delete(self.url)
+
+        self.assertIn(
+            response.status_code,
+            [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN],
+        )
+
+
+class PostViewEdgeCaseTestCase(TestCase):
+    """엣지 케이스 및 추가 시나리오 테스트"""
+
+    def setUp(self) -> None:
+        """테스트 환경 설정"""
+        self.client: APIClient = APIClient()
+        self.user: User = User.objects.create_user(
+            birthday=date(2000, 11, 21),
+            name="테스트유저",
+            email="test@example.com",
+            password="testpass123",
+        )
+        self.category: PostCategory = PostCategory.objects.create(name="테스트 카테고리")
+
+    def test_get_post_list_with_multiple_filters(self) -> None:
+        """
+        여러 필터 동시 적용 테스트
+        """
+        Post.objects.create(
+            title="Django 튜토리얼",
+            content="내용",
+            author=self.user,
+            category=self.category,
+            view_count=100,
+        )
+        Post.objects.create(
+            title="Django 고급",
+            content="내용",
+            author=self.user,
+            category=self.category,
+            view_count=200,
+        )
+
+        url: str = reverse("post-list-create")
+        response = self.client.get(
+            url,
+            {
+                "search": "Django",
+                "category_id": str(self.category.id),
+                "sort": "view_count",
+                "order": "desc",
+            },
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data: Any = response.json()
+        self.assertEqual(len(response_data), 2)
+        self.assertEqual(response_data[0]["view_count"], 200)
+        self.assertEqual(response_data[1]["view_count"], 100)
+
+    def test_get_post_list_empty_queryset(self) -> None:
+        """
+        빈 쿼리셋 반환 테스트
+        """
+        url: str = reverse("post-list-create")
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data: Any = response.json()
+        self.assertEqual(len(response_data), 0)
+        self.assertIsInstance(response_data, list)
+
+    def test_get_post_list_with_default_sort_and_order(self) -> None:
+        """
+        기본 정렬 옵션 테스트 (sort=created_at, order=desc)
+        """
+        Post.objects.create(title="게시글 1", content="내용", author=self.user, category=self.category)
+        Post.objects.create(title="게시글 2", content="내용", author=self.user, category=self.category)
+
+        url: str = reverse("post-list-create")
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data: Any = response.json()
+        self.assertEqual(len(response_data), 2)
+
+    def test_update_post_with_invalid_serializer_data(self) -> None:
+        """
+        유효하지 않은 데이터로 수정 시도 테스트
+        """
+        post: Post = Post.objects.create(title="원본", content="내용", author=self.user, category=self.category)
+
+        self.client.force_authenticate(user=self.user)
+        url: str = reverse("post-detail", kwargs={"pk": str(post.id)})
+
+        data: Dict[str, Any] = {
+            "title": "",
+            "content": "내용",
+            "category_id": self.category.id,
+        }
+        response = self.client.put(url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_get_post_list_with_special_characters_in_search(self) -> None:
+        """
+        특수 문자 검색어 테스트
+        """
+        Post.objects.create(
+            title="특수문자 테스트 @#$",
+            content="내용",
+            author=self.user,
+            category=self.category,
+        )
+
+        url: str = reverse("post-list-create")
+        response = self.client.get(url, {"search": "@#$"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        response_data: Any = response.json()
+        self.assertEqual(len(response_data), 1)
+
+    def test_update_post_with_nonexistent_category(self) -> None:
+        """
+        존재하지 않는 카테고리로 수정 시도 테스트
+        """
+        post: Post = Post.objects.create(title="원본", content="내용", author=self.user, category=self.category)
+
+        self.client.force_authenticate(user=self.user)
+        url: str = reverse("post-detail", kwargs={"pk": str(post.id)})
+
+        data: Dict[str, Any] = {
+            "title": "수정",
+            "content": "내용",
+            "category_id": 99999,
+        }
+        response = self.client.put(url, data, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_get_post_list_with_all_allowed_sort_fields(self) -> None:
+        """
+        허용된 모든 정렬 필드 테스트
+        """
+        Post.objects.create(title="테스트", content="내용", author=self.user, category=self.category)
+
+        url: str = reverse("post-list-create")
+
+        sort_fields = ["created_at", "updated_at", "title", "view_count"]
+
+        for sort_field in sort_fields:
+            with self.subTest(sort_field=sort_field):
+                response = self.client.get(url, {"sort": sort_field, "order": "desc"})
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+                response = self.client.get(url, {"sort": sort_field, "order": "asc"})
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class PostViewSelectRelatedTestCase(TestCase):
+    """select_related 최적화 테스트"""
+
+    def setUp(self) -> None:
+        """테스트 환경 설정"""
+        self.client: APIClient = APIClient()
+        self.user: User = User.objects.create_user(
+            birthday=date(2000, 11, 21),
+            name="테스트유저",
+            email="test@example.com",
+            password="testpass123",
+        )
+        self.category: PostCategory = PostCategory.objects.create(name="테스트 카테고리")
+
+    def test_get_base_queryset_uses_select_related(self) -> None:
+        """
+        get_base_queryset가 select_related를 사용하는지 테스트
+        """
+        Post.objects.create(title="테스트", content="내용", author=self.user, category=self.category)
+
+        url: str = reverse("post-list-create")
+
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        with CaptureQueriesContext(connection) as context:
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+            query_count = len(context.captured_queries)
+            self.assertLessEqual(query_count, 5)
