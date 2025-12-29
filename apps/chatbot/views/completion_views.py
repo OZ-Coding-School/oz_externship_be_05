@@ -107,7 +107,7 @@ class CompletionAPIView(APIView):
         summary="챗봇 대화 내역 조회",
         parameters=[
             OpenApiParameter(
-                name="cursor", type=OpenApiTypes.STR, description="커서 페이지 네이션 적용을 위한 커서 값", default=5
+                name="cursor", type=OpenApiTypes.STR, description="커서 페이지 네이션 적용을 위한 커서 값", required=False, default=None,
             ),
             OpenApiParameter(
                 name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값", default=10
