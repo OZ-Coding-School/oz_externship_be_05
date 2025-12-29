@@ -21,6 +21,7 @@ class EnrollStudentAPIView(APIView):
     @extend_schema(
         tags=["accounts"],
         summary="Enroll student request",
+        request=EnrollStudentSerializer,
         responses={201: None},
     )
     def post(self, request: Request) -> Response:
@@ -36,7 +37,7 @@ class EnrolledCoursesAPIView(APIView):
     @extend_schema(
         tags=["accounts"],
         summary="Get enrolled courses",
-        responses={200: None},
+        responses=EnrolledCourseItemSerializer,
     )
     def get(self, request: Request) -> Response:
         user = cast(User, request.user)
