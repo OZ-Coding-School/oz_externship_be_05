@@ -1,7 +1,7 @@
 from django.db import transaction
 
-from apps.qna.models import Question, QuestionImage
 from apps.core.utils.s3_client import S3Client
+from apps.qna.models import Question, QuestionImage
 
 
 def sync_question_images(question: Question, content: str, extract_image_urls_from_content=None) -> None:
