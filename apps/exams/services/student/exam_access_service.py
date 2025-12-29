@@ -43,7 +43,7 @@ class ExamAccessCodeService:
 
         # close_at이 있고, 이미 종료 시간이 지난 경우
         if deployment.close_at and now > deployment.close_at:
-            raise LockedException(error_detail="시험 응시 시간이 지났습니다.")
+            raise LockedException(detail="시험 응시 시간이 지났습니다.")
 
     @staticmethod
     def _validate_access_code(deployment: ExamDeployment, input_code: str) -> None:
