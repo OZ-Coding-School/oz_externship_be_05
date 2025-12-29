@@ -9,7 +9,7 @@ from apps.chatbot.views.session_views import (
 app_name = "chatbot"
 
 urlpatterns = [
-    path("sessions", SessionCreateListAPIView.as_view(), name="session-list-create"),
-    path("sessions/<int:session_id>", SessionDeleteView.as_view(), name="session-delete"),
-    path("sessions/<int:session_id>/completions", CompletionAPIView.as_view(), name="completion-stream"),
+    path("/sessions", SessionCreateListAPIView.as_view(), name="session-list-create"),
+    path("/sessions/<int:session_id>", SessionDeleteView.as_view(), name="session-delete"),
+    path("/sessions/<int:session_id>/completions", CompletionAPIView.as_view(), name="completion-stream"),
 ]
