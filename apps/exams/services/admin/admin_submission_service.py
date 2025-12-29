@@ -43,19 +43,13 @@ def _not_found() -> NotFound:
 
 
 def _validate_params(params: AdminSubmissionListParams) -> None:
-    # 서비스가 요청 검증 책임 (뷰는 파싱만)
-    if params.page < 1:
-        raise _bad_request()
-
-    if params.size < 1 or params.size > 100:
-        raise _bad_request()
-
-    # sort는 정렬 필드 매핑이 정의된 것만 허용
-    if params.sort not in ALLOWED_SORTS:
-        raise _bad_request()
-
-    # order는 asc/desc만 허용
-    if params.order not in ("asc", "desc"):
+    validators = {
+        "page": params.page >= 1,
+        "size": 1 <= params.size <= 100,
+        "sort": params.sort in ALLOWED_SORTS,
+        "order": params.order in ("asc", "desc"),
+    }
+    if not all(validators.values()):
         raise _bad_request()
 
 
@@ -98,7 +92,12 @@ def get_admin_exam_submission_list(params: AdminSubmissionListParams) -> dict[st
 
     total_count = qs.count()
     if total_count == 0:
-        raise _not_found()
+        return {
+            "page": params.page,
+            "size": params.size,
+            "total_count": 0,
+            "submissions": [],
+        }
 
     qs = _apply_sort(qs, params)
 
