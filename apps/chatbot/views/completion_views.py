@@ -100,18 +100,12 @@ class CompletionAPIView(APIView):
     @extend_schema(
         tags=["AI 챗봇"],
         summary="챗봇 대화 내역 조회",
-        request=CompletionSerializer,
         parameters=[
             OpenApiParameter(
-                name="session_id",
-                type=OpenApiTypes.INT,
-                description="세션 PK ID",
+                name="cursor", type=OpenApiTypes.STR, description="커서 페이지 네이션 적용을 위한 커서 값", default=5
             ),
             OpenApiParameter(
-                name="cursor", type=OpenApiTypes.STR, description="커서 페이지 네이션 적용을 위한 커서 값"
-            ),
-            OpenApiParameter(
-                name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값"
+                name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값", default=10
             ),
         ],
         responses={
