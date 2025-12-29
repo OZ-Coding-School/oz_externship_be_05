@@ -1,27 +1,21 @@
 from typing import Any
 
-from django.contrib.admin import ModelAdmin, SimpleListFilter
-from django.db.models import Count, F, Q, QuerySet, Sum
-from django.http import HttpRequest
-
-from apps.courses.models.cohorts_models import CohortStatusChoices
-
-# 정렬
+from django.contrib.admin import SimpleListFilter
+from django.db.models import Q, QuerySet
 
 
 class TimeOrderingFilter(SimpleListFilter):
     title = "시간 정렬"
-    parameter_name = "order_by_time"
+    parameter_name = "order_by"
 
     def lookups(self, request: Any, model_admin: Any) -> list[tuple[str, str]]:
         return [
-            ("latest", "최신순"),
+            ("newest", "최신순"),
             ("oldest", "오래된 순"),
         ]
 
     def queryset(self, request: Any, queryset: Any) -> Any:
-
-        if self.value() == "latest":
+        if self.value() == "newest":
             return queryset.order_by("-created_at")
 
         if self.value() == "oldest":
@@ -45,7 +39,6 @@ class PostOrderingFilter(TimeOrderingFilter):
         return time_options + post_options
 
     def queryset(self, request: Any, queryset: QuerySet[Any]) -> Any:
-
         if self.value() == "most_views":
             return queryset.order_by("-view_count")
 
