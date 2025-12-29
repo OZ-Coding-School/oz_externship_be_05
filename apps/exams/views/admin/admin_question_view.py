@@ -5,7 +5,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.core.exceptions.exception_messages import EMS
-from apps.exams.permissions.admin_permission import AdminUserPermission
+from apps.exams.permissions.admin_permission import AdminUserPermissionView
 from apps.exams.serializers.admin.admin_question_serializer import (
     AdminExamQuestionSerializer,
 )
@@ -105,7 +105,7 @@ QUESTION_EXAMPLES = [
 ]
 
 
-class ExamAdminQuestionUpdateDestroyAPIView(AdminUserPermission):
+class ExamAdminQuestionUpdateDestroyAPIView(AdminUserPermissionView):
     """쪽지시험 문제 수정 및 삭제 API"""
 
     service = AdminQuestionService()
