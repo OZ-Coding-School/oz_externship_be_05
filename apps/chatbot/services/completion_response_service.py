@@ -134,5 +134,4 @@ def create_streaming_response(*, session: ChatbotSession, user_message: str) -> 
     )
     response["Cache-Control"] = "no-cache"
     response["X-Accel-Buffering"] = "no"
-    response["Connection"] = "keep-alive"
     return response
