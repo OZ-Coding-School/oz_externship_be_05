@@ -80,7 +80,7 @@ class ExamAccessCodeVerifyAPITest(APITestCase):
 
     def _get_url(self, deployment_id: int) -> str:
         return reverse(
-            "exam-check-code",
+            "exam_check_code",
             kwargs={"deployment_id": deployment_id},
         )
 
