@@ -32,7 +32,7 @@ class AvailableCourseSerializer(serializers.Serializer[Any]):
 
 
 class EnrolledCourseItemSerializer(serializers.Serializer[Any]):
-    cohort = CohortSerializer(source="cohort", read_only=True)
+    cohort = CohortSerializer(read_only=True)
     course = CourseEnrolledSerializer(source="cohort.course", read_only=True)
 
 
