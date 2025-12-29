@@ -17,11 +17,11 @@ urlpatterns = [
     path("accounts/<int:account_id>", AdminAccountRetrieveUpdateView.as_view(), name="admin-account-detail"),
     path("accounts/<int:account_id>/role", AdminAccountRoleUpdateView.as_view(), name="admin-account-update-role"),
     path("students", AdminStudentView.as_view(), name="admin-student-list"),
-    path("students-enrollments", AdminStudentsEnrollViews.as_view(), name="admin-student-enrollments-list"),
+    path("student-enrollments", AdminStudentsEnrollViews.as_view(), name="admin-student-enrollments-list"),
     path(
-        "students-enrollments/accept", AdminStudentEnrollAcceptView.as_view(), name="admin-student-enrollments-accept"
+        "student-enrollments/accept", AdminStudentEnrollAcceptView.as_view(), name="admin-student-enrollments-accept"
     ),
     path(
-        "students-enrollments/reject", AdminStudentEnrollRejectView.as_view(), name="admin-student-enrollments-reject"
+        "student-enrollments/reject", AdminStudentEnrollRejectView.as_view(), name="admin-student-enrollments-reject"
     ),
 ]
