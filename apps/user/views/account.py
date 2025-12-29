@@ -45,6 +45,7 @@ class MeAPIView(APIView):
     @extend_schema(
         tags=["회원관리"],
         summary="내 정보 수정 API",
+        request=UserUpdateSerializer,
         responses={200: None},
     )
     def patch(self, request: Request) -> Response:
@@ -57,6 +58,7 @@ class MeAPIView(APIView):
     @extend_schema(
         tags=["회원관리"],
         summary="회원탈퇴 신청 API",
+        request=WithdrawalRequestSerializer,
         responses={204: None},
     )
     def delete(self, request: Request) -> Response:
@@ -83,6 +85,7 @@ class CheckNicknameAPIView(APIView):
     @extend_schema(
         tags=["회원관리"],
         summary="닉네임 중복 조회 API",
+        request=NicknameCheckSerializer,
         responses={200: None},
     )
     def post(self, request: Request) -> Response:
@@ -100,6 +103,7 @@ class ChangePasswordAPIView(APIView):
     @extend_schema(
         tags=["회원관리"],
         summary="내 비밀번호 변경 API",
+        request=ChangePasswordSerializer,
         responses={200: None},
     )
     def patch(self, request: Request) -> Response:
@@ -117,6 +121,7 @@ class ChangePhoneAPIView(APIView):
     @extend_schema(
         tags=["회원관리"],
         summary="내 휴대폰 번호 변경 API",
+        request=ChangePhoneSerializer,
         responses={200: None},
     )
     def patch(self, request: Request) -> Response:
