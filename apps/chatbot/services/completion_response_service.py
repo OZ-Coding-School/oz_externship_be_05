@@ -16,7 +16,7 @@ from apps.chatbot.models.chatbot_sessions import ChatbotSession
 logger = logging.getLogger(__name__)
 
 # Gemini API 설정
-DEFAULT_MODEL = "gemini-2.0-flash"
+DEFAULT_MODEL = "gemini-2.5-flash"
 
 
 # environ vs getenv?
@@ -134,5 +134,4 @@ def create_streaming_response(*, session: ChatbotSession, user_message: str) -> 
     )
     response["Cache-Control"] = "no-cache"
     response["X-Accel-Buffering"] = "no"
-    response["Connection"] = "keep-alive"
     return response
