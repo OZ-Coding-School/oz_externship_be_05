@@ -1,7 +1,8 @@
 from django.db.models import Prefetch, Q
+from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
-from rest_framework.permissions import IsAdminUser
+from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,6 +11,7 @@ from apps.core.exceptions.exception_messages import EMS
 from apps.courses.models import Course
 from apps.courses.models.cohorts_models import Cohort, CohortStatusChoices
 from apps.courses.serializers.courses_serializers import CourseCohortsSerializer
+from apps.courses.serializers.enrollment import AvailableCourseSerializer
 
 
 @extend_schema(
@@ -34,3 +36,19 @@ class CourseCohortsView(APIView):
             return Response(EMS.E404_NOT_FOUND("과정 정보"), status=status.HTTP_404_NOT_FOUND)
 
         return Response(CourseCohortsSerializer(courses, many=True).data)
+
+
+class AvailableCoursesAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        tags=["회원관리"],
+        summary="현재 가능한 수강 신청 목록 받아오기 API",
+        responses={200: None},
+    )
+    def get(self, request: Request) -> Response:
+        cohorts = Cohort.objects.filter(
+            status=CohortStatusChoices.PENDING, start_date__gte=timezone.localdate()
+        ).select_related("course")
+        serializer = AvailableCourseSerializer(cohorts, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
