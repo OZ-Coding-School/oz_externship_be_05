@@ -14,7 +14,7 @@ services:
       - "8000:8000"
     volumes:
       - .:/oz_externship
-      - static_volume:/oz_externship/static
+      - static_volume:/oz_externship/staticfiles
       - media_volume:/oz_externship/media
     networks:
       - ws
