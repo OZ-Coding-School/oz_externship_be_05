@@ -1,11 +1,10 @@
 from django.db import transaction
 
 from apps.qna.models import Question, QuestionImage
-from apps.qna.utils.content_image_parser import extract_image_urls_from_content
-from apps.qna.utils.s3_client import S3Client
+from apps.core.utils.s3_client import S3Client
 
 
-def sync_question_images(question: Question, content: str) -> None:
+def sync_question_images(question: Question, content: str, extract_image_urls_from_content=None) -> None:
     """
     본문(Content)에 포함된 이미지 URL을 추출하여 DB 및 S3와 동기화(삭제 및 추가)를 수행합니다.
     """

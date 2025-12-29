@@ -4,8 +4,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from drf_spectacular.utils import extend_schema
+from apps.core.utils.s3_client import S3Client
 
-from apps.qna.utils.s3_client import S3Client
 from apps.core.constants import QUESTION_IMAGE_UPLOAD_PATH, ANSWER_IMAGE_UPLOAD_PATH
 from apps.qna.serializers.common.presigned_url_serializer import PresignedUploadSerializer
 
