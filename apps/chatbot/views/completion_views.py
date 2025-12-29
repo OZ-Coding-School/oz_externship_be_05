@@ -7,6 +7,7 @@ from django.http import StreamingHttpResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
+from rest_framework.exceptions import NotFound
 from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -44,7 +45,10 @@ class CompletionAPIView(APIView):
     # 세션 조회, 권한 검증 (여기서)
     def get_session(self, session_id: int) -> ChatbotSession:
         user = cast(User, self.request.user)
-        return ChatbotSession.objects.get(id=session_id, user=user)
+        session = ChatbotSession.objects.filter(user=user, id=session_id).first()
+        if session is None:
+            raise NotFound(EMS.E404_CHATBOT_SESSION_NOT_FOUND)
+        return session
 
     # 세션 속한 모든 메세지 조회, 기본 쿼리셋 반환
     def get_queryset(self, session: ChatbotSession) -> QuerySet[ChatbotCompletion]:
