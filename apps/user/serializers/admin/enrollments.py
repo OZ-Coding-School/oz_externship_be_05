@@ -14,12 +14,15 @@ from apps.user.serializers.admin.common import (
 
 # 수강생 목록 조회 시리얼라이저
 class InProgressCourseSerializer(serializers.Serializer[dict[str, Any]]):
-    cohort: CohortSimpleSerializer = CohortSimpleSerializer(read_only=True)
-    course: CourseMiniSerializer = CourseMiniSerializer(read_only=True)
+    cohort: CohortSimpleSerializer = CohortSimpleSerializer(source="cohort")
+    course: CourseMiniSerializer = CourseMiniSerializer(source="cohort.course")
 
 
 class AdminStudentSerializer(serializers.ModelSerializer[User]):
-    in_progress_course: serializers.SerializerMethodField = serializers.SerializerMethodField()
+    in_progress_course = InProgressCourseSerializer(
+        source="in_progress_cohortstudent",
+        read_only=True,
+        )
 
     class Meta:
         model = User
@@ -35,15 +38,6 @@ class AdminStudentSerializer(serializers.ModelSerializer[User]):
             "in_progress_course",
             "created_at",
         )
-
-    @extend_schema_field(InProgressCourseSerializer)
-    def get_in_progress_course(self, obj: User) -> dict[str, Any]:
-        for cs in obj.cohortstudent_set.all():
-            cohort = cs.cohort
-            if not cohort:
-                continue
-            return InProgressCourseSerializer({"cohort": cohort, "course": cohort.course}).data
-        return {}
 
 
 # 수강생 등록 요청 목록 시리얼라이저
