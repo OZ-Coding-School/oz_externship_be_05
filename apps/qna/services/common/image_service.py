@@ -1,3 +1,5 @@
+from django.db import transaction
+
 from apps.qna.models import Question, QuestionImage
 from apps.qna.utils.content_image_parser import extract_image_urls_from_content
 from apps.qna.utils.s3_client import S3Client
@@ -22,10 +24,15 @@ def sync_question_images(question: Question, content: str) -> None:
 
     # 4. 삭제 처리 (S3 파일 삭제 + DB 삭제)
     if urls_to_delete:
-        for url in urls_to_delete:
-            s3_client.delete_from_url(url)
-
+        # 1. DB 먼저 삭제
         QuestionImage.objects.filter(question=question, img_url__in=urls_to_delete).delete()
+
+        # 2. S3 삭제는 트랜잭션이 성공적으로 끝난 뒤에 실행 예약
+        def delete_s3_files():
+            for url in urls_to_delete:
+                s3_client.delete_from_url(url)
+
+        transaction.on_commit(delete_s3_files)
 
     # 5. 추가 처리 (검증 + DB 저장)
     new_images = []
