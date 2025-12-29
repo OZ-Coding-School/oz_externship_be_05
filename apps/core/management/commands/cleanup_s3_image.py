@@ -1,15 +1,15 @@
 from datetime import datetime, timedelta, timezone
-from typing import Any, Iterable, Iterator, List, TypeVar, Tuple, Type
+from typing import Any, Iterable, Iterator, List, Tuple, Type, TypeVar
 
 from django.core.management.base import BaseCommand
 from django.db.models import Model
 from mypy_boto3_s3 import S3Client
 from mypy_boto3_s3.type_defs import DeleteTypeDef, ObjectIdentifierTypeDef
-# 관리할 모델 임포트
-from apps.qna.models.answer.images import AnswerImage
-
 
 from apps.core.utils.s3_client import S3Client as MyS3ClientWrapper
+
+# 관리할 모델 임포트
+from apps.qna.models.answer.images import AnswerImage
 
 T = TypeVar("T")
 
@@ -43,14 +43,12 @@ class Command(BaseCommand):
         # 청소대상 목록
         targets: List[Tuple[str, Type[Model]]] = [
             ("answer_images/", AnswerImage),
-
         ]
         total_scanned = 0
         total_deleted = 0
 
         for prefix, model_class in targets:
             self.stdout.write(f"\n🚀 [{prefix}] 구역 스캔 중... ({model_class.__name__})")
-
 
             paginator = s3_client.get_paginator("list_objects_v2")
             pages = paginator.paginate(Bucket=bucket_name, Prefix=prefix)
@@ -59,12 +57,8 @@ class Command(BaseCommand):
                 if "Contents" not in page:
                     continue
 
-                orphans, scanned_count = self._find_orphans_in_page(
-                    page["Contents"], 
-                    safety_boundary,
-                    model_class
-                )
-                
+                orphans, scanned_count = self._find_orphans_in_page(page["Contents"], safety_boundary, model_class)
+
                 total_scanned += scanned_count
 
                 if not orphans:
@@ -76,12 +70,9 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"작업 종료! 총 스캔: {total_scanned}, 총 삭제: {total_deleted}"))
 
     def _find_orphans_in_page(
-            self, 
-            contents: List[Any], 
-            safety_boundary: datetime,
-            model_class: Type[Model]
+        self, contents: List[Any], safety_boundary: datetime, model_class: Type[Model]
     ) -> tuple[List[str], int]:
-        
+
         candidates: List[str] = []
         scanned = 0
 
@@ -98,7 +89,7 @@ class Command(BaseCommand):
             return [], scanned
 
         # 모든 모델의 필드가 image_url
-        existing_keys = set(model_class.objects.filter(image_url__in=candidates).values_list("image_url", flat=True))
+        existing_keys = set(model_class.objects.filter(image_url__in=candidates).values_list("image_url", flat=True))  # type: ignore [attr-defined]
         orphan_keys = set(candidates) - existing_keys
         return list(orphan_keys), scanned
 
