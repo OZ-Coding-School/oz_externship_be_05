@@ -22,6 +22,7 @@ class BaseCourseTestCase(APITestCase):
             password="qwer1234!",
             birthday=date(2007, 8, 31),
         )
+
         self.client.force_authenticate(user=self.admin_user)
 
         # 2. 과정 생성
