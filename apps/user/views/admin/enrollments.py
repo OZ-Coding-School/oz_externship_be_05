@@ -26,7 +26,7 @@ from apps.user.serializers.admin.enrollments import (
 )
 
 ORDERING_MAP = {"id": "id", "latest": "-created_at", "oldest": "created_at"}
-wa
+
 USER_STATUS_FILTERS = {
     "withdrew": Q(is_withdrawing=True),
     "activated": Q(is_withdrawing=False, is_active=True),
@@ -117,7 +117,7 @@ class AdminStudentsEnrollViews(APIView):
                 required=False,
                 location=OpenApiParameter.QUERY,
                 enum=["pending", "accepted", "rejected", "canceled"],
-            ),
+            ), 
             OpenApiParameter(
                 "ordering",
                 OpenApiTypes.STR,
