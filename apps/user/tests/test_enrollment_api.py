@@ -10,27 +10,24 @@ from rest_framework.test import APIRequestFactory, force_authenticate
 
 from apps.courses.models.cohorts_models import Cohort, CohortStatusChoices
 from apps.courses.models.courses_models import Course
-from apps.user.models import CohortStudent, StudentEnrollmentRequest
-from apps.user.views.enrollemnt import (
-    AvailableCoursesAPIView,
-    EnrolledCoursesAPIView,
-    EnrollStudentAPIView,
-)
+from apps.courses.views import AvailableCoursesAPIView
+from apps.user.models import StudentEnrollmentRequest
+from apps.user.views.enrollemnt import EnrollStudentAPIView
 
 
 class EnrollmentAPIViewTests(TestCase):
     def setUp(self) -> None:
         self.factory = APIRequestFactory()
         self.user = get_user_model().objects.create_user(
-            email="iwannabebedev@example.com",  # 고급드립
+            email="iwannabebedev@example.com",
             password="Pass1234!",
-            name="제갈춘삼",
+            name="Tester",
             birthday=timezone.localdate(),
             phone_number="01012341234",
             gender="M",
         )
         self.course = Course.objects.create(
-            name="빡엔드 부트캠프",
+            name="Backend Bootcamp",
             tag="BE",
             description="desc",
             thumbnail_img_url="https://example.com/thumb.png",
@@ -81,7 +78,7 @@ class EnrollmentAPIViewTests(TestCase):
             end_date=base_date - timedelta(days=1),
             status=CohortStatusChoices.COMPLETED,
         )
-        request = self.factory.get("/api/v1/accounts/available-courses")
+        request = self.factory.get("/api/v1/courses/available")
         force_authenticate(request, user=self.user)
 
         response = AvailableCoursesAPIView.as_view()(request)
@@ -91,16 +88,3 @@ class EnrollmentAPIViewTests(TestCase):
         item = response.data[0]
         self.assertEqual(item["cohort"]["id"], self.available_cohort.id)
         self.assertEqual(item["course"]["id"], self.course.id)
-
-    def test_enrolled_courses_returns_user_cohorts(self) -> None:
-        CohortStudent.objects.create(user=self.user, cohort=self.available_cohort)
-        request = self.factory.get("/api/v1/accounts/me/enrolled-courses")
-        force_authenticate(request, user=self.user)
-
-        response = EnrolledCoursesAPIView.as_view()(request)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        item = response.data[0]
-        self.assertEqual(item["cohort"]["id"], self.available_cohort.id)
-        self.assertEqual(item["course"]["tag"], "BE")
