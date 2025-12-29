@@ -14,7 +14,7 @@ from apps.user.serializers.admin.common import (
 
 # 수강생 목록 조회 시리얼라이저
 class InProgressCourseSerializer(serializers.Serializer[dict[str, Any]]):
-    cohort: CohortSimpleSerializer = CohortSimpleSerializer(source="cohort")
+    cohort: CohortSimpleSerializer = CohortSimpleSerializer()
     course: CourseMiniSerializer = CourseMiniSerializer(source="cohort.course")
 
 
