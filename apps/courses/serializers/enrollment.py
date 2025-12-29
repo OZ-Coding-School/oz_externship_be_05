@@ -11,10 +11,12 @@ class CohortSerializer(serializers.ModelSerializer[Cohort]):
         model = Cohort
         fields = ("id", "number", "start_date", "end_date", "status")
 
+
 class CourseAvailableSerializer(serializers.ModelSerializer[Course]):
     class Meta:
         model = Course
         fields = ("id", "name")
+
 
 class AvailableCourseSerializer(serializers.Serializer[Any]):
     cohort = CohortSerializer(source="*", read_only=True)

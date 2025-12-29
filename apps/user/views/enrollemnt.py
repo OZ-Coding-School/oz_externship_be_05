@@ -8,7 +8,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.user.models import CohortStudent, User
-from apps.user.serializers.enrollment import EnrolledCourseItemSerializer, EnrollStudentSerializer
+from apps.user.serializers.enrollment import (
+    EnrolledCourseItemSerializer,
+    EnrollStudentSerializer,
+)
 from apps.user.services.enrollment_service import enroll_student
 
 

@@ -13,6 +13,7 @@ from apps.courses.models.cohorts_models import Cohort, CohortStatusChoices
 from apps.courses.serializers.courses_serializers import CourseCohortsSerializer
 from apps.courses.serializers.enrollment import AvailableCourseSerializer
 
+
 @extend_schema(
     summary="해당 과정 진행중인 기수 조회 API",
     tags=["과정-기수 관리"],
@@ -35,7 +36,7 @@ class CourseCohortsView(APIView):
             return Response(EMS.E404_NOT_FOUND("과정 정보"), status=status.HTTP_404_NOT_FOUND)
 
         return Response(CourseCohortsSerializer(courses, many=True).data)
-    
+
 
 class AvailableCoursesAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -46,6 +47,8 @@ class AvailableCoursesAPIView(APIView):
         responses={200: None},
     )
     def get(self, request: Request) -> Response:
-        cohorts = Cohort.objects.filter(status=CohortStatusChoices.PENDING, start_date__gte=timezone.localdate()).select_related("course")
+        cohorts = Cohort.objects.filter(
+            status=CohortStatusChoices.PENDING, start_date__gte=timezone.localdate()
+        ).select_related("course")
         serializer = AvailableCourseSerializer(cohorts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
