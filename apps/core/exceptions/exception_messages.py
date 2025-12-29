@@ -28,7 +28,7 @@ class ErrorMessages:
     E400_CATEGORY_REQUIRED: Final[ErrorDetail] = {"error_detail": "카테고리 종류와 이름은 필수 입력값입니다."}
     E400_QUESTION_ID_REQUIRED: Final[ErrorDetail] = {"error_detail": "question_id는 필수 쿼리 파라미터입니다."}
     E400_INVALID_PHONE_FORMAT: Final[ErrorDetail] = {"error_detail": "11자리 숫자로 구성된 포맷이어야 합니다."}
-    E400_REQUIRED_FIELD: Final[ErrorDetail] = {"error_detail": "이필드는 필수 항목입니다."}
+    E400_REQUIRED_FIELD: Final[ErrorDetail] = {"error_detail": "이 필드는 필수 항목입니다."}
     E400_EMAIL_AUTH_INVALID: Final[ErrorDetail] = {"error_detail": "이메일 인증 실패 - 인증코드가 유효하지 않습니다."}
     E400_INVALID_FILE_FORMAT: Final[ErrorDetail] = {"error_detail": "잘못된 파일 형식입니다."}
     E400_ASSISTANT_REQUIRED_FIELD: Final[ErrorDetail] = {"error_detail": "조교 권한 변경 시 필수 필드입니다."}

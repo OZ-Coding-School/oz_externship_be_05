@@ -1,12 +1,15 @@
 from django.urls import URLPattern, URLResolver, path
 
-from ..views.student.exam_result_view import ExamResultView
-from ..views.student.exam_submit_view import ExamSubmissionCreateAPIView
+from apps.exams.views.student import (
+    ExamAccessCodeVerifyView,
+    ExamResultView,
+    ExamSubmissionCreateAPIView,
+)
 
 urlpatterns: list[URLPattern | URLResolver] = [
     path(
         # student/submit
-        "submissions/",
+        "submissions",
         ExamSubmissionCreateAPIView.as_view(),
         name="exam_submit",
     ),
@@ -15,5 +18,10 @@ urlpatterns: list[URLPattern | URLResolver] = [
         "submissions/<int:submission_id>",
         ExamResultView.as_view(),
         name="exam_result",
+    ),
+    path(
+        "deployments/<int:deployment_id>/check-code",
+        ExamAccessCodeVerifyView.as_view(),
+        name="exam-check-code",
     ),
 ]
