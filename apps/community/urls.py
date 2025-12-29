@@ -1,3 +1,11 @@
-from django.urls import URLPattern, URLResolver, path
+from django.urls import path
 
-urlpatterns: list[URLPattern | URLResolver] = []
+from apps.community.views.post_views import (
+    PostDetailAPIView,
+    PostListCreateAPIView,
+)
+
+urlpatterns = [
+    path("", PostListCreateAPIView.as_view(), name="post-list-create"),
+    path("<int:pk>/", PostDetailAPIView.as_view(), name="post-detail"),
+]
