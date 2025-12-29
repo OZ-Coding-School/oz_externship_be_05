@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import cast
+
 from django.db.models import QuerySet
 from django.http import StreamingHttpResponse
 from drf_spectacular.types import OpenApiTypes
@@ -11,8 +13,6 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from typing import cast
-from apps.user.models import User
 from apps.chatbot.models import ChatbotCompletion
 from apps.chatbot.models.chatbot_sessions import ChatbotSession
 from apps.chatbot.serializers.completion_serializers import (
@@ -24,6 +24,7 @@ from apps.chatbot.services.completion_response_service import (
     user_message_save,
 )
 from apps.core.exceptions.exception_messages import EMS
+from apps.user.models import User
 
 
 class CustomCursorPagination(CursorPagination):
