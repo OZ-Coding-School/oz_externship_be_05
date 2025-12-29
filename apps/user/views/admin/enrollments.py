@@ -1,8 +1,9 @@
+from django.db.models import QuerySet
 from django.db import transaction
 from django.db.models import Exists, OuterRef, Prefetch, Q
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import status
+from rest_framework import status as drf_status
 from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -64,9 +65,26 @@ class AdminStudentView(APIView):
         ],
     )
     def get(self, request: Request) -> Response:
-        students = User.objects.filter(role=RoleChoices.ST).order_by("id")
-        students = students.annotate(is_withdrawing=Exists(Withdrawal.objects.filter(user_id=OuterRef("pk"))))
+        students = self.get_students_queryset()
+        students = self.apply_course_filters(students, request)
+        students = self.apply_prefetch(students)
+        students = self.apply_search(students, request)
+        students = self.apply_status_filter(students, request)
 
+        paginator = AdminAccountPagination()
+        page = paginator.paginate_queryset(students, request, view=self)
+
+        serializer = AdminStudentSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    def get_students_queryset(self) -> "QuerySet[User]":
+        students = User.objects.filter(role=RoleChoices.ST).order_by("id")
+        students = students.annotate(
+            is_withdrawing=Exists(Withdrawal.objects.filter(user_id=OuterRef("pk")))
+        )
+        return students
+
+    def apply_course_filters(self, students: "QuerySet[User]", request: Request) -> "QuerySet[User]":
         course_id = request.query_params.get("course_id", "")
         cohort_number = request.query_params.get("cohort_number", "")
 
@@ -77,28 +95,33 @@ class AdminStudentView(APIView):
                 students = students.filter(cohortstudent__cohort__number=int(cohort_number))
 
         students = students.distinct()
+        return students
 
+    def apply_prefetch(self, students: "QuerySet[User]") -> "QuerySet[User]":
         students = students.prefetch_related(
-            Prefetch("cohortstudent_set", queryset=CohortStudent.objects.select_related("cohort__course"))
+            Prefetch(
+                "cohortstudent_set",
+                queryset=CohortStudent.objects.select_related("cohort__course"),
+            )
         )
+        return students
 
+    def apply_search(self, students: "QuerySet[User]", request: Request) -> "QuerySet[User]":
         search = request.query_params.get("search")
         if search:
             cond = Q(email__icontains=search) | Q(nickname__icontains=search) | Q(name__icontains=search)
             if search.isdigit():
                 cond |= Q(id=int(search))
             students = students.filter(cond)
+        return students
 
+    def apply_status_filter(self, students: "QuerySet[User]", request: Request) -> "QuerySet[User]":
         status = request.query_params.get("status")
         status_query = USER_STATUS_FILTERS.get((status or "").strip())
         if status_query:
             students = students.filter(status_query)
+        return students
 
-        paginator = AdminAccountPagination()
-        page = paginator.paginate_queryset(students, request, view=self)
-
-        serializer = AdminStudentSerializer(page, many=True)
-        return paginator.get_paginated_response(serializer.data)
 
 
 class AdminStudentsEnrollViews(APIView):
@@ -117,7 +140,7 @@ class AdminStudentsEnrollViews(APIView):
                 required=False,
                 location=OpenApiParameter.QUERY,
                 enum=["pending", "accepted", "rejected", "canceled"],
-            ), 
+            ),
             OpenApiParameter(
                 "ordering",
                 OpenApiTypes.STR,
@@ -170,18 +193,16 @@ class AdminStudentEnrollAcceptView(APIView):
         ids: list[int] = req.validated_data["enrollments"]
 
         with transaction.atomic():
-            enrollments = StudentEnrollmentRequest.objects.select_for_update().filter(
+            StudentEnrollmentRequest.objects.select_for_update().filter(
                 id__in=ids, status=EnrollmentStatus.PENDING
-            )
-            success = enrollments.update(status=EnrollmentStatus.ACCEPTED)
-            failed = len(ids) - success
+            ).update(status=EnrollmentStatus.ACCEPTED)
 
-        data = {"detail": "수강생 등록 신청들에 대한 승인 요청이 처리되었습니다.", "success": success, "failed": failed}
+        data = {"detail": "수강생 등록 신청들에 대한 승인 요청이 처리되었습니다."}
 
         res = AdminStudentEnrollAcceptSerializer(data=data)
         res.is_valid(raise_exception=True)
 
-        return Response(res.data, status=status.HTTP_200_OK)
+        return Response(res.data, status=drf_status.HTTP_200_OK)
 
 
 class AdminStudentEnrollRejectView(APIView):
@@ -199,19 +220,13 @@ class AdminStudentEnrollRejectView(APIView):
         ids: list[int] = req.validated_data["enrollments"]
 
         with transaction.atomic():
-            enrollments = StudentEnrollmentRequest.objects.select_for_update().filter(
+            StudentEnrollmentRequest.objects.select_for_update().filter(
                 id__in=ids, status=EnrollmentStatus.PENDING
-            )
-            success = enrollments.update(status=EnrollmentStatus.REJECTED)
-            failed = len(ids) - success
+            ).update(status=EnrollmentStatus.REJECTED)
 
-        data = {
-            "detail": "수강생 등록 신청들에 대한 거절 요청이 처리되었습니다.",
-            "success": success,
-            "failed": failed,
-        }
+        data = {"detail": "수강생 등록 신청들에 대한 거절 요청이 처리되었습니다."}
 
         res = AdminStudentEnrollRejectSerializer(data=data)
         res.is_valid(raise_exception=True)
 
-        return Response(res.data, status=status.HTTP_200_OK)
+        return Response(res.data, status=drf_status.HTTP_200_OK)
