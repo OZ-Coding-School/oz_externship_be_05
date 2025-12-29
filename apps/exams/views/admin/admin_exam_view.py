@@ -13,7 +13,7 @@ from rest_framework.serializers import BaseSerializer
 
 from apps.core.exceptions.exception_messages import EMS
 from apps.exams.models import Exam
-from apps.exams.permissions.admin_permission import AdminUserPermission
+from apps.exams.permissions.admin_permission import AdminUserPermissionView
 from apps.exams.serializers.admin.admin_exam_serializer import (
     AdminExamListSerializer,
     AdminExamQuestionsListSerializer,
