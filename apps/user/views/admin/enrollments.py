@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.db.models import Exists, OuterRef, Prefetch, Q
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+from drf_spectacular.types import OpenApiTypes
 from rest_framework import status
 from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
@@ -44,7 +45,23 @@ ENROLLMENT_STATUS_FILTERS = {
 class AdminStudentView(APIView):
     permission_classes = [IsAdminUser]
 
-    @extend_schema(tags=["회원관리"], summary="수강생 목록 조회 API")
+    @extend_schema(
+            tags=["회원관리"], 
+            summary="수강생 목록 조회 API",
+            parameters=[
+                OpenApiParameter("page", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
+                OpenApiParameter("page_size", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
+                OpenApiParameter("search", OpenApiTypes.STR, required=False, location=OpenApiParameter.QUERY),
+                OpenApiParameter(
+                    "status", 
+                    OpenApiTypes.STR, 
+                    required=False, 
+                    location=OpenApiParameter.QUERY, 
+                    enum=["activated", "deactivated", "withdrew"]),
+                OpenApiParameter("course_id", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
+                OpenApiParameter("cohort_number", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
+            ]
+            )
     def get(self, request: Request) -> Response:
         students = User.objects.filter(role=RoleChoices.ST).order_by("id")
         students = students.annotate(is_withdrawing=Exists(Withdrawal.objects.filter(user_id=OuterRef("pk"))))
@@ -86,7 +103,22 @@ class AdminStudentView(APIView):
 class AdminStudentsEnrollViews(APIView):
     permission_classes = [IsAdminUser]
 
-    @extend_schema(tags=["회원관리"], summary="수강생 등록 요청 목록 조회 API")
+    @extend_schema(
+            tags=["회원관리"],
+            summary="수강생 등록 요청 목록 조회 API",
+            parameters=[
+                OpenApiParameter("page", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
+                OpenApiParameter("page_size", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
+                OpenApiParameter("search", OpenApiTypes.STR, required=False, location=OpenApiParameter.QUERY),
+                OpenApiParameter(
+                    "status", 
+                    OpenApiTypes.STR, 
+                    required=False, 
+                    location=OpenApiParameter.QUERY, 
+                    enum=["pending","accepted","rejected","canceled"]),
+                OpenApiParameter("ordering", OpenApiTypes.STR, required=False, location=OpenApiParameter.QUERY, enum=["id", "latest", "oldest"]),
+            ]
+            )
     def get(self, request: Request) -> Response:
         enrollments = (
             StudentEnrollmentRequest.objects.all().select_related("user", "cohort", "cohort__course").order_by("id")
