@@ -1,9 +1,11 @@
 from drf_spectacular.utils import OpenApiExample, OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from apps.core.exceptions.exception_messages import EMS
+from apps.exams.models import ExamDeployment
 from apps.exams.permissions.student_permission import StudentUserPermissionView
 from apps.exams.serializers.student.exam_access_serializer import (
     ExamAccessCodeSerializer,
@@ -55,6 +57,12 @@ class ExamAccessCodeVerifyView(StudentUserPermissionView):
         tags=["쪽지시험"],
     )
     def post(self, request: Request, deployment_id: int) -> Response:
+        # 배포 정보 조회
+        try:
+            deployment = ExamDeployment.objects.get(id=deployment_id)
+        except ExamDeployment.DoesNotExist:
+            raise NotFound(detail=EMS.E404_NOT_FOUND("배포 정보"))
+
         # 요청 데이터 검증
         serializer = ExamAccessCodeSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -62,7 +70,7 @@ class ExamAccessCodeVerifyView(StudentUserPermissionView):
         try:
             # 서비스 레이어에서 비즈니스 로직 처리
             ExamAccessCodeService.verify_access_code(
-                deployment_id=deployment_id, access_code=serializer.validated_data["code"]
+                deployment=deployment, access_code=serializer.validated_data["code"]
             )
         except ValidationError as e:
             message = e.detail[0] if isinstance(e.detail, list) else str(e.detail)

@@ -1,5 +1,5 @@
 from django.utils import timezone
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import ValidationError
 
 from apps.core.exceptions.exception_messages import EMS
 from apps.core.exceptions.exceptions import LockedException
@@ -12,11 +12,7 @@ class ExamAccessCodeService:
     """
 
     @staticmethod
-    def verify_access_code(deployment_id: int, access_code: str) -> None:
-
-        # 배포 존재 여부 확인
-        deployment = ExamAccessCodeService._get_deployment(deployment_id)
-
+    def verify_access_code(deployment: ExamDeployment, access_code: str) -> None:
         # 응시 가능 시간 확인
         ExamAccessCodeService._check_available_time(deployment)
 
@@ -24,14 +20,6 @@ class ExamAccessCodeService:
         ExamAccessCodeService._validate_access_code(deployment, access_code)
 
     # ---------------------------------------
-    @staticmethod
-    def _get_deployment(deployment_id: int) -> ExamDeployment:
-        """배포 정보 조회"""
-        try:
-            return ExamDeployment.objects.get(id=deployment_id)
-        except ExamDeployment.DoesNotExist:
-            raise NotFound(detail=EMS.E404_NOT_FOUND("배포 정보")["error_detail"])
-
     @staticmethod
     def _check_available_time(deployment: ExamDeployment) -> None:
         """응시 가능 시간 확인"""
