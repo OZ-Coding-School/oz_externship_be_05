@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from django.db.models import QuerySet
 from django.http import StreamingHttpResponse
-from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
@@ -12,6 +11,8 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from typing import cast
+from apps.user.models import User
 from apps.chatbot.models import ChatbotCompletion
 from apps.chatbot.models.chatbot_sessions import ChatbotSession
 from apps.chatbot.serializers.completion_serializers import (
@@ -34,14 +35,15 @@ class CustomCursorPagination(CursorPagination):
 
 
 # SSE 스트리밍 AI 응답 생성 API
-class CompletionStreamAPIView(APIView):
+class CompletionAPIView(APIView):
     permission_classes = [IsAuthenticated]
     pagination_class = CustomCursorPagination
     serializer_class = CompletionSerializer
 
     # 세션 조회, 권한 검증 (여기서)
-    def get_session(self, session_id: int, user) -> ChatbotSession:
-        return get_object_or_404(ChatbotSession, id=session_id, user=user)
+    def get_session(self, session_id: int) -> ChatbotSession:
+        user = cast(User, self.request.user)
+        return ChatbotSession.objects.get(id=session_id, user=user)
 
     # 세션 속한 모든 메세지 조회, 기본 쿼리셋 반환
     def get_queryset(self, session: ChatbotSession) -> QuerySet[ChatbotCompletion]:
@@ -76,7 +78,7 @@ class CompletionStreamAPIView(APIView):
 
     # SSE 스트리밍 응답 생성.
     def post(self, request: Request, session_id: int) -> StreamingHttpResponse:
-        session = self.get_session(session_id, request.user)  # 세션 조회(권한 검증 포함)
+        session = self.get_session(session_id)  # 세션 조회(권한 검증 포함)
 
         # 요청 데이터 검증
         serializer = CompletionCreateSerializer(data=request.data)
@@ -139,7 +141,7 @@ class CompletionStreamAPIView(APIView):
 
     # 메세지 목록 조회
     def get(self, request: Request, session_id: int) -> Response:
-        session = self.get_session(session_id, request.user)  # 세션 조회
+        session = self.get_session(session_id)  # 세션 조회
         paginator = self.pagination_class()  # 페이지네이션 적용
         queryset = self.get_queryset(session)  # 메세지 쿼리셋 가져오기
 
@@ -168,6 +170,6 @@ class CompletionStreamAPIView(APIView):
         },
     )
     def delete(self, request: Request, session_id: int) -> Response:
-        session = self.get_session(session_id, request.user)
+        session = self.get_session(session_id)
         session.messages.all().delete()  # 세션 모든 메세지 삭제
         return Response(status=status.HTTP_204_NO_CONTENT)
