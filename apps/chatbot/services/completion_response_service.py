@@ -16,7 +16,7 @@ from apps.chatbot.models.chatbot_sessions import ChatbotSession
 logger = logging.getLogger(__name__)
 
 # Gemini API 설정
-DEFAULT_MODEL = "gemini-2.0-flash"
+DEFAULT_MODEL = "gemini-2.5-flash"
 
 
 # environ vs getenv?
