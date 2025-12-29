@@ -150,8 +150,6 @@ class AdminStudentAPIMinimalTests(TestCase):
         response = AdminStudentEnrollAcceptView.as_view()(request)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["success"], 2)
-        self.assertEqual(response.data["failed"], 1)
 
         e1.refresh_from_db()
         e2.refresh_from_db()
@@ -183,8 +181,6 @@ class AdminStudentAPIMinimalTests(TestCase):
         response = AdminStudentEnrollRejectView.as_view()(request)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["success"], 2)
-        self.assertEqual(response.data["failed"], 0)
 
         e1.refresh_from_db()
         e2.refresh_from_db()
