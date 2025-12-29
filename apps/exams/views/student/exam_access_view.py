@@ -19,7 +19,7 @@ class ExamAccessCodeVerifyView(StudentUserPermissionView):
     """
 
     @extend_schema(
-        summary="쪽지시험 참가 코드 검증",
+        summary="쪽지시험 참가 코드 검증 API",
         description="Base62로 인코딩된 참가 코드를 검증합니다.",
         request=ExamAccessCodeSerializer,
         responses={
