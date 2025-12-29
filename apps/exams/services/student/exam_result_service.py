@@ -55,26 +55,39 @@ def _format_hhmmss(seconds: int) -> str:
 
 
 # 제출 API와 동일한 타입별 정답 판정 로직 분리
-def _is_correct_answer(q_type: str, submitted: Any, correct: Any) -> bool:
-    if q_type == QuestionType.SINGLE_CHOICE:
-        return bool(submitted == correct)
+def _grade_simple_equal(submitted: Any, correct: Any) -> bool:
+    return bool(submitted == correct)
+
+
+def _grade_short_answer(submitted: Any, correct: Any) -> bool:
+    return isinstance(submitted, str) and submitted.strip() == str(correct).strip()
+
+
+def _grade_multiple_choice(submitted: Any, correct: Any) -> bool:
+    return isinstance(submitted, list) and set(submitted) == set(correct or [])
+
+
+def _grade_fill_blank(submitted: Any, correct: Any) -> bool:
+    return isinstance(submitted, list) and submitted == correct
+
+
+SIMPLE_EQUAL_TYPES = {QuestionType.SINGLE_CHOICE, QuestionType.OX, QuestionType.ORDERING}
+
+
+def _is_correct_answer(q_type: QuestionType, submitted: Any, correct: Any) -> bool:
+    if q_type in SIMPLE_EQUAL_TYPES:
+        return _grade_simple_equal(submitted, correct)
 
     if q_type == QuestionType.MULTIPLE_CHOICE:
-        return isinstance(submitted, list) and set(submitted) == set(correct or [])
-
-    if q_type == QuestionType.OX:
-        return bool(submitted == correct)
+        return _grade_multiple_choice(submitted, correct)
 
     if q_type == QuestionType.SHORT_ANSWER:
-        return isinstance(submitted, str) and submitted.strip() == str(correct).strip()
-
-    if q_type == QuestionType.ORDERING:
-        return bool(submitted == correct)
+        return _grade_short_answer(submitted, correct)
 
     if q_type == QuestionType.FILL_BLANK:
-        return isinstance(submitted, list) and submitted == correct
+        return _grade_fill_blank(submitted, correct)
 
-    return False
+    raise ValueError(f"Unsupported question type: {q_type}")
 
 
 def build_exam_result(submission: Any) -> ResultResponse:
@@ -139,8 +152,17 @@ def build_exam_result(submission: Any) -> ResultResponse:
         correct_answer = q.get("answer")
         submitted_answer = answers_map.get(int(qid))
 
+        raw_type = q.get("type")
+        if not isinstance(raw_type, str):
+            raise ValueError(f"Invalid question type: {raw_type}")
+
+        try:
+            q_type = QuestionType(raw_type)
+        except ValueError:
+            raise ValueError(f"Invalid question type: {raw_type}")
+
         # 정답 비교(타입별 판정 함수 사용)
-        is_correct = _is_correct_answer(str(q.get("type", "")), submitted_answer, correct_answer)
+        is_correct = _is_correct_answer(q_type, submitted_answer, correct_answer)
 
         questions.append(
             {
