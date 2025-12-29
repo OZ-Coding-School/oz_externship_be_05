@@ -97,7 +97,7 @@ class AdminAccountRoleUpdateSerializer(serializers.Serializer[User]):
         courses = attrs.get("assigned_courses")
 
         if role in (RoleChoices.TA, RoleChoices.ST) and cohort is None:
-            raise serializers.ValidationError({"cohort_id": ["해당 권한으로 변경 시 필수 값입니다."]})  #! 변경
+            raise serializers.ValidationError({"cohort_id": ["해당 권한으로 변경 시 필수 값입니다."]})
 
         if role in (RoleChoices.OM, RoleChoices.LC) and not courses:
             raise serializers.ValidationError({"assigned_courses": ["해당 권한으로 변경 시 필수 값입니다."]})
