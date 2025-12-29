@@ -24,6 +24,7 @@ class SignupAPIView(APIView):
     @extend_schema(
         tags=["회원관리"],
         summary="회원가입 폼 제출 API",
+        request=SignupSerializer,
         responses={201: None},
     )
     def post(self, request: Request) -> Response:
@@ -39,6 +40,7 @@ class LoginAPIView(APIView):
     @extend_schema(
         tags=["회원관리"],
         summary="로그인 폼 제출 API",
+        request=LoginSerializer,
         responses={200: None},
     )
     def post(self, request: Request) -> Response:
@@ -54,6 +56,7 @@ class RefreshAPIView(APIView):
     @extend_schema(
         tags=["회원관리"],
         summary="리프레시 토큰으로 액세스 토큰 재발급 API",
+        request=TokenRefreshSerializer,
         responses={200: None},
     )
     def post(self, request: Request) -> Response:
