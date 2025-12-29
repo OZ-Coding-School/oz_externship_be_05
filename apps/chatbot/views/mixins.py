@@ -27,6 +27,7 @@ class ChatbotSessionMixin:
         - get_session_queryset(): 사용자의 모든 세션 QuerySet 반환
         - get_session(session_id): 특정 세션 조회 + EMS 404 처리
     """
+
     request: Request
 
     def get_user(self) -> User:
