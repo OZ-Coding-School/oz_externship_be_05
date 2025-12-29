@@ -82,6 +82,10 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
         if is_withdrawing:
             return "withdrew"
         return "active" if self.is_active else "inactive"
+    
+    @property
+    def in_progress_cohortstudent(self):
+        return self.cohortstudent_set.select_related("cohort__course").first()
 
     class Meta:
         db_table = "users"
