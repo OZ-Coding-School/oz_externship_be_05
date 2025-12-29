@@ -6,17 +6,52 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.community.models import PostCommentTag
 from apps.community.models.post import Post
 from apps.community.models.post_comment import PostComment
-from apps.community.serializers.post_comment import PostCommentSerializer
-from apps.community.serializers.post_comment_tags import PostCommentTagsSerializer
+from apps.community.serializers.post_comment import PostCommentSerializer,PostCommentTagsSerializer
+from apps.user.models import User
+from apps.core.exceptions.exception_handler import custom_exception_handler
 
-# pagination_class = None
+from rest_framework.pagination import PageNumberPagination
+
+
+class CommentPagination(PageNumberPagination):
+    page_size = 10  # 페이지당 댓글 수
+    page_size_query_param = 'page_size'  # ?page_size=20 으로 조절 가능
+    max_page_size = 100
+
+# class ResponseMixin:
+#
+#     def comment_tags(self, comment: PostComment, content: str) -> list[dict] :
+#
+#         words = content.split()
+#         tag_nicknames = [word[1:] for word in words if word.startswith("@")]
+#
+#         if not tag_nicknames:
+#             return []
+#
+#         tagged_users = User.objects.filter(nickname__in=tag_nicknames)
+#
+#         comment_tags = [
+#             PostCommentTag(comment=comment, tagged_user=user)
+#             for user in tagged_users
+#         ]
+#         PostCommentTag.objects.bulk_create(comment_tags, ignore_conflicts=True)
+#
+#         return [
+#             {"id": user.id,
+#              "nickname": user.nickname}
+#             for user in tagged_users
+#         ]
+
 
 
 # apps/community/views.py
 class PostCommentListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = CommentPagination
+    validation_error_message = "게시글 작성 데이터가 올바르지 않습니다."
 
     def check_post(self, post_id: int) -> Post:
         try:
@@ -29,29 +64,46 @@ class PostCommentListCreateAPIView(APIView):
 
         self.check_post(post_id)
 
-        qs = PostComment.objects.filter(post_id=post_id).select_related("author")
+        queryset = PostComment.objects.filter(post_id=post_id).select_related("author").order_by('created_at')
 
-        serializer = PostCommentSerializer(qs, many=True)
+        paginator = self.pagination_class()
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        paginated_queryset = paginator.paginate_queryset(queryset, request)
+
+        serializer = PostCommentSerializer(paginated_queryset, many=True)
+
+        return paginator.get_paginated_response(serializer.data)
+
 
     def post(self, request: Any, *args: Any, **kwargs: Any) -> Response:
+
         post_id: int = int(kwargs["post_id"])
 
         self.check_post(post_id)
 
         serializer = PostCommentSerializer(data=request.data)
 
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
 
-        serializer.save(author=request.user, post_id=post_id)
+        comment = serializer.save(author=request.user, post_id=post_id)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        content = serializer.validated_data["content"]
+        words = content.split()
+        tag_nicknames = [word[1:] for word in words if word.startswith("@")]
+
+        if tag_nicknames:
+            tagged_users = User.objects.filter(nickname__in=tag_nicknames)
+
+            comment_tags = [
+                PostCommentTag(comment=comment, tagged_user=user)
+                for user in tagged_users
+            ]
+            PostCommentTag.objects.bulk_create(comment_tags, ignore_conflicts=True)
+
+        return Response({"detail": "댓글이 등록되었습니다."}, status=status.HTTP_201_CREATED)
 
 
 class PostCommentUpdateDestroyAPIView(APIView):
-    serializer_class = PostCommentSerializer
     permission_classes = [IsAuthenticated]
 
     def check_comment(self, comment_id: int) -> PostComment:
@@ -69,14 +121,29 @@ class PostCommentUpdateDestroyAPIView(APIView):
         comment_id: int = int(kwargs["comment_id"])
         comment = self.check_comment(comment_id)
 
-        serializer = PostCommentSerializer(comment, data=request.data, partial=True)
+        pcs = PostCommentSerializer(comment, data=request.data)
 
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        PostCommentTag.objects.filter(comment_id=comment_id).delete()
 
-        serializer.save()
+        if not pcs.is_valid():
+            return Response(pcs.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        comment = pcs.save(author=request.user, id=comment_id)
+
+        content = pcs.validated_data["content"]
+        words = content.split()
+        tag_nicknames = [word[1:] for word in words if word.startswith("@")]
+
+        if tag_nicknames:
+            tagged_users = User.objects.filter(nickname__in=tag_nicknames)
+
+            comment_tags = [
+                PostCommentTag(comment=comment, tagged_user=user)
+                for user in tagged_users
+            ]
+            PostCommentTag.objects.bulk_create(comment_tags, ignore_conflicts=True)
+
+        return Response(pcs.data, status=status.HTTP_200_OK)
 
     def delete(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         comment_id: int = int(kwargs["comment_id"])

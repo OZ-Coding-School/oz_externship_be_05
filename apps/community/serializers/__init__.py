@@ -1,2 +1,1 @@
 from .post_comment import PostCommentSerializer
-from .post_comment_tags import PostCommentTagsSerializer
