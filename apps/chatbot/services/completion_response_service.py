@@ -66,7 +66,7 @@ def ai_message_save(*, session: ChatbotSession, message: str) -> ChatbotCompleti
 
 # 세션 대화 이력 Gemini API 형식으로 변환
 def get_chat_history(session: ChatbotSession) -> list[types.Content]:
-    completions = session.messages.all().order_by("-created_at")
+    completions = session.messages.all().order_by("created_at")
     history = []
 
     for completion in completions:
