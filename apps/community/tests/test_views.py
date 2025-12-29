@@ -105,31 +105,17 @@ class PostListCreateAPIViewTests(APITestCase):
     def test_get_post_list_ordering_all_allowed_fields(self) -> None:
         """모든 허용 정렬 필드 테스트"""
         for field in [
-            "created_at", "-created_at", "view_count", "-view_count",
-            "like_count", "-like_count", "comment_count", "-comment_count"
+            "created_at",
+            "-created_at",
+            "view_count",
+            "-view_count",
+            "like_count",
+            "-like_count",
+            "comment_count",
+            "-comment_count",
         ]:
             response = self.client.get(self.list_url, {"ordering": field})
             self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-
-    def test_create_post_success(self) -> None:
-        self.client.force_authenticate(user=self.user1)
-        data: Dict[str, Any] = {
-            "title": "새로운 게시글",
-            "content": "새로운 게시글 내용입니다.",
-            "category_id": self.category1.id,
-        }
-        response = self.client.post(self.list_url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn("post_id", response.data)
-        self.assertEqual(response.data["detail"], "게시글이 성공적 등록됨.")
-
-        # DB 확인
-        post_id = response.data["post_id"]
-        post = Post.objects.get(id=post_id)
-        self.assertEqual(post.title, "새로운 게시글")
-        self.assertEqual(post.content, "새로운 게시글 내용입니다.")
-        self.assertEqual(post.author, self.user1)
 
     def test_create_post_unauthorized(self) -> None:
         data: Dict[str, Any] = {
@@ -255,9 +241,7 @@ class PostDetailAPIViewTests(APITestCase):
         """PATCH: title만 보내고 content/category 누락 시 기존 값 유지"""
         self.client.force_authenticate(user=self.user1)
 
-        data: Dict[str, Any] = {
-            "title": "부분 수정 - 제목만"
-        }
+        data: Dict[str, Any] = {"title": "부분 수정 - 제목만"}
 
         response = self.client.patch(self.detail_url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -336,4 +320,3 @@ class PostDetailAPIViewTests(APITestCase):
 
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-

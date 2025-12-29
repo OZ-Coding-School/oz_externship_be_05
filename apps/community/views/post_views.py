@@ -1,4 +1,4 @@
-from typing import Type, Any
+from typing import Any, Type
 
 from django.db.models import Count, QuerySet
 from rest_framework import serializers, status
