@@ -28,26 +28,6 @@ class CourseListViewTest(BaseCourseTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, expected_data)
 
-
-class CohortListViewTest(BaseCourseTestCase):
-
-    def setUp(self) -> None:
-        super().setUp()
-        self.url = reverse("cohort-list")
-
-    def test_CohortListView(self) -> None:
-        """
-        기수 목록 조회
-        """
-        cohorts = Cohort.objects.all()
-        expected_data = CohortSerializer(cohorts, many=True).data
-
-        response = self.client.get(self.url)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, expected_data)
-
-
 class CohortListDetailViewTest(BaseCourseTestCase):
 
     def setUp(self) -> None:

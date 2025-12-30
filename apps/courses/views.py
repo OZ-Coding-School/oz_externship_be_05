@@ -22,17 +22,12 @@ from apps.courses.serializers.enrollment import AvailableCourseSerializer
     tags=["기수 관리"],
 )
 class CohortListView(APIView):
-    permission_classes = [IsAdminUser]
+    # permission_classes = [IsAdminUser]
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
 
         course_id = kwargs.get("course_id")
-
-        if course_id:
-            cohort = Cohort.objects.filter(course=course_id)
-        else:
-            cohort = Cohort.objects.all()
-
+        cohort = Cohort.objects.filter(course=course_id)
         return Response(CohortSerializer(cohort, many=True).data)
 
 
