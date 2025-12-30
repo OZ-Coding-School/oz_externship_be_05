@@ -41,13 +41,13 @@ class Command(BaseCommand):
 
         safety_boundary = datetime.now(timezone.utc) - timedelta(hours=24)
         # 청소대상 목록
-        targets: List[Tuple[str, Type[Model]]] = [
-            ("answer_images/", AnswerImage),
+        targets: List[Tuple[str, Type[Model], str]] = [
+            ("answer_images/", AnswerImage, "image_url"),
         ]
         total_scanned = 0
         total_deleted = 0
 
-        for prefix, model_class in targets:
+        for prefix, model_class, field_name in targets:
             self.stdout.write(f"\n🚀 [{prefix}] 구역 스캔 중... ({model_class.__name__})")
 
             paginator = s3_client.get_paginator("list_objects_v2")
@@ -57,7 +57,12 @@ class Command(BaseCommand):
                 if "Contents" not in page:
                     continue
 
-                orphans, scanned_count = self._find_orphans_in_page(page["Contents"], safety_boundary, model_class)
+                orphans, scanned_count = self._find_orphans_in_page(
+                    page["Contents"],
+                    safety_boundary,
+                    model_class,
+                    field_name,
+                )
 
                 total_scanned += scanned_count
 
@@ -70,7 +75,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(f"작업 종료! 총 스캔: {total_scanned}, 총 삭제: {total_deleted}"))
 
     def _find_orphans_in_page(
-        self, contents: List[Any], safety_boundary: datetime, model_class: Type[Model]
+        self, contents: List[Any], safety_boundary: datetime, model_class: Type[Model], field_name: str
     ) -> tuple[List[str], int]:
 
         candidates: List[str] = []
@@ -88,8 +93,8 @@ class Command(BaseCommand):
         if not candidates:
             return [], scanned
 
-        # 모든 모델의 필드가 image_url
-        existing_keys = set(model_class.objects.filter(image_url__in=candidates).values_list("image_url", flat=True))  # type: ignore [attr-defined]
+        filter_kwargs = {f"{field_name}__in": candidates}
+        existing_keys = set(model_class.objects.filter(**filter_kwargs).values_list(field_name, flat=True))  # type: ignore [attr-defined]
         orphan_keys = set(candidates) - existing_keys
         return list(orphan_keys), scanned
 
