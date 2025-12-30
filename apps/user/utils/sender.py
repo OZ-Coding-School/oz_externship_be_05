@@ -10,6 +10,7 @@ from django.core.mail import send_mail
 from rest_framework.exceptions import APIException, ValidationError
 from twilio.rest import Client  # type: ignore[import-untyped]
 
+from apps.user.utils.limiter import build_sms_rate_limiter
 from apps.user.utils.verification import VerificationService
 
 logger = logging.getLogger(__name__)
@@ -108,6 +109,7 @@ class SMSSender(Sender):
             raise APIException("SMS 인증서비스에 문제가 발생했습니다.")
 
         self.client = Client(self.account_sid, self.auth_token)
+        self.rate_limiter = build_sms_rate_limiter()
 
     @staticmethod
     def make_it_korean(phone_number: str) -> str:
@@ -116,8 +118,9 @@ class SMSSender(Sender):
             digits = digits[1:]
         return f"+82{digits}"
 
-    def send(self, send_to: str, locale: str = "ko") -> None:
+    def send(self, send_to: str, locale: str = "ko", request_ip: Optional[str] = None) -> None:
         try:
+            self.rate_limiter.enforce(request_ip)
             self.client.verify.v2.services(self.verify_service_sid).verifications.create(
                 to=self.make_it_korean(send_to),
                 channel="sms",
