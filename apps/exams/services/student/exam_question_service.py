@@ -13,13 +13,13 @@ def validate_exam_access(deployment: ExamDeployment, submission: ExamSubmission 
     """
     now = timezone.now()
 
-    # 이미 종료된 시험인지 확인
-    if deployment.close_at and now > deployment.close_at:
-        raise GoneException(EMS.E410_ENDED("시험")["error_detail"])
-
     # 아직 시작 전인지 확인
     if deployment.open_at and now < deployment.open_at:
         raise LockedException(EMS.E423_LOCKED("응시")["error_detail"])
+
+    # 이미 종료된 시험인지 확인
+    if deployment.close_at and now > deployment.close_at:
+        raise GoneException(EMS.E410_ENDED("시험")["error_detail"])
 
 
 def calculate_elapsed_time(submission: ExamSubmission | None) -> int:
