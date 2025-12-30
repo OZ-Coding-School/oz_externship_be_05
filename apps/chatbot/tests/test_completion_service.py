@@ -142,8 +142,11 @@ class CompletionResponseServiceTests(APITestCase):
         assert saved is not None  # mypy용
         self.assertEqual(saved.message, "Hello World")
 
+    @patch("apps.chatbot.services.completion_response_service.logger")
     @patch("apps.chatbot.services.completion_response_service._iter_gemini_text_stream")
-    def test_generate_streaming_response_error_yields_error_and_done(self, mock_iter: MagicMock) -> None:
+    def test_generate_streaming_response_error_yields_error_and_done(
+        self, mock_iter: MagicMock, _log_mock: MagicMock
+    ) -> None:
         mock_iter.side_effect = Exception("API Error")
 
         out = list(svc.generate_streaming_response(session=self.session, user_message="테스트"))

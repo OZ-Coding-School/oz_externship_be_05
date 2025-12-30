@@ -31,8 +31,9 @@ class SenderMinimalTests(TestCase):
         send_mail_mock.assert_called_once()
 
     @override_settings(DEFAULT_FROM_EMAIL="noreply@test.com")
+    @patch("apps.user.utils.sender.logger")
     @patch("apps.user.utils.sender.send_mail", side_effect=Exception("fail"), autospec=True)
-    def test_email_send_fail_raises(self, _send_mail_mock: MagicMock) -> None:
+    def test_email_send_fail_raises(self, _send_mail_mock: MagicMock, _log_mock: MagicMock) -> None:
         vs = MagicMock()
         vs.generate_code.return_value = "123456"
         sender = EmailSender(verification_service=vs)
@@ -40,7 +41,8 @@ class SenderMinimalTests(TestCase):
             sender.send("to@test.com")
 
     @override_settings(TWILIO_ACCOUNT_SID=None, TWILIO_AUTH_TOKEN=None, TWILIO_VERIFY_SERVICE_SID=None)
-    def test_sms_sender_init_missing_settings_raises(self) -> None:
+    @patch("apps.user.utils.sender.logger")
+    def test_sms_sender_init_missing_settings_raises(self, _log_mock: MagicMock) -> None:
         with self.assertRaises(APIException):
             SMSSender()
 

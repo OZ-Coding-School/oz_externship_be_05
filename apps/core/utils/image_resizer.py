@@ -10,6 +10,7 @@ from apps.core.utils.s3_client import S3Client
 
 
 class ImageResizer:
+    # 뭔가 센터링이라던지 환경변수 더 받아오게 만들까 싶은데 귀찮아서 스킵
     def __init__(self, s3_client: S3Client | None = None) -> None:
         self.s3_client = s3_client or S3Client()
 
