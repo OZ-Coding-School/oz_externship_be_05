@@ -104,9 +104,11 @@ def get_admin_exam_submission_list(params: AdminSubmissionListParams) -> dict[st
     start = (params.page - 1) * params.size
     end = start + params.size
 
+    submissions = list(qs[start:end])
+
     return {
         "page": params.page,
         "size": params.size,
         "total_count": total_count,
-        "submissions": list(qs[start:end]),
+        "submissions": submissions,
     }
