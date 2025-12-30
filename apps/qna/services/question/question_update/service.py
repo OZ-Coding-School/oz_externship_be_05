@@ -2,8 +2,8 @@ from typing import Any
 
 from django.db import transaction
 
-from apps.qna.models import Question, QuestionImage
-from apps.qna.services.common.image_service import sync_question_images
+from apps.qna.models import Question
+from apps.qna.services.question.question_image_service import sync_question_images
 
 
 @transaction.atomic

@@ -1,9 +1,8 @@
-from unittest import mock
-from unittest.mock import MagicMock
+from typing import Any
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
-from apps.qna.models import Question, QuestionCategory, QuestionImage
+from apps.qna.models import QuestionCategory, QuestionImage
 from apps.qna.services.question.question_create_service import create_question
 from apps.user.models.user import RoleChoices, User
 
@@ -22,30 +21,25 @@ class QuestionCreateServiceTests(TestCase):
 
         self.category = QuestionCategory.objects.create(name="백엔드")
 
-    # S3 Client를 Mocking하여 실제 S3 통신 없이 테스트 수행
-    @mock.patch("apps.qna.services.common.image_service.S3Client")
-    def test_create_question_success(self, mock_s3_client_class: MagicMock) -> None:
+        self.valid_s3_url = "https://test-bucket.s3.ap-northeast-2.amazonaws.com/question_images/test.jpg"
 
-        # S3 URL 검증이 무조건 True를 반환하도록 설정
-        mock_s3_instance = mock_s3_client_class.return_value
-        mock_s3_instance.is_valid_s3_url.return_value = True
+    @override_settings(AWS_S3_BUCKET_NAME="test-bucket")
+    def test_create_question_success(self) -> None:
+        # HTML <img> 태그(http 기준) 사용
+        content = f'이미지 포함 질문 <img src="{self.valid_s3_url}">'
 
-        # 본문에 이미지 태그를 포함하여 질문 생성
-        image_url = "https://test.com/img1.png"
-        content_with_image = f'질문 내용 <img src="{image_url}">'
+        data: dict[str, Any] = {
+            "title": "Test Question",
+            "content": content,
+        }
 
-        question = create_question(
-            author=self.user,
-            category=self.category,
-            validated_data={
-                "title": "질문 제목",
-                "content": content_with_image,
-            },
-        )
+        create_question(author=self.user, category=self.category, validated_data=data)
 
-        self.assertEqual(Question.objects.count(), 1)
+        # 1개가 정상적으로 생성되어야 함
         self.assertEqual(QuestionImage.objects.count(), 1)
-        self.assertEqual(question.title, "질문 제목")
-        first_image = QuestionImage.objects.first()
-        assert first_image is not None
-        self.assertEqual(first_image.img_url, image_url)
+
+        # DB에는 Key만 저장되어야 함
+        image = QuestionImage.objects.first()
+        self.assertIsNotNone(image)
+        if image:
+            self.assertEqual(image.img_url, "question_images/test.jpg")

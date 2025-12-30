@@ -1,7 +1,7 @@
 from unittest import mock
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 
 from apps.qna.models import Question, QuestionCategory, QuestionImage
 from apps.qna.services.question.question_update.service import update_question
@@ -33,6 +33,8 @@ class QuestionUpdateServiceTest(TestCase):
             category=self.category,
         )
 
+        self.valid_s3_url = "https://test-bucket.s3.ap-northeast-2.amazonaws.com/question_images/new.jpg"
+
     # 내용만 수정
     def test_update_content_only(self) -> None:
         update_question(
@@ -44,42 +46,42 @@ class QuestionUpdateServiceTest(TestCase):
         self.assertEqual(self.question.content, "변경된 내용")
 
     # 이미지 추가 (본문에 태그 추가)
-    @mock.patch("apps.qna.services.common.image_service.S3Client")
+    @override_settings(AWS_S3_BUCKET_NAME="test-bucket")
+    @mock.patch("apps.qna.services.question.question_image_service.S3Client")
     def test_add_image_via_content(self, mock_s3_client_class: MagicMock) -> None:
         mock_s3_instance = mock_s3_client_class.return_value
-        mock_s3_instance.is_valid_s3_url.return_value = True
 
-        new_url = "https://img.com/1.png"
-        new_content = f'이미지 추가됨 <img src="{new_url}">'
+        new_content = f'이미지 추가됨 <img src="{self.valid_s3_url}">'
 
         update_question(
             question=self.question,
             validated_data={"content": new_content},
         )
 
+        # DB 검증: 1개가 생성되어야 하며 URL이 아닌 Key로 저장되어야 함
         self.assertEqual(self.question.images.count(), 1)
         image = self.question.images.first()
-        assert image is not None
-        self.assertEqual(image.img_url, new_url)
+        self.assertIsNotNone(image)
+        if image:
+            self.assertEqual(image.img_url, "question_images/new.jpg")
 
     # 이미지 삭제 (본문에서 태그 제거)
-    @mock.patch("apps.qna.services.common.image_service.S3Client")
-    def test_delete_image_via_content(self, mock_s3_client_class: MagicMock) -> None:
-        # 이미지가 있는 상태로 시작
-        existing_url = "https://img.com/exist.png"
-        QuestionImage.objects.create(question=self.question, img_url=existing_url)
+    @patch("apps.qna.services.question.question_image_service.transaction.on_commit")  # 경로 수정
+    @patch("apps.core.utils.s3_client.S3Client.delete")  # 메서드 수정
+    def test_delete_image_via_content(self, mock_s3_delete: MagicMock, mock_on_commit: MagicMock) -> None:
+        old_key = "question_images/old.jpg"
+        QuestionImage.objects.create(question=self.question, img_url=old_key)
 
-        mock_s3_instance = mock_s3_client_class.return_value
+        # 트랜잭션 즉시 실행
+        mock_on_commit.side_effect = lambda func: func()
 
-        # 이미지가 없는 텍스트로 본문 수정
         update_question(
             question=self.question,
             validated_data={"content": "이제 이미지가 없습니다."},
         )
 
         self.assertEqual(self.question.images.count(), 0)
-        # S3 삭제 로직이 호출되었는지 확인
-        mock_s3_instance.delete_from_url.assert_called_once_with(existing_url)
+        mock_s3_delete.assert_called_once_with(old_key)
 
     # 변경된 부분만 업데이트
     def test_only_updated_field_is_changed(self) -> None:

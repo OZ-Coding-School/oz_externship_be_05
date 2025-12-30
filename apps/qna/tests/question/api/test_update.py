@@ -1,7 +1,8 @@
-from typing import Any, cast
+from typing import Any
 from unittest import mock
 from unittest.mock import MagicMock
 
+from django.test import override_settings  # [수정] settings 제어를 위해 추가
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -36,13 +37,16 @@ class QuestionUpdateAPITest(APITestCase):
             category=self.category,
         )
 
-        # 이미지 3개 생성
+        # 유효성 검사를 통과할 수 있는 S3 URL 패턴으로 정의
+        self.bucket_name = "test-bucket"
         self.urls = [
-            "https://img.com/1.png",
-            "https://img.com/2.png",
-            "https://img.com/3.png",
+            f"https://{self.bucket_name}.s3.ap-northeast-2.amazonaws.com/question_images/1.png",
+            f"https://{self.bucket_name}.s3.ap-northeast-2.amazonaws.com/question_images/2.png",
+            f"https://{self.bucket_name}.s3.ap-northeast-2.amazonaws.com/question_images/3.png",
         ]
-        self.images = [QuestionImage.objects.create(question=self.question, img_url=url) for url in self.urls]
+        # DB에는 Key만 저장됨
+        self.keys = ["question_images/1.png", "question_images/2.png", "question_images/3.png"]
+        self.images = [QuestionImage.objects.create(question=self.question, img_url=key) for key in self.keys]
 
         self.url = reverse("question_detail", args=[self.question.id])
 
@@ -58,15 +62,19 @@ class QuestionUpdateAPITest(APITestCase):
         self.assertEqual(self.question.title, "수정된 제목")
 
     # 200: 이미지 1개 삭제, 1개 등록
-    @mock.patch("apps.qna.services.common.image_service.S3Client")
-    def test_update_image_delete_and_add(self, mock_s3_client_class: MagicMock) -> None:
+    @override_settings(AWS_S3_BUCKET_NAME="test-bucket")
+    @mock.patch("apps.qna.services.question.question_image_service.transaction.on_commit")
+    @mock.patch("apps.qna.services.question.question_image_service.S3Client")
+    def test_update_image_delete_and_add(self, mock_s3_client_class: MagicMock, mock_on_commit: MagicMock) -> None:
         mock_s3_instance = mock_s3_client_class.return_value
-        mock_s3_instance.is_valid_s3_url.return_value = True
+
+        # [수정] 트랜잭션 commit 시 내부 함수(삭제 로직)를 즉시 실행하도록 설정
+        mock_on_commit.side_effect = lambda func: func()
 
         # 기존 이미지 1번 삭제 / 2,3번 유지 / 4번 추가
-        new_url = "https://new.com/4.png"
+        new_url = f"https://{self.bucket_name}.s3.ap-northeast-2.amazonaws.com/question_images/4.png"
 
-        # 1번(urls[0]) 제외, 2번(urls[1]), 3번(urls[2]) 유지, 4번 추가
+        # 1번 제외, 2번, 3번 유지, 4번 추가
         new_content = f"""
             <p>내용 수정</p>
             <img src="{self.urls[1]}">
@@ -82,21 +90,24 @@ class QuestionUpdateAPITest(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # DB 검증
-        current_urls = set(QuestionImage.objects.filter(question=self.question).values_list("img_url", flat=True))
+        # DB 검증: Key 기준으로 확인
+        current_keys = set(QuestionImage.objects.filter(question=self.question).values_list("img_url", flat=True))
 
-        self.assertNotIn(self.urls[0], current_urls)  # 1번 삭제됨
-        self.assertIn(self.urls[1], current_urls)  # 2번 유지
-        self.assertIn(self.urls[2], current_urls)  # 3번 유지
-        self.assertIn(new_url, current_urls)  # 4번 추가됨
+        self.assertNotIn(self.keys[0], current_keys)  # 1번 삭제됨
+        self.assertIn(self.keys[1], current_keys)  # 2번 유지
+        self.assertIn(self.keys[2], current_keys)  # 3번 유지
+        self.assertIn("question_images/4.png", current_keys)  # 4번 추가됨
 
-        # S3 삭제 호출 검증
-        mock_s3_instance.delete_from_url.assert_called_with(self.urls[0])
+        # [수정] delete_from_url이 아닌 delete 메서드와 Key 인자 확인
+        mock_s3_instance.delete.assert_called_with(self.keys[0])
 
     # 200: 이미지 전부 삭제
-    @mock.patch("apps.qna.services.common.image_service.S3Client")
-    def test_delete_all_images(self, mock_s3_client_class: MagicMock) -> None:
+    @override_settings(AWS_S3_BUCKET_NAME="test-bucket")
+    @mock.patch("apps.qna.services.question.question_image_service.transaction.on_commit")  # [수정] 패치 추가
+    @mock.patch("apps.qna.services.question.question_image_service.S3Client")
+    def test_delete_all_images(self, mock_s3_client_class: MagicMock, mock_on_commit: MagicMock) -> None:
         mock_s3_instance = mock_s3_client_class.return_value
+        mock_on_commit.side_effect = lambda func: func()
 
         response = self.client.patch(
             self.url,
@@ -107,5 +118,5 @@ class QuestionUpdateAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(self.question.images.count(), 0)
 
-        # 3개 모두 삭제 호출되었는지 확인
-        self.assertEqual(mock_s3_instance.delete_from_url.call_count, 3)
+        # [수정] delete_from_url -> delete 명칭 수정
+        self.assertEqual(mock_s3_instance.delete.call_count, 3)

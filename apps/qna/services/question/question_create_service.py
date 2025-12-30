@@ -1,7 +1,7 @@
 from typing import Any
 
 from apps.qna.models import Question, QuestionCategory
-from apps.qna.services.common.image_service import sync_question_images
+from apps.qna.services.question.question_image_service import sync_question_images
 from apps.user.models import User
 
 
