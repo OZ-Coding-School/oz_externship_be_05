@@ -1,4 +1,5 @@
-from django.db.models import Prefetch, Q
+from typing import Any
+
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
@@ -7,35 +8,44 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.core.exceptions.exception_messages import EMS
 from apps.courses.models import Course
 from apps.courses.models.cohorts_models import Cohort, CohortStatusChoices
-from apps.courses.serializers.courses_serializers import CourseCohortsSerializer
+from apps.courses.serializers.courses_serializers import (
+    CohortSerializer,
+    CourseSerializer,
+)
 from apps.courses.serializers.enrollment import AvailableCourseSerializer
 
 
 @extend_schema(
-    summary="해당 과정 진행중인 기수 조회 API",
-    tags=["과정-기수 관리"],
+    summary="기수 리스트 조회 API",
+    tags=["기수 관리"],
 )
-class CourseCohortsView(APIView):
+class CohortListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+
+        course_id = kwargs.get("course_id")
+
+        if course_id:
+            cohort = Cohort.objects.filter(course=course_id)
+        else:
+            cohort = Cohort.objects.all()
+
+        return Response(CohortSerializer(cohort, many=True).data)
+
+
+@extend_schema(
+    summary="과정 리스트 조회 API",
+    tags=["과정 관리"],
+)
+class CourseListView(APIView):
     permission_classes = [IsAdminUser]
 
     def get(self, request: Request) -> Response:
-        try:
-            courses = Course.objects.prefetch_related(
-                Prefetch(
-                    "cohorts",
-                    queryset=Cohort.objects.filter(
-                        Q(status=CohortStatusChoices.IN_PROGRESS) | Q(status=CohortStatusChoices.PENDING)
-                    ),
-                    to_attr="select_enable_cohorts",
-                )
-            ).all()
-        except Course.DoesNotExist:
-            return Response(EMS.E404_NOT_FOUND("과정 정보"), status=status.HTTP_404_NOT_FOUND)
-
-        return Response(CourseCohortsSerializer(courses, many=True).data)
+        course = Course.objects.all()
+        return Response(CourseSerializer(course, many=True).data)
 
 
 class AvailableCoursesAPIView(APIView):

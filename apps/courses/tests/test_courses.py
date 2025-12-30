@@ -1,42 +1,67 @@
 from django.urls import reverse
 from rest_framework import status
 
-from apps.courses.models.cohorts_models import CohortStatusChoices
+from apps.courses.models import Course
+from apps.courses.models.cohorts_models import Cohort, CohortStatusChoices
+from apps.courses.serializers.courses_serializers import (
+    CohortSerializer,
+    CourseSerializer,
+)
 from apps.courses.tests.test_base import BaseCourseTestCase
 
 
-class CohortsListViewTest(BaseCourseTestCase):
+class CourseListViewTest(BaseCourseTestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        self.url = reverse("course-cohort-list")
+        self.url = reverse("course-list")
 
-    def test_get_cohorts_success(self) -> None:
+    def test_CourseListView(self) -> None:
         """
-        수강 중인 기수 목록 요청
+        수강 목록 조회
         """
-        expected_data = [
-            {
-                "id": self.course.id,
-                "name": self.course.name,
-                "cohorts": [
-                    {
-                        "id": self.active_cohort.id,
-                        "number": self.active_cohort.number,
-                        "display": "1기",
-                        "status": "IN_PROGRESS",
-                    },
-                    {
-                        "id": self.pending_cohort.id,
-                        "number": self.pending_cohort.number,
-                        "display": "3기",
-                        "status": "PENDING",
-                    },
-                ],
-            }
-        ]
+        courses = Course.objects.all()
+        expected_data = CourseSerializer(courses, many=True).data
 
         response = self.client.get(self.url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, expected_data)
+
+
+class CohortListViewTest(BaseCourseTestCase):
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.url = reverse("cohort-list")
+
+    def test_CohortListView(self) -> None:
+        """
+        기수 목록 조회
+        """
+        cohorts = Cohort.objects.all()
+        expected_data = CohortSerializer(cohorts, many=True).data
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, expected_data)
+
+
+class CohortListDetailViewTest(BaseCourseTestCase):
+
+    def setUp(self) -> None:
+        super().setUp()
+        self.url = reverse("cohort-list-detail", kwargs={"course_id": self.course.id})
+
+    def test_CohortListViewDetail(self) -> None:
+        """
+        기수 목록 조회
+        """
+        cohorts = Cohort.objects.all()
+        expected_data = CohortSerializer(cohorts, many=True).data
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, expected_data)
