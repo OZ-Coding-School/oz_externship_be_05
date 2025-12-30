@@ -1,7 +1,10 @@
 from typing import cast
 
+from django.contrib.auth import authenticate
+from django.contrib.auth.base_user import AbstractBaseUser
+from django.contrib.auth.models import AnonymousUser
 from django.db.models import QuerySet
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, NotAuthenticated
 from rest_framework.pagination import CursorPagination
 from rest_framework.request import Request
 
@@ -31,7 +34,10 @@ class ChatbotSessionMixin:
     request: Request
 
     def get_user(self) -> User:
-        return cast(User, self.request.user)
+        user = self.request.user
+        if not user.is_authenticated:
+            raise NotAuthenticated(EMS.E401_NO_AUTH_DATA)
+        return user
 
     def get_session_queryset(self) -> QuerySet[ChatbotSession]:
         return ChatbotSession.objects.filter(user=self.get_user())
