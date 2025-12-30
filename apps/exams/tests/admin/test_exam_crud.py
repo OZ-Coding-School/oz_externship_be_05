@@ -155,7 +155,7 @@ class ExamAdminViewTest(APITestCase):
         non_existent_url = reverse("exam-detail", kwargs={"pk": 9999})
         response = self.client.delete(non_existent_url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertEqual(response.data["error_detail"], EMS.E404_NOT_FOUND("수정할 쪽지시험 정보").get("error_detail"))
+        self.assertEqual(response.data["error_detail"], EMS.E404_NOT_FOUND("삭제할 쪽지시험 정보").get("error_detail"))
 
     def test_list_exams_with_search_and_subject_filter(self) -> None:
         """키워드(search_keyword)와 subject_id 필터링 조합 확인"""
