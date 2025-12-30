@@ -10,10 +10,7 @@ from rest_framework.views import APIView
 from apps.community.models.post import Post
 from apps.community.models.post_comment import PostComment
 from apps.community.models.post_comment_tags import PostCommentTag
-from apps.community.serializers.post_comment import (
-    PostCommentSerializer,
-    PostCommentTagsSerializer,
-)
+from apps.community.serializers.post_comment import PostCommentSerializer
 from apps.core.exceptions.exception_messages import EMS
 from apps.user.models import User
 
@@ -24,7 +21,6 @@ class CommentPagination(PageNumberPagination):
     max_page_size = 100
 
 
-# apps/community/views.py
 class PostCommentListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
     pagination_class = CommentPagination

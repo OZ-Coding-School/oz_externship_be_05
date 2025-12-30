@@ -60,7 +60,7 @@ class TestPostCommentListCreateAPIView(APITestCaseBase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["count"], 3)
 
-        check_author_id = [1, 1, 2]
+        check_author_id = [self.test_user.id, self.test_user.id, self.other_user.id]
         check_content = ["댓글1", "댓글2", "댓글3"]
 
         for i, comment in enumerate(response.data["results"]):

@@ -1,1 +1,1 @@
-from .post_comment import TestPostCommentListCreateAPIView
+from .test_comment import TestPostCommentListCreateAPIView
