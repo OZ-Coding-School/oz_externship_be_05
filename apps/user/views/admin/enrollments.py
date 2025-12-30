@@ -194,7 +194,7 @@ class AdminStudentEnrollAcceptView(APIView):
                 status__in=[EnrollmentStatus.PENDING],
             )
 
-            user_ids = list(enrollments.values_list("user_id", flat=True).distinct())
+            user_ids = list(set(enrollments.values_list("user_id", flat=True)))
 
             enrollments.update(status=EnrollmentStatus.ACCEPTED)
 
