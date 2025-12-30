@@ -62,7 +62,7 @@ class ExamQuestion(TimeStampedModel):
     point = models.PositiveSmallIntegerField()
 
     # ERD: explanation text [not null] // 해설
-    explanation = models.TextField()
+    explanation = models.TextField(blank=True, default="")
 
     class Meta:
         db_table = "exam_questions"
