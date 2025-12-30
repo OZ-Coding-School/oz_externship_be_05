@@ -1,46 +1,33 @@
-from django.db.models import QuerySet
-from django.shortcuts import get_object_or_404
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
-from rest_framework.pagination import CursorPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.chatbot.models.chatbot_sessions import ChatbotSession
 from apps.chatbot.serializers.session_serializers import (
     SessionCreateSerializer,
     SessionSerializer,
 )
-
-# DELETE: 세션의 대화내역 전체 삭제 (명세서 추가 필요)
-
-
-class CustomCursorPagination(CursorPagination):
-    cursor_query_param = "cursor"
-    page_size_query_param = "page_size"
-    page_size = 10
-    ordering = "-created_at"
+from apps.chatbot.views.mixins import ChatbotCursorPagination, ChatbotSessionMixin
+from apps.core.exceptions.exception_messages import EMS
 
 
-class SessionCreateListAPIView(APIView):
+class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
     serializer_class = SessionSerializer
     permission_classes = [IsAuthenticated]
-    pagination_class = CustomCursorPagination
-
-    def get_queryset(self) -> QuerySet[ChatbotSession]:
-        user = self.request.user
-        return ChatbotSession.objects.filter(user=user.id)
+    pagination_class = ChatbotCursorPagination
 
     @extend_schema(
         tags=["AI 챗봇"],
         summary="세션 생성 API",
         request=SessionCreateSerializer,
         responses={
-            "201": SessionCreateSerializer,
-            "400": {"object": "object", "example": {"error": "Bad Request"}},
+            201: SessionCreateSerializer,
+            400: {"type": "object", "example": EMS.E400_INVALID_REQUEST("세션 생성")},
+            403: {"type": "object", "example": EMS.E401_USER_ONLY_ACTION("세션 생성")},
+            404: {"type": "object", "example": EMS.E403_PERMISSION_DENIED("세션 생성")},
         },
     )
     def post(self, request: Request) -> Response:
@@ -56,48 +43,47 @@ class SessionCreateListAPIView(APIView):
     @extend_schema(
         tags=["AI 챗봇"],
         summary="세션 리스트 확인 API",
-        # responses={
-        #     "400": {"object": "object", "example": {"error": "Bad Request"}},
-        # },
         parameters=[
             OpenApiParameter(
-                name="cursor", type=OpenApiTypes.STR, description="커서 페이지 네이션 적용을 위한 커서 값입니다."
+                name="cursor",
+                type=OpenApiTypes.STR,
+                description="커서 페이지 네이션 적용을 위한 커서 값.",
+                required=False,
+                default=None,
             ),
             OpenApiParameter(
-                name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값입니다."
+                name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값", default=10
             ),
         ],
         responses={
-            "200": SessionSerializer,
-            "400": {"object": "object", "example": {"error": "Bad Request"}},
+            200: SessionSerializer,
+            401: {"type": "object", "example": EMS.E401_USER_ONLY_ACTION("조회")},
+            403: {"type": "object", "example": EMS.E403_PERMISSION_DENIED("조회")},
+            404: {"type": "object", "example": EMS.E404_NOT_EXIST("세션")},
         },
     )
     def get(self, request: Request) -> Response:
         paginator = self.pagination_class()
-        qs = self.get_queryset()
+        qs = self.get_session_queryset()
         page = paginator.paginate_queryset(queryset=qs, request=request)
         serializer = self.serializer_class(page, many=True)
         return paginator.get_paginated_response(serializer.data)
 
 
-# 세션 상세.
-class SessionDeleteView(APIView):
+class SessionDeleteView(APIView, ChatbotSessionMixin):
     permission_classes = [IsAuthenticated]
-    serializer_class = SessionSerializer
 
     @extend_schema(
         tags=["AI 챗봇"],
         summary="세션 삭제 API",
-        request=SessionSerializer,
         responses={
             "204": None,
-            "400": {"object": "object", "example": {"error": "Bad Request"}},
-            "404": {"object": "object", "example": {"error": "Not Found"}},
+            401: {"type": "object", "example": EMS.E401_USER_ONLY_ACTION("삭제")},
+            403: {"type": "object", "example": EMS.E403_PERMISSION_DENIED("삭제")},
+            404: {"type": "object", "example": EMS.E404_USER_CHATBOT_SESSION_NOT_FOUND},
         },
     )
-    # DjangoObjectPermissions -> 오버라이딩 해서 ChatbotSession에 대해서 request.user가 삭제할 권한이 잇는지 확인할 것
-    # 권한도 커스텀 퍼미션 만들어서 응답 주기? 유저가 아닌 경우 세션 삭제에 대한 응답 주면 안되니까(403)
-    def delete(self, request: Request, session_id: int) -> Response:
-        session = get_object_or_404(ChatbotSession, id=session_id, user=request.user)
+    def delete(self, session_id: int) -> Response:
+        session = self.get_session(session_id)
         session.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
