@@ -1,16 +1,9 @@
-import datetime
-
-from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APITestCase
 
 from apps.chatbot.models.chatbot_completions import ChatbotCompletion, UserRole
-from apps.chatbot.models.chatbot_sessions import ChatbotSession, ChatModel
 from apps.chatbot.tests.completion.api.test_completion_api_base import (
     CompletionAPITestBase,
 )
-from apps.qna.models.question import Question, QuestionCategory
-from apps.user.models.user import User
 
 """
 /sessions/{session_id}/completions/
