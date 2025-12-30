@@ -7,6 +7,23 @@ from rest_framework.views import APIView
 
 from apps.user.models.user import RoleChoices
 
+ADMIN_STAFF_ROLES = {
+    RoleChoices.AD, 
+    RoleChoices.TA, 
+    RoleChoices.LC, 
+    RoleChoices.OM, 
+}
+
+
+class IsAdminStaffRole(BasePermission):
+    def has_permission(self, request: Request, view: APIView) -> bool:
+        user = getattr(request, "user", None)
+        if not user or not user.is_authenticated:
+            return False
+
+        role = getattr(user, "role", None)
+        return role in ADMIN_STAFF_ROLES
+
 
 class AdminAccountRoleUpdatePayloadPermission(BasePermission):
 
@@ -37,3 +54,4 @@ class AdminAccountRoleUpdatePayloadPermission(BasePermission):
             return True
 
         return True
+
