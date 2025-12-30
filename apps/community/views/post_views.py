@@ -1,6 +1,7 @@
 from typing import Any, Type
 
-from django.db.models import Count, QuerySet
+from django.db.models import Count, F, QuerySet
+from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -8,6 +9,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.community.models.post import Post
+from apps.community.permissions import IsAuthorOrReadOnly
 from apps.community.serializers.post_serializers import (
     PostCreateSerializer,
     PostDetailSerializer,
@@ -57,8 +59,21 @@ class PostListCreateAPIView(ListCreateAPIView[Post]):
 
 
 class PostDetailAPIView(RetrieveUpdateDestroyAPIView[Post]):
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    lookup_field = "pk"
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
+    lookup_field = "post_id"
+
+    def get_object(self) -> Post:
+        """URL의 post_id 파라미터를 사용하여 Post 객체 조회"""
+        queryset = self.filter_queryset(self.get_queryset())
+
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        filter_kwargs = {"id": self.kwargs[lookup_url_kwarg]}
+
+        obj = get_object_or_404(queryset, **filter_kwargs)
+
+        self.check_object_permissions(self.request, obj)
+
+        return obj
 
     def get_queryset(self) -> QuerySet[Post]:
         return Post.objects.select_related("author", "category").annotate(
@@ -72,8 +87,10 @@ class PostDetailAPIView(RetrieveUpdateDestroyAPIView[Post]):
 
     def retrieve(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         instance = self.get_object()
-        instance.view_count += 1
-        instance.save(update_fields=["view_count"])
+
+        Post.objects.filter(pk=instance.pk).update(view_count=F("view_count") + 1)
+
+        instance.refresh_from_db()
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
@@ -81,38 +98,29 @@ class PostDetailAPIView(RetrieveUpdateDestroyAPIView[Post]):
     def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         instance = self.get_object()
 
-        if instance.author != request.user:
-            return Response(
-                {"detail": "게시글 수정 권한이 없습니다."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
         partial = kwargs.pop("partial", False)
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+
+        data = request.data.copy()
+
+        if "content" not in data:
+            data["content"] = instance.content
+
+        if "category_id" not in data:
+            data["category_id"] = instance.category_id
+
+        serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
 
-        if partial:
-            data_with_defaults = {
-                "title": serializer.validated_data.get("title", instance.title),
-                "content": serializer.validated_data.get("content", instance.content),
-                "category_id": serializer.validated_data.get("category_id", instance.category_id),
-            }
-            serializer.validated_data.update(data_with_defaults)
-
         self.perform_update(serializer)
+
         return Response(serializer.data)
 
     def destroy(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         instance = self.get_object()
 
-        if instance.author != request.user:
-            return Response(
-                {"detail": "게시글 삭제 권한이 없습니다."},
-                status=status.HTTP_403_FORBIDDEN,
-            )
-
         self.perform_destroy(instance)
+
         return Response(
-            {"detail": "게시글이 성공적으로 삭제되었습니다."},
-            status=status.HTTP_204_NO_CONTENT,
+            {"detail": "게시글이 삭제되었습니다."},
+            status=status.HTTP_200_OK,
         )

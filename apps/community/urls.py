@@ -7,5 +7,5 @@ from apps.community.views.post_views import (
 
 urlpatterns = [
     path("", PostListCreateAPIView.as_view(), name="post-list-create"),
-    path("<int:pk>/", PostDetailAPIView.as_view(), name="post-detail"),
+    path("<int:post_id>/", PostDetailAPIView.as_view(), name="post-detail"),
 ]
