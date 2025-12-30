@@ -27,7 +27,6 @@ class PostCommentTagsSerializer(serializers.ModelSerializer[PostCommentTag]):
         fields = ["tagged_user"]
 
 
-# apps/community/serializers/post_comment.py
 class PostCommentSerializer(serializers.ModelSerializer[PostComment]):
     author = AuthorSerializer(read_only=True)
     tagged_users = PostCommentTagsSerializer(source="postcommenttag_set", many=True, required=False)
