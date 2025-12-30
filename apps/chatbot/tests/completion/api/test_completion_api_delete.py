@@ -1,13 +1,16 @@
 import datetime
+
 from django.urls import reverse
-from rest_framework.test import APITestCase
 from rest_framework import status
-from apps.chatbot.models.chatbot_sessions import ChatbotSession, ChatModel
+from rest_framework.test import APITestCase
+
 from apps.chatbot.models.chatbot_completions import ChatbotCompletion, UserRole
+from apps.chatbot.models.chatbot_sessions import ChatbotSession, ChatModel
+from apps.chatbot.tests.completion.api.test_completion_api_base import (
+    CompletionAPITestBase,
+)
+from apps.qna.models.question import Question, QuestionCategory
 from apps.user.models.user import User
-from apps.qna.models.question import QuestionCategory, Question
-from apps.qna.models.question import Question
-from apps.chatbot.tests.completion.api.test_completion_api_base import CompletionAPITestBase
 
 """
 /sessions/{session_id}/completions/
@@ -33,8 +36,9 @@ test_completion_delete_noneffective_other_session
 
 """
 
+
 class CompletionDeleteAPITest(CompletionAPITestBase):
-    def setUp(self)-> None:
+    def setUp(self) -> None:
         super().setUp()
 
         ChatbotCompletion.objects.create(
@@ -64,16 +68,16 @@ class CompletionDeleteAPITest(CompletionAPITestBase):
         response = self.delete_response(self.session.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_completion_delete_404_session_notfound(self)-> None:
+    def test_completion_delete_404_session_notfound(self) -> None:
         invalid_session_id = self.session.id + 999
         response = self.delete_response(invalid_session_id)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_completion_delete_404_other_session(self)-> None:
+    def test_completion_delete_404_other_session(self) -> None:
         response = self.delete_response(self.other_session.id)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_completion_delete_noneffective_other_session(self)-> None:
+    def test_completion_delete_noneffective_other_session(self) -> None:
         ChatbotCompletion.objects.create(
             session=self.other_session,
             message="다른 세션 메세지",

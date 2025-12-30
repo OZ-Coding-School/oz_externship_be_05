@@ -1,12 +1,12 @@
 import datetime
 from typing import Any
+
 from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from apps.chatbot.models.chatbot_sessions import ChatbotSession, ChatModel
+from apps.qna.models.question import Question, QuestionCategory
 from apps.user.models.user import User
-from apps.qna.models.question import QuestionCategory, Question
-from apps.qna.models.question import Question
 
 """
 completion API 테스트용 공통 설정
@@ -22,6 +22,7 @@ post_response
 get_response
 delete_response
 """
+
 
 class CompletionAPITestBase(APITestCase):
 
@@ -79,7 +80,7 @@ class CompletionAPITestBase(APITestCase):
         payload: dict[str, Any] = {}
         if message is not None:
             payload["message"] = message
-        return self.client.post(self.get_url(session_id), payload, format='json', **kwargs)
+        return self.client.post(self.get_url(session_id), payload, format="json", **kwargs)
 
     def get_response(self, session_id: int, **kwargs: Any) -> Any:
         return self.client.get(self.get_url(session_id), **kwargs)

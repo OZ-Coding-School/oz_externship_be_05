@@ -1,7 +1,9 @@
 from rest_framework import status
 
 from apps.chatbot.models.chatbot_completions import ChatbotCompletion, UserRole
-from apps.chatbot.tests.completion.api.test_completion_api_base import CompletionAPITestBase
+from apps.chatbot.tests.completion.api.test_completion_api_base import (
+    CompletionAPITestBase,
+)
 
 """
 /sessions/{session_id}/completions/
@@ -29,6 +31,7 @@ test_completion_list_404_other_session
     타인 세션에 접근 시 404 반환
 
 """
+
 
 class CompletionListAPITest(CompletionAPITestBase):
     @classmethod
@@ -76,10 +79,10 @@ class CompletionListAPITest(CompletionAPITestBase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         message = response.data["results"][0]
-        self.assertIn("id",message)
-        self.assertIn("message",message)
-        self.assertIn("role",message)
-        self.assertIn("created_at",message)
+        self.assertIn("id", message)
+        self.assertIn("message", message)
+        self.assertIn("role", message)
+        self.assertIn("created_at", message)
 
     def test_completion_list_returns_only_session_message(self) -> None:
         response = self.get_response(self.session.id)
@@ -93,11 +96,11 @@ class CompletionListAPITest(CompletionAPITestBase):
         response = self.get_response(self.session.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_completion_list_404_session_notfound(self)-> None:
+    def test_completion_list_404_session_notfound(self) -> None:
         invalid_session_id = self.session.id + 999
         response = self.get_response(invalid_session_id)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_completion_list_404_other_session(self)-> None:
+    def test_completion_list_404_other_session(self) -> None:
         response = self.get_response(self.other_session.id)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
