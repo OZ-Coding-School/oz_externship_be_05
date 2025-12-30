@@ -68,6 +68,6 @@ class BaseCourseTestCase(APITestCase):
             course=self.course,
             number_of_days=5,
             number_of_hours=40,
-            status=True,
+            status="activated",
             thumbnail_img_url="https://example.com/test.jpg",
         )

@@ -6,9 +6,8 @@ from apps.courses.models.courses_models import Course
 
 
 class SubjectChoices(models.TextChoices):
-    PENDING = "PENDING", "대기중"
-    IN_PROGRESS = "IN_PROGRESS", "처리중"
-    COMPLETED = "COMPLETED", "처리완료"
+    activated = "activated"
+    deactivated = "deactivated"
 
 
 class Subject(TimeStampedModel):
@@ -21,7 +20,10 @@ class Subject(TimeStampedModel):
         validators=[MinValueValidator(1)],
     )
     thumbnail_img_url = models.URLField(null=True, blank=True)
-    status = models.BooleanField(default=True)
+    status = models.CharField(
+        choices=SubjectChoices.choices,
+        default=SubjectChoices.deactivated,
+    )
 
     def __str__(self) -> str:
         return self.title
