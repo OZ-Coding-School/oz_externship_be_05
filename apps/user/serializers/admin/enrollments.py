@@ -63,4 +63,3 @@ class AdminStudentEnrollRequestSerializer(serializers.Serializer[dict[str, list[
 # 수강생 등록 요청 승인 시리얼라이저
 class AdminStudentEnrollApprovalStatusSerializer(serializers.Serializer[dict[str, str | int]]):
     detail = serializers.CharField(max_length=255)
-    

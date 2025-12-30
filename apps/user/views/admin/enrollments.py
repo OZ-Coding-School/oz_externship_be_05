@@ -146,9 +146,7 @@ class AdminStudentsEnrollViews(APIView):
         ],
     )
     def get(self, request: Request) -> Response:
-        enrollments = (
-            StudentEnrollmentRequest.objects.all().select_related("user", "cohort", "cohort__course")
-        )
+        enrollments = StudentEnrollmentRequest.objects.all().select_related("user", "cohort", "cohort__course")
 
         search = request.query_params.get("search")
         if search:
