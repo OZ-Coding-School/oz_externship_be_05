@@ -9,5 +9,5 @@ __all__ = [
     "ExamResultView",
     "ExamAccessCodeVerifyView",
     "ExamDeploymentStatusCheckView",
-    "ExamQuestionView"
+    "ExamQuestionView",
 ]
