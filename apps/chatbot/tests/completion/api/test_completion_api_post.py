@@ -52,6 +52,7 @@ class CompletionCreateAPITest(CompletionAPITestBase):
             role=UserRole.USER,
         ).first()
         self.assertIsNotNone(user_message)
+        assert isinstance(user_message, ChatbotCompletion)
         self.assertEqual(user_message.message, "Hello World")
 
         # AI 메시지 DB 저장 확인
@@ -60,6 +61,7 @@ class CompletionCreateAPITest(CompletionAPITestBase):
             role=UserRole.ASSISTANT,
         ).first()
 
+        assert isinstance(ai_message, ChatbotCompletion)
         self.assertIsNotNone(ai_message)
         self.assertEqual(ai_message.message, "GreetingsWorld")
 

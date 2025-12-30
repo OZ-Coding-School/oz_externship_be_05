@@ -25,6 +25,13 @@ delete_response
 
 
 class CompletionAPITestBase(APITestCase):
+    user: User
+    other_user: User
+    password: str
+    question_category: QuestionCategory
+    question: Question
+    session: ChatbotSession
+    other_session: ChatbotSession
 
     @classmethod
     def setUpTestData(cls) -> None:
@@ -74,7 +81,7 @@ class CompletionAPITestBase(APITestCase):
         self.client.force_authenticate(self.user)
 
     def get_url(self, session_id: int) -> str:
-        return reverse("chatbot:completion", kwargs={"session_id": session_id})
+        return reverse("chatbot:completion-stream", kwargs={"session_id": session_id})
 
     def post_response(self, session_id: int, message: str | None = None, **kwargs: Any) -> Any:
         payload: dict[str, Any] = {}

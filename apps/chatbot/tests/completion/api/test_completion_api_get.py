@@ -35,7 +35,7 @@ test_completion_list_404_other_session
 
 class CompletionListAPITest(CompletionAPITestBase):
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         super().setUpTestData()
 
         ChatbotCompletion.objects.create(
@@ -60,7 +60,7 @@ class CompletionListAPITest(CompletionAPITestBase):
             role=UserRole.USER,
         )
 
-    def test_completion_list_200(self) -> None:
+    def test_completion_list_200(self) -> None: #여기서 에러
         response = self.get_response(self.session.id)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -101,6 +101,6 @@ class CompletionListAPITest(CompletionAPITestBase):
         response = self.get_response(invalid_session_id)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_completion_list_404_other_session(self) -> None:
+    def test_completion_list_404_other_session(self) -> None: # 여기서 에러
         response = self.get_response(self.other_session.id)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
