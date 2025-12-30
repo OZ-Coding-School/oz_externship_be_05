@@ -44,7 +44,7 @@ class SessionCreateAPITest(SessionAPITestBase):
         self.assertEqual(session.user, self.user)
         self.assertEqual(session.question, self.question)
         self.assertEqual(session.title, "새로운 세션")
-        self.assertEqual(session.using_model, ChatModel.OPENAI)
+        self.assertEqual(session.using_model, ChatModel.GEMINI)
 
         # 응답 데이터 검증
         data = response.json()
@@ -66,10 +66,7 @@ class SessionCreateAPITest(SessionAPITestBase):
     def test_session_create_400_question_not_exists(self) -> None:
         invalid_question_id = self.question.id + 9999
 
-        response = self.post_session(
-            question_id=invalid_question_id,
-            using_model=ChatModel.GEMINI
-        )
+        response = self.post_session(question_id=invalid_question_id, using_model=ChatModel.GEMINI)
 
         self.assertIn(
             response.status_code,

@@ -62,7 +62,7 @@ class SessionCreateSerializerTests(TestCase):
         data: dict[str, str | int] = {
             "question": self.question.id,
             "title": "test_session",
-            "using_model": ChatModel.OPENAI,
+            "using_model": ChatModel.GEMINI,
         }
 
         request = self._make_request_with_user()
@@ -76,7 +76,7 @@ class SessionCreateSerializerTests(TestCase):
         self.assertEqual(session.user, self.user)
         self.assertEqual(session.question, self.question)
         self.assertEqual(session.title, data["title"])
-        self.assertEqual(session.using_model, ChatModel.OPENAI)
+        self.assertEqual(session.using_model, ChatModel.GEMINI)
 
     # 사용모델 누락 시 serializer가 에러메세지 반환하는지 테스트
     def test_missing_using_model_is_valid(self) -> None:
