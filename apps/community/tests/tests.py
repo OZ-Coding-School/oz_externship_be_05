@@ -46,12 +46,12 @@ class PostCreateSerializerTest(TestCase):
         serializer = PostCreateUpdateSerializer(data=data, context={"request": drf_request})
 
         self.assertTrue(serializer.is_valid(), msg=serializer.errors)
-        post: Post = serializer.save()
+        post: Post = serializer.save(author=self.user)
 
         self.assertEqual(post.title, data["title"])
         self.assertEqual(post.content, data["content"])
         self.assertEqual(post.author, self.user)
-        self.assertEqual(post.category, self.category.id)
+        self.assertEqual(post.category, self.category)
 
     # 게시글 생성 응답 형식 테스트
     def test_create_post_response_format(self) -> None:
@@ -66,14 +66,12 @@ class PostCreateSerializerTest(TestCase):
 
         serializer = PostCreateUpdateSerializer(data=data, context={"request": drf_request})
         self.assertTrue(serializer.is_valid(), msg=serializer.errors)
-        post: Post = serializer.save()
+        post: Post = serializer.save(author=self.user)
 
         response_data: Dict[str, Any] = serializer.to_representation(post)
 
-        self.assertIn("detail", response_data)
-        self.assertIn("post_id", response_data)
-        self.assertEqual(response_data["post_id"], post.id)
-        self.assertEqual(response_data["detail"], "게시글이 성공적 등록됨.")
+        self.assertIn("id", response_data)
+        self.assertEqual(response_data["id"], post.id)
 
     # 게시글 필수 필드 누락 시 실패할때 테스트
     def test_create_post_missing_required_fields(self) -> None:
@@ -144,13 +142,9 @@ class PostCreateSerializerTest(TestCase):
         drf_request = Request(request)
 
         serializer = PostCreateUpdateSerializer(data=data, context={"request": drf_request})
-        is_valid = serializer.is_valid()
-
-        if is_valid:
-            post: Post = serializer.save()
-            self.assertIn(post.title, "테스트 제목")
-        else:
-            self.skipTest("Validation 예기치 않게 실패함 ")
+        serializer.is_valid()
+        post: Post = serializer.save(author=self.user)
+        self.assertIn(post.title, "테스트 제목")
 
 
 #### 게시글 수정 시리얼라이저 테스트
