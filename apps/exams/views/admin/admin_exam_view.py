@@ -15,14 +15,14 @@ from apps.core.exceptions.exception_messages import EMS
 from apps.exams.models import Exam
 from apps.exams.permissions.admin_permission import AdminUserPermissionView
 from apps.exams.serializers.admin.admin_exam_serializer import (
-    ExamListSerializer,
-    ExamQuestionsListSerializer,
-    ExamSerializer,
+    AdminExamListSerializer,
+    AdminExamQuestionsListSerializer,
+    AdminExamSerializer,
 )
-from apps.exams.services.admin import ExamService
+from apps.exams.services.admin import AdminExamService
 
 # 서비스 인스턴스 생성
-exam_service = ExamService()
+exam_service = AdminExamService()
 
 
 class ExamCustomPageNumberPagination(PageNumberPagination):
@@ -49,7 +49,7 @@ class ExamAdminListCreateAPIView(AdminUserPermissionView):
     """
 
     pagination_class = ExamCustomPageNumberPagination
-    serializer_class: Type[BaseSerializer[Any]] = ExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
+    serializer_class = AdminExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
 
     @extend_schema(
         tags=["쪽지시험 관리"],
@@ -76,7 +76,7 @@ class ExamAdminListCreateAPIView(AdminUserPermissionView):
                 name="size", description="페이지당 개수", required=False, type=OpenApiTypes.INT, default=10
             ),
         ],
-        responses={200: ExamListSerializer(many=True)},
+        responses={200: AdminExamListSerializer(many=True)},
     )
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """
@@ -92,7 +92,7 @@ class ExamAdminListCreateAPIView(AdminUserPermissionView):
             page = paginator.paginate_queryset(queryset, request, view=self)
 
             # 목록 조회: ExamListSerializer
-            serializer = ExamListSerializer(page, many=True)
+            serializer = AdminExamListSerializer(page, many=True)
             return paginator.get_paginated_response(serializer.data)
 
         except ValueError:
@@ -103,16 +103,16 @@ class ExamAdminListCreateAPIView(AdminUserPermissionView):
         tags=["쪽지시험 관리"],
         summary="쪽지시험 생성",
         description="새로운 쪽지시험을 생성합니다. 과목 ID, 시험 제목, 썸네일 URL을 입력받습니다.",
-        request=ExamSerializer,  # 요청 시 사용할 시리얼라이저
+        request=AdminExamSerializer,  # 요청 시 사용할 시리얼라이저
         responses={
-            201: ExamSerializer,  # 성공 시 생성된 데이터 반환
+            201: AdminExamSerializer,  # 성공 시 생성된 데이터 반환
             400: OpenApiResponse(description="유효하지 않은 입력 데이터"),
             404: OpenApiResponse(description="해당 과목 정보를 찾을 수 없음"),
         },
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """POST: 시험 생성 view (create)"""
-        serializer = ExamSerializer(data=request.data)
+        serializer = AdminExamSerializer(data=request.data)
 
         try:
             serializer.is_valid(raise_exception=True)  # 시리얼라이저로 유효성 검사
@@ -130,7 +130,7 @@ class ExamAdminListCreateAPIView(AdminUserPermissionView):
 
         # subject_name N+1 쿼리 방지.
         exam_with_subject = exam_service.get_exam_by_id(exam.pk)
-        response_serializer = ExamSerializer(exam_with_subject)
+        response_serializer = AdminExamSerializer(exam_with_subject)
 
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
@@ -142,17 +142,15 @@ class ExamAdminRetrieveUpdateDestroyAPIView(AdminUserPermissionView):
     DELETE: 쪽지시험 삭제
     """
 
-    serializer_class: Type[BaseSerializer[Any]] = ExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
+    serializer_class: Type[BaseSerializer[Any]] = AdminExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
 
-    def get_object_for_detail(self, pk: str) -> Exam:
+    def get_object_for_detail(self, pk: int) -> Exam:
         """
         PK를 사용하여 Exam 객체를 가져옵니다.
         subject_id의 title을 가져옵니다.
-        400 에러를 처리하기 위해 pk: str 처리합니다. (pk: int = 404)
         """
         try:
-            exam_id: int = int(pk)
-            return exam_service.get_exam_by_id(exam_id)
+            return exam_service.get_exam_by_id(pk)
         except ValueError:
             raise ValueError  # PK 포맷 오류 (호출단에 메시지 존재)
         except Exam.DoesNotExist:
@@ -162,14 +160,14 @@ class ExamAdminRetrieveUpdateDestroyAPIView(AdminUserPermissionView):
         tags=["쪽지시험 관리"],
         summary="쪽지시험 상세 조회",
         description="특정 ID의 쪽지시험 상세 정보와 속한 문제를 조회합니다.",
-        responses={200: ExamQuestionsListSerializer},
+        responses={200: AdminExamQuestionsListSerializer},
     )
-    def get(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> Response:
+    def get(self, request: Request, pk: int, *args: Any, **kwargs: Any) -> Response:
         """GET: 시험 상세 조회 view (retrieve)"""
         try:
-            exam = exam_service.get_exam_questions_by_id(int(pk))
+            exam = exam_service.get_exam_questions_by_id(pk)
 
-            serializer = ExamQuestionsListSerializer(exam)
+            serializer = AdminExamQuestionsListSerializer(exam)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except ValueError:
             return Response(EMS.E400_INVALID_DATA("요청"), status=status.HTTP_400_BAD_REQUEST)
@@ -180,14 +178,14 @@ class ExamAdminRetrieveUpdateDestroyAPIView(AdminUserPermissionView):
         tags=["쪽지시험 관리"],
         summary="쪽지시험 수정",
         description="시험 제목, 과목 ID, 썸네일 등을 수정합니다.",
-        request=ExamSerializer,
+        request=AdminExamSerializer,
         responses={
-            200: ExamSerializer,
+            200: AdminExamSerializer,
             400: OpenApiResponse(description="유효하지 않은 요청 데이터입니다."),
             404: OpenApiResponse(description="수정할 쪽지시험 정보을(를) 찾을 수 없습니다."),
         },
     )
-    def put(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> Response:
+    def put(self, request: Request, pk: int, *args: Any, **kwargs: Any) -> Response:
         """PUT: 시험 수정 view (update)"""
         try:
             instance = self.get_object_for_detail(pk)
@@ -222,15 +220,13 @@ class ExamAdminRetrieveUpdateDestroyAPIView(AdminUserPermissionView):
             404: OpenApiResponse(description="삭제할 쪽지시험 정보을(를) 찾을 수 없습니다."),
         },
     )
-    def delete(self, request: Request, pk: str, *args: Any, **kwargs: Any) -> Response:
+    def delete(self, request: Request, pk: int, *args: Any, **kwargs: Any) -> Response:
         """DELETE: 시험 삭제 view (destroy)"""
         try:
-            exam_id: int = int(pk)
-
-            exam_service.delete_exam(exam_id)
+            exam_service.delete_exam(pk)
         except ValueError:
             return Response(EMS.E400_INVALID_DATA("요청"), status=status.HTTP_400_BAD_REQUEST)
         except Exam.DoesNotExist:
-            return Response(EMS.E404_NOT_FOUND("수정할 쪽지시험 정보"), status=status.HTTP_404_NOT_FOUND)
+            return Response(EMS.E404_NOT_FOUND("삭제할 쪽지시험 정보"), status=status.HTTP_404_NOT_FOUND)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
