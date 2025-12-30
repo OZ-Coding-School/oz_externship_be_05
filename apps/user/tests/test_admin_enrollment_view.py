@@ -31,9 +31,8 @@ class AdminStudentAPIMinimalTests(TestCase):
             nickname="admin",
             phone_number="01000000000",
             birthday=date(1998, 1, 4),
+            role=RoleChoices.AD,   # ✅ 이거 추가
         )
-        self.admin.is_staff = True
-        self.admin.save(update_fields=["is_staff"])
 
         self.course1 = Course.objects.create(name="초격차 백엔드 부트캠프", tag="BE")
         self.course2 = Course.objects.create(name="프론트 부트캠프", tag="FE")
