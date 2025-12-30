@@ -2,7 +2,6 @@ from django.urls import URLPattern, URLResolver, path
 
 from apps.exams.views.student import (
     ExamAccessCodeVerifyView,
-    ExamQuestionView,
     ExamDeploymentStatusCheckView,
     ExamQuestionView,
     ExamResultView,
