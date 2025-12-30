@@ -84,5 +84,5 @@ class CompletionCreateAPITest(CompletionAPITestBase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_completion_create_404_other_session(self) -> None:
-        response = self.post_response(self.session.id, "From Other World")
+        response = self.post_response(self.other_session.id, "From Other World")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

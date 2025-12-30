@@ -64,7 +64,7 @@ class CompletionListAPITest(CompletionAPITestBase):
         response = self.get_response(self.session.id)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("result", response.data)
+        self.assertIn("results", response.data)
         self.assertEqual(len(response.data["results"]), 3)
 
     def test_completion_list_pagination(self) -> None:
