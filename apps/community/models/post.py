@@ -17,6 +17,13 @@ class Post(TimeStampedModel):
     def __str__(self) -> str:
         return self.title
 
+    @property
+    def content_preview(self) -> str:
+        try:
+            return self.content[:50] + "..."
+        except IndexError:
+            return self.content
+
     class Meta:
         verbose_name = "Post"
         verbose_name_plural = "Posts"
