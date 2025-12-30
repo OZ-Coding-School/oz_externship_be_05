@@ -27,6 +27,7 @@ class BaseCourseTestCase(APITestCase):
 
         # 2. 과정 생성
         self.course = Course.objects.create(
+            id=1,
             name="테스트 과정",
             tag=1,
             description="테스트 과정",

@@ -41,10 +41,7 @@ class CohortAdmin(BaseAdmin):
     )
     readonly_fields = (
         "id",
-        "course",
         "status",
-        "number",
-        "max_student",
         "created_at",
         "updated_at",
         "course_info_display",
