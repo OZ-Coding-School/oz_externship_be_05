@@ -31,6 +31,7 @@ class CohortListView(APIView):
         cohort = Cohort.objects.filter(course=course_id)
         return Response(CohortSerializer(cohort, many=True).data)
 
+
 @extend_schema(
     summary="과목 리스트 조회 API",
     tags=["수강 과목 관리"],
