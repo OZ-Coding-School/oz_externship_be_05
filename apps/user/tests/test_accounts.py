@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import base64
 from datetime import date, timedelta
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework import status
@@ -19,6 +21,7 @@ from apps.user.views.account import (
     ChangePhoneAPIView,
     CheckNicknameAPIView,
     MeAPIView,
+    ProfileImageAPIView,
 )
 
 
@@ -184,5 +187,47 @@ class ChangePhoneAPIViewTests(TestCase):
         force_authenticate(request, user=self.user)
 
         response = ChangePhoneAPIView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class ProfileImageAPIViewTests(TestCase):
+    def setUp(self) -> None:
+        self.factory = APIRequestFactory()
+        self.user = get_user_model().objects.create_user(
+            email="image@example.com",
+            password="OldPass123!",
+            name="Tester",
+            birthday=date(2000, 1, 1),
+            gender=GenderChoices.MALE,
+            phone_number="01088889999",
+        )
+        self.test_image_path = Path("apps/user/tests/resource/test_image.png")
+
+    def test_profile_image_upload_success(self) -> None:
+        file_bytes = self.test_image_path.read_bytes()
+        upload = SimpleUploadedFile("test_image.png", file_bytes, content_type="image/png")
+        request = self.factory.patch("/api/v1/accounts/me/profile-image", {"image": upload}, format="multipart")
+        force_authenticate(request, user=self.user)
+
+        with (
+            patch("apps.core.utils.s3_client.S3Client.upload_with_key", return_value="key.jpg") as upload_mock,
+            patch("apps.core.utils.s3_client.S3Client.build_url", return_value="https://example.com/key.jpg"),
+        ):
+            response = ProfileImageAPIView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.profile_image_url, "https://example.com/key.jpg")
+        self.assertEqual(upload_mock.call_count, 3)
+
+    def test_profile_image_upload_rejects_invalid_image(self) -> None:
+        invalid_path = Path("apps/user/tests/resource/test_notimage.png")
+        file_bytes = invalid_path.read_bytes()
+        upload = SimpleUploadedFile("test_notimage.png", file_bytes, content_type="image/png")
+        request = self.factory.patch("/api/v1/accounts/me/profile-image", {"image": upload}, format="multipart")
+        force_authenticate(request, user=self.user)
+
+        response = ProfileImageAPIView.as_view()(request)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

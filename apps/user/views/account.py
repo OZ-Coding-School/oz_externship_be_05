@@ -4,19 +4,23 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.utils import timezone
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import OpenApiRequest, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.constants import USER_PROFILE_IMAGE_UPLOAD_PATH
+from apps.core.utils.image_resizer import ImageResizer
 from apps.user.models import User, Withdrawal, WithdrawalReason
 from apps.user.serializers.account import (
     ChangePasswordSerializer,
     ChangePhoneSerializer,
     NicknameCheckSerializer,
+    ProfileImageUploadSerializer,
     UserProfileSerializer,
     UserUpdateSerializer,
     WithdrawalRequestSerializer,
@@ -58,7 +62,7 @@ class MeAPIView(APIView):
     @extend_schema(
         tags=["회원관리"],
         summary="회원탈퇴 신청 API",
-        request=WithdrawalRequestSerializer,
+        request=OpenApiRequest(WithdrawalRequestSerializer),
         responses={204: None},
     )
     def delete(self, request: Request) -> Response:
@@ -130,3 +134,32 @@ class ChangePhoneAPIView(APIView):
         user = get_authenticated_user(request)
         serializer.update(user, serializer.validated_data)
         return Response({"phone_number": user.phone_number}, status=status.HTTP_200_OK)
+
+
+class ProfileImageAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    @extend_schema(
+        tags=["회원관리"],
+        summary="프로필 사진 업로드 API",
+        request=ProfileImageUploadSerializer,
+        responses={200: None},
+    )
+    def patch(self, request: Request) -> Response:
+        user = get_authenticated_user(request)
+        serializer = ProfileImageUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        urls = ImageResizer().upload_square_resizes(
+            image_file=serializer.validated_data["image"],
+            sizes=(64, 128, 256),
+            path_prefix=f"{USER_PROFILE_IMAGE_UPLOAD_PATH}{user.id}",
+        )
+
+        profile_url = urls.get("256", "")
+        user.profile_image_url = profile_url or None
+        user.save(update_fields=["profile_image_url", "updated_at"])
+        return Response(
+            status=status.HTTP_200_OK,
+        )
