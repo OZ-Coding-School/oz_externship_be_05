@@ -28,6 +28,7 @@ class CourseListViewTest(BaseCourseTestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data, expected_data)
 
+
 class CohortListDetailViewTest(BaseCourseTestCase):
 
     def setUp(self) -> None:
