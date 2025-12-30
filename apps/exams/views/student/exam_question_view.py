@@ -5,7 +5,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.core.exceptions.exception_messages import EMS
-from apps.exams.models import ExamDeployment, ExamQuestion, ExamSubmission
+from apps.exams.models import ExamDeployment, ExamSubmission
 from apps.exams.permissions.student_permission import StudentUserPermissionView
 from apps.exams.serializers.student.exam_question_serializer import (
     ExamQuestionResponseSerializer,
@@ -87,8 +87,15 @@ class ExamQuestionView(StudentUserPermissionView):
         # 시험 접근 가능 여부 검증 (서비스 레이어)
         validate_exam_access(deployment=deployment, submission=submission)
 
-        # 문제 목록 조회 (번호 순서대로)
-        questions = list(ExamQuestion.objects.filter(exam_id=deployment.exam_id).order_by("id"))
+        # 문제 목록 조회 (스냅샷)
+        questions = deployment.questions_snapshot
+
+        # 각 문제에 번호 추가 및 정렬
+        for idx, question in enumerate(questions, start=1):
+            question["number"] = idx
+
+        # 번호 순서대로 정렬
+        questions_sorted = sorted(questions, key=lambda q: q["number"])
 
         # 경과 시간 계산 (서비스 레이어)
         elapsed_time = calculate_elapsed_time(submission=submission)
@@ -103,7 +110,7 @@ class ExamQuestionView(StudentUserPermissionView):
             "duration_time": deployment.duration_time,
             "elapsed_time": elapsed_time,
             "cheating_count": cheating_count,
-            "questions": questions,
+            "questions": questions_sorted,
         }
 
         # 직렬화 및 응답
