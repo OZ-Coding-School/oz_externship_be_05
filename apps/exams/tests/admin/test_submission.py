@@ -118,12 +118,10 @@ class AdminExamSubmissionTest(APITestCase):
         print(res.status_code, res.data)
 
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.data["page"], 1)
-        self.assertEqual(res.data["size"], 10)
-        self.assertEqual(res.data["total_count"], 1)
-        self.assertEqual(res.data["submissions"][0]["submission_id"], self.submission.id)
-        self.assertEqual(res.data["submissions"][0]["nickname"], "한율_회장")
-        self.assertEqual(res.data["submissions"][0]["name"], "한율")
+        self.assertEqual(res.data["count"], 1)
+        self.assertIsNone(res.data["previous"])
+        self.assertIsNone(res.data["next"])
+        self.assertEqual(res.data["results"][0]["submission_id"], self.submission.id)
 
     def test_200_when_empty_result(self) -> None:
         self.client.force_authenticate(self.admin)
@@ -132,8 +130,8 @@ class AdminExamSubmissionTest(APITestCase):
         res = self.client.get(self.url, params)
 
         self.assertEqual(res.status_code, 200)
-        self.assertEqual(res.data["total_count"], 0)
-        self.assertEqual(res.data["submissions"], [])
+        self.assertEqual(res.data["count"], 0)
+        self.assertEqual(res.data["results"], [])
 
     def test_400_invalid_sort(self) -> None:
         self.client.force_authenticate(self.admin)

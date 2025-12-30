@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Literal, Optional
+from typing import Literal, Mapping, Optional, cast
 
 from django.db.models import Q, QuerySet
 from rest_framework.exceptions import NotFound, ValidationError
@@ -37,8 +37,29 @@ def _bad_request() -> ValidationError:
     return ValidationError(EMS.E400_INVALID_REQUEST("조회"))
 
 
-def _not_found() -> NotFound:
-    return NotFound(EMS.E404_NO_EXAM_HISTORY)
+def parse_admin_submission_list_params(qp: Mapping[str, str]) -> AdminSubmissionListParams:
+    try:
+        page = int(qp.get("page", 1))
+        size = int(qp.get("size", 10))
+        search_keyword = str(qp.get("search_keyword", "") or "")
+        cohort_id = int(qp.get("cohort_id", 0)) if qp.get("cohort_id") else None
+        exam_id = int(qp.get("exam_id", 0)) if qp.get("exam_id") else None
+        sort = qp.get("sort", "finished_at")
+        order = qp.get("order", "desc")
+    except (TypeError, ValueError, KeyError):
+        raise _bad_request()
+
+    params = AdminSubmissionListParams(
+        page=page,
+        size=size,
+        search_keyword=search_keyword,
+        cohort_id=cohort_id,
+        exam_id=exam_id,
+        sort=sort,
+        order=cast(Order, order),
+    )
+    _validate_params(params)
+    return params
 
 
 def _validate_params(params: AdminSubmissionListParams) -> None:
@@ -52,7 +73,16 @@ def _validate_params(params: AdminSubmissionListParams) -> None:
         raise _bad_request()
 
 
-def _apply_filters(qs: QuerySet[ExamSubmission], params: AdminSubmissionListParams) -> QuerySet[ExamSubmission]:
+def build_admin_submission_query(params: AdminSubmissionListParams) -> QuerySet[ExamSubmission]:
+    qs = ExamSubmission.objects.all().select_related(
+        "submitter",
+        "deployment",
+        "deployment__cohort",
+        "deployment__cohort__course",
+        "deployment__exam",
+        "deployment__exam__subject",
+    )
+
     if params.cohort_id is not None:
         qs = qs.filter(deployment__cohort_id=params.cohort_id)
 
@@ -63,49 +93,6 @@ def _apply_filters(qs: QuerySet[ExamSubmission], params: AdminSubmissionListPara
     if keyword:
         qs = qs.filter(Q(submitter__nickname__icontains=keyword) | Q(submitter__name__icontains=keyword))
 
-    return qs
-
-
-def _apply_sort(qs: QuerySet[ExamSubmission], params: AdminSubmissionListParams) -> QuerySet[ExamSubmission]:
-    field = ALLOWED_SORTS[params.sort]
-    prefix = "" if params.order == "asc" else "-"
-
-    return qs.order_by(f"{prefix}{field}", f"{prefix}id")
-
-
-def get_admin_exam_submission_list(params: AdminSubmissionListParams) -> dict[str, Any]:
-    _validate_params(params)
-
-    qs = ExamSubmission.objects.all().select_related(
-        "submitter",
-        "deployment",
-        "deployment__cohort",
-        "deployment__cohort__course",
-        "deployment__exam",
-        "deployment__exam__subject",
-    )
-
-    qs = _apply_filters(qs, params)
-
-    total_count = qs.count()
-    if total_count == 0:
-        return {
-            "page": params.page,
-            "size": params.size,
-            "total_count": 0,
-            "submissions": [],
-        }
-
-    qs = _apply_sort(qs, params)
-
-    start = (params.page - 1) * params.size
-    end = start + params.size
-
-    submissions = list(qs[start:end])
-
-    return {
-        "page": params.page,
-        "size": params.size,
-        "total_count": total_count,
-        "submissions": submissions,
-    }
+    sort_field = ALLOWED_SORTS[params.sort]
+    prefix = "-" if params.order == "desc" else ""
+    return qs.order_by(f"{prefix}{sort_field}", f"{prefix}id")

@@ -49,15 +49,3 @@ class AdminSubmissionListSerializer(serializers.ModelSerializer):  # type: ignor
         )
         # 관리자 조회 전용 응답이므로 전체 read-only
         read_only_fields = fields
-
-
-class AdminExamSubmissionListSerializer(serializers.Serializer):  # type: ignore[type-arg]
-    """
-    관리자 응시내역 목록 응답 wrapper.
-    payload(dict) 그대로 감싸서 내려준다.
-    """
-
-    page = serializers.IntegerField()
-    size = serializers.IntegerField()
-    total_count = serializers.IntegerField()
-    submissions = AdminSubmissionListSerializer(many=True)
