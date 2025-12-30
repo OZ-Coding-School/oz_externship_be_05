@@ -26,12 +26,12 @@ ROLE_QUERY_MAP: dict[str, str] = {
 
 
 class AdminAccountWithdrawalListAPIView(APIView):
-
     permission_classes = [IsAdminStaffRole]
 
     @extend_schema(
         tags=["회원관리"],
         summary="회원탈퇴 요청 목록 조회 API",
+        responses={200: AdminAccountWithdrawalListSerializer},
         parameters=[
             OpenApiParameter("page", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
             OpenApiParameter("page_size", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
