@@ -1,11 +1,17 @@
-from django.urls import URLPattern, URLResolver, path
+from django.urls import path
 
 from apps.community.views.post_comment import (
     PostCommentListCreateAPIView,
     PostCommentUpdateDestroyAPIView,
 )
+from apps.community.views.post_views import (
+    PostDetailAPIView,
+    PostListCreateAPIView,
+)
 
-urlpatterns: list[URLPattern | URLResolver] = [
+urlpatterns = [
+    path("", PostListCreateAPIView.as_view(), name="post-list-create"),
+    path("<int:post_id>/", PostDetailAPIView.as_view(), name="post-detail"),
     path("<int:post_id>/comments", PostCommentListCreateAPIView.as_view(), name="post_comment_list_create"),
     path(
         "<int:post_id>/comments/<int:comment_id>",
