@@ -184,17 +184,17 @@ class AdminStudentEnrollAcceptView(APIView):
     def post(self, request: Request) -> Response:
         req = AdminStudentEnrollRequestSerializer(data=request.data)
         req.is_valid(raise_exception=True)
+
         ids: list[int] = req.validated_data["enrollments"]
+        ids_set = set(ids)
 
         with transaction.atomic():
             enrollments = StudentEnrollmentRequest.objects.select_for_update().filter(
-                id__in=ids, status=EnrollmentStatus.PENDING
+                id__in=ids_set,
+                status__in=[EnrollmentStatus.PENDING],
             )
-            if enrollments.count() != len(set(ids)):
-                raise ValidationError({"error_detail": "승인 처리에 실패했습니다."})
 
-            user_ids = list(enrollments.values_list("user_id", flat=True))
-            user_ids = list(set(user_ids))
+            user_ids = list(enrollments.values_list("user_id", flat=True).distinct())
 
             enrollments.update(status=EnrollmentStatus.ACCEPTED)
 
@@ -204,11 +204,10 @@ class AdminStudentEnrollAcceptView(APIView):
                 is_superuser=False,
             )
 
-        data = {"detail": "수강생 등록 신청들에 대한 승인 요청이 처리되었습니다."}
-
-        res = AdminStudentEnrollApprovalStatusSerializer(data=data)
+        res = AdminStudentEnrollApprovalStatusSerializer(
+            data={"detail": "수강생 등록 신청들에 대한 승인 요청이 처리되었습니다."}
+        )
         res.is_valid(raise_exception=True)
-
         return Response(res.data, status=drf_status.HTTP_200_OK)
 
 
@@ -224,21 +223,20 @@ class AdminStudentEnrollRejectView(APIView):
     def post(self, request: Request) -> Response:
         req = AdminStudentEnrollRequestSerializer(data=request.data)
         req.is_valid(raise_exception=True)
+
         ids: list[int] = req.validated_data["enrollments"]
+        ids_set = set(ids)
 
         with transaction.atomic():
             enrollments = StudentEnrollmentRequest.objects.select_for_update().filter(
-                id__in=ids, status=EnrollmentStatus.PENDING
+                id__in=ids_set,
+                status__in=[EnrollmentStatus.PENDING],
             )
-
-            if enrollments.count() != len(set(ids)):
-                raise ValidationError({"error_detail": "거절 처리에 실패했습니다."})
-
             enrollments.update(status=EnrollmentStatus.REJECTED)
 
-        data = {"detail": "수강생 등록 신청들에 대한 거절 요청이 처리되었습니다."}
-
-        res = AdminStudentEnrollApprovalStatusSerializer(data=data)
+        res = AdminStudentEnrollApprovalStatusSerializer(
+            data={"detail": "수강생 등록 신청들에 대한 거절 요청이 처리되었습니다."}
+        )
         res.is_valid(raise_exception=True)
 
         return Response(res.data, status=drf_status.HTTP_200_OK)
