@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory, force_authenticate
@@ -44,8 +44,14 @@ class AdminWithdrawalAPIMinimalTests(TestCase):
             role=RoleChoices.ST,
         )
 
-        self.w1 = Withdrawal.objects.create(user=self.u1)
-        self.w2 = Withdrawal.objects.create(user=self.u2)
+        self.w1 = Withdrawal.objects.create(
+            user=self.u1,
+            due_date=date.today() + timedelta(days=7),
+        )
+        self.w2 = Withdrawal.objects.create(
+            user=self.u2,
+            due_date=date.today() + timedelta(days=7),
+        )
 
     def test_withdrawal_list_ok(self) -> None:
         request = self.factory.get("/admin/withdrawals")
