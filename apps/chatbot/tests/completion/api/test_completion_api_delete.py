@@ -54,7 +54,7 @@ class CompletionDeleteAPITest(CompletionAPITestBase):
             role=UserRole.ASSISTANT,
         )
 
-    def test_completion_delete_204(self) -> None: # 여기서 에러
+    def test_completion_delete_204(self) -> None:
 
         self.assertEqual(self.session.messages.count(), 2)
         response = self.delete_response(self.session.id)
@@ -66,16 +66,16 @@ class CompletionDeleteAPITest(CompletionAPITestBase):
         response = self.delete_response(self.session.id)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_completion_delete_404_session_notfound(self) -> None: # 여기서 에러
+    def test_completion_delete_404_session_notfound(self) -> None:
         invalid_session_id = self.session.id + 999
         response = self.delete_response(invalid_session_id)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_completion_delete_404_other_session(self) -> None: #여기서 에러
+    def test_completion_delete_404_other_session(self) -> None:
         response = self.delete_response(self.other_session.id)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_completion_delete_noneffective_other_session(self) -> None: # 여기서 에러
+    def test_completion_delete_noneffective_other_session(self) -> None:
         ChatbotCompletion.objects.create(
             session=self.other_session,
             message="다른 세션 메세지",
