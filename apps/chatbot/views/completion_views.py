@@ -20,14 +20,16 @@ from apps.chatbot.services.completion_response_service import (
 from apps.chatbot.views.mixins import ChatbotCompletionMixin, ChatbotCursorPagination
 from apps.core.exceptions.exception_messages import EMS
 
+"""
+Completion API Views
+
+CompletionAPIView: /sessions/{session_id}/completions/
+    POST   - AI 응답 생성 (SSE 스트리밍)
+    GET    - 메시지 목록 조회 (페이지네이션)
+    DELETE - 세션 내 모든 메시지 삭제
+"""
 
 class CompletionAPIView(APIView, ChatbotCompletionMixin):
-    """
-    SSE 스트리밍 AI 응답 생성 API
-    GET: /sessions/{session_id}/completion  메세지 목록 조회
-    POST:  /sessions/{session_id}/completion  AI 응답 생성 (SSE 스트리밍)
-    DELETE:  /sessions/{session_id}/completion  모든 메세지 삭제
-    """
 
     permission_classes = [IsAuthenticated]
     pagination_class = ChatbotCursorPagination

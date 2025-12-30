@@ -13,6 +13,13 @@ from apps.chatbot.serializers.session_serializers import (
 from apps.chatbot.views.mixins import ChatbotCursorPagination, ChatbotSessionMixin
 from apps.core.exceptions.exception_messages import EMS
 
+"""
+Session API Views
+
+SessionCreateListAPIView: /sessions/
+    POST - 세션 생성
+    GET  - 세션 목록 조회 (페이지네이션)
+"""
 
 class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
     serializer_class = SessionSerializer
@@ -69,6 +76,10 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
         serializer = self.serializer_class(page, many=True)
         return paginator.get_paginated_response(serializer.data)
 
+"""
+SessionDeleteView: /sessions/{session_id}/
+    DELETE - 세션 완전삭제
+"""
 
 class SessionDeleteView(APIView, ChatbotSessionMixin):
     permission_classes = [IsAuthenticated]
