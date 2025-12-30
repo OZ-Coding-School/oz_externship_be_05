@@ -33,7 +33,7 @@ class SessionCreateAPITest(SessionAPITestBase):
         response = self.post_session(
             question_id=self.question.id,
             title="새로운 세션",
-            using_model=ChatModel.OPENAI,
+            using_model=ChatModel.GEMINI,
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -68,7 +68,7 @@ class SessionCreateAPITest(SessionAPITestBase):
 
         response = self.post_session(
             question_id=invalid_question_id,
-            using_model=ChatModel.OPENAI,
+            using_model=ChatModel.GEMINI
         )
 
         self.assertIn(
