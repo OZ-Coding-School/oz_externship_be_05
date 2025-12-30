@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from apps.community.models.post_category import PostCategory
 from apps.community.models.post import Post
+from apps.community.models.post_category import PostCategory
 from apps.user.models import User
 
 
