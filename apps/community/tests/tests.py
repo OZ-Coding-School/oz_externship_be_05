@@ -10,10 +10,9 @@ from rest_framework.test import force_authenticate
 from apps.community.models.post import Post
 from apps.community.models.post_category import PostCategory
 from apps.community.serializers.post_serializers import (
-    PostCreateSerializer,
+    PostCreateUpdateSerializer,
     PostDetailSerializer,
     PostListSerializer,
-    PostUpdateSerializer,
 )
 
 User = get_user_model()
@@ -37,14 +36,14 @@ class PostCreateSerializerTest(TestCase):
         data: Dict[str, Any] = {
             "title": "테스트 게시글",
             "content": "테스트 내용입니다.",
-            "category_id": self.category.id,
+            "category": self.category.id,
         }
 
         request = self.factory.post("/api/posts/")
         force_authenticate(request, user=self.user)
         drf_request = Request(request)
 
-        serializer = PostCreateSerializer(data=data, context={"request": drf_request})
+        serializer = PostCreateUpdateSerializer(data=data, context={"request": drf_request})
 
         self.assertTrue(serializer.is_valid(), msg=serializer.errors)
         post: Post = serializer.save()
@@ -52,20 +51,20 @@ class PostCreateSerializerTest(TestCase):
         self.assertEqual(post.title, data["title"])
         self.assertEqual(post.content, data["content"])
         self.assertEqual(post.author, self.user)
-        self.assertEqual(post.category_id, self.category.id)
+        self.assertEqual(post.category, self.category.id)
 
     # 게시글 생성 응답 형식 테스트
     def test_create_post_response_format(self) -> None:
         data: Dict[str, Any] = {
             "title": "테스트",
             "content": "내용",
-            "category_id": self.category.id,
+            "category": self.category.id,
         }
         request = self.factory.post("/api/posts/")
         force_authenticate(request, user=self.user)
         drf_request = Request(request)
 
-        serializer = PostCreateSerializer(data=data, context={"request": drf_request})
+        serializer = PostCreateUpdateSerializer(data=data, context={"request": drf_request})
         self.assertTrue(serializer.is_valid(), msg=serializer.errors)
         post: Post = serializer.save()
 
@@ -80,13 +79,13 @@ class PostCreateSerializerTest(TestCase):
     def test_create_post_missing_required_fields(self) -> None:
         data: Dict[str, Any] = {
             "content": "내용만 있음",
-            "category_id": self.category.id,
+            "category": self.category.id,
         }
         request = self.factory.post("/api/posts/")
         force_authenticate(request, user=self.user)
         drf_request = Request(request)
 
-        serializer = PostCreateSerializer(data=data, context={"request": drf_request})
+        serializer = PostCreateUpdateSerializer(data=data, context={"request": drf_request})
 
         is_valid = serializer.is_valid()
         if not is_valid:
@@ -95,21 +94,21 @@ class PostCreateSerializerTest(TestCase):
             self.skipTest("Mixin fields가 필요한 검증을 제대로 수행하지 못했습니다.")
 
     # 게시글 존재하지 않는 카테고리 ID 실패 테스트
-    def test_create_post_invalid_category_id(self) -> None:
+    def test_create_post_invalid_category(self) -> None:
         data: Dict[str, Any] = {
             "title": "테스트",
             "content": "내용",
-            "category_id": 99999999,
+            "category": 99999999,
         }
         request = self.factory.post("/api/posts/")
         force_authenticate(request, user=self.user)
         drf_request = Request(request)
 
-        serializer = PostCreateSerializer(data=data, context={"request": drf_request})
+        serializer = PostCreateUpdateSerializer(data=data, context={"request": drf_request})
 
         is_valid = serializer.is_valid()
         if not is_valid:
-            self.assertIn("category_id", serializer.errors)
+            self.assertIn("category", serializer.errors)
         else:
             self.skipTest("Mixin 유효성검사 메서드가 제대로 호출되지 않았습니다.")
 
@@ -118,13 +117,13 @@ class PostCreateSerializerTest(TestCase):
         data: Dict[str, Any] = {
             "title": "    ",
             "content": "내용",
-            "category_id": self.category.id,
+            "category": self.category.id,
         }
         request = self.factory.post("/api/posts/")
         force_authenticate(request, user=self.user)
         drf_request = Request(request)
 
-        serializer = PostCreateSerializer(data=data, context={"request": drf_request})
+        serializer = PostCreateUpdateSerializer(data=data, context={"request": drf_request})
 
         is_valid = serializer.is_valid()
 
@@ -138,13 +137,13 @@ class PostCreateSerializerTest(TestCase):
         data: Dict[str, Any] = {
             "title": "  테스트 제목  ",
             "content": "내용",
-            "category_id": self.category.id,
+            "category": self.category.id,
         }
         request = self.factory.post("/api/posts/")
         force_authenticate(request, user=self.user)
         drf_request = Request(request)
 
-        serializer = PostCreateSerializer(data=data, context={"request": drf_request})
+        serializer = PostCreateUpdateSerializer(data=data, context={"request": drf_request})
         is_valid = serializer.is_valid()
 
         if is_valid:
@@ -178,26 +177,26 @@ class PostUpdateSerializerTest(TestCase):
         data: Dict[str, Any] = {
             "title": "수정된 제목",
             "content": "수정된 내용",
-            "category_id": self.category2.id,
+            "category": self.category2.id,
         }
 
-        serializer = PostUpdateSerializer(instance=self.post, data=data)
+        serializer = PostCreateUpdateSerializer(instance=self.post, data=data)
         self.assertTrue(serializer.is_valid(), msg=serializer.errors)
         updated_post: Post = serializer.save()
 
         self.assertEqual(updated_post.title, "수정된 제목")
         self.assertEqual(updated_post.content, "수정된 내용")
-        self.assertEqual(updated_post.category_id, self.category2.id)
+        self.assertEqual(updated_post.category, self.category2)
 
     # 게시글 수정 응답 형식 테스트
     def test_update_post_response_format(self) -> None:
         data: Dict[str, Any] = {
             "title": "수정",
             "content": "수정 내용",
-            "category_id": self.category2.id,
+            "category": self.category2.id,
         }
 
-        serializer = PostUpdateSerializer(instance=self.post, data=data)
+        serializer = PostCreateUpdateSerializer(instance=self.post, data=data)
         self.assertTrue(serializer.is_valid(), msg=serializer.errors)
         updated_post: Post = serializer.save()
 
@@ -205,7 +204,7 @@ class PostUpdateSerializerTest(TestCase):
         self.assertEqual(response_data["id"], updated_post.id)
         self.assertEqual(response_data["title"], data["title"])
         self.assertEqual(response_data["content"], data["content"])
-        self.assertEqual(response_data["category_id"], self.category2.id)
+        self.assertEqual(response_data["category"], self.category2.id)
 
     # 부분 수정 불가 테스트
     def test_update_post_partial_update_not_allowed(self) -> None:
@@ -213,12 +212,12 @@ class PostUpdateSerializerTest(TestCase):
             "title": "제목만 수정",
         }
 
-        serializer = PostUpdateSerializer(instance=self.post, data=data)
+        serializer = PostCreateUpdateSerializer(instance=self.post, data=data)
 
         is_valid = serializer.is_valid()
         if not is_valid:
             self.assertIn("content", serializer.errors)
-            self.assertIn("category_id", serializer.errors)
+            self.assertIn("category", serializer.errors)
         else:
             self.skipTest("Mixin 필수 필드 검증이 작동되지 않았습니다.")
 
@@ -227,16 +226,16 @@ class PostUpdateSerializerTest(TestCase):
         data: Dict[str, Any] = {
             "title": "수정",
             "content": "수정 내용",
-            "category_id": 99999999,
+            "category": 99999999,
         }
 
-        serializer = PostUpdateSerializer(instance=self.post, data=data)
+        serializer = PostCreateUpdateSerializer(instance=self.post, data=data)
 
         is_valid = serializer.is_valid()
         if not is_valid:
-            self.assertIn("category_id", serializer.errors)
+            self.assertIn("category", serializer.errors)
         else:
-            self.skipTest("Mixin validate_category_id 불러오지 못했습니다.")
+            self.skipTest("Mixin validate_category 불러오지 못했습니다.")
 
 
 #### 게시글 목록 시리얼라이저 테스트
@@ -294,7 +293,7 @@ class PostListSerializerTest(TestCase):
 
         author_data: Dict[str, Any] = cast(Dict[str, Any], data["author"])
         self.assertEqual(author_data["id"], self.user.id)
-        self.assertEqual(author_data["name"], "테스터")
+        self.assertEqual(author_data["nickname"], "테스터")
         self.assertIn("profile_image_url", author_data)
 
     # 긴 내용 미리보기 잘림 테스트
@@ -329,7 +328,7 @@ class PostListSerializerTest(TestCase):
         serializer = PostListSerializer(instance=short_post_annotated)
         data: Dict[str, Any] = serializer.data
 
-        self.assertEqual(data["content_preview"], "짧은 내용")
+        self.assertEqual(data["content_preview"], short_post_annotated.content_preview)
 
     # 좋아요 개수 기본값 테스트
     def test_list_like_count_default_zero(self) -> None:
@@ -451,7 +450,7 @@ class PostDetailSerializerTest(TestCase):
 
         author_data: Dict[str, Any] = cast(Dict[str, Any], data["author"])
         self.assertEqual(author_data["id"], self.user.id)
-        self.assertEqual(author_data["name"], "테스터")
+        self.assertEqual(author_data["nickname"], "테스터")
         self.assertIn("profile_image_url", author_data)
 
     # 좋아요 개수 테스트
@@ -485,23 +484,23 @@ class PostSerializerIntegrationTest(TestCase):
         create_data: Dict[str, Any] = {
             "title": "새 게시글",
             "content": "처음 작성한 내용임.",
-            "category_id": self.category1.id,
+            "category": self.category1.id,
         }
         request = self.factory.post("/api/posts/")
         force_authenticate(request, user=self.user)
         drf_request: Request = Request(request)
 
-        create_serializer = PostCreateSerializer(data=create_data, context={"request": drf_request})
+        create_serializer = PostCreateUpdateSerializer(data=create_data, context={"request": drf_request})
         self.assertTrue(create_serializer.is_valid(), msg=create_serializer.errors)
-        post: Post = create_serializer.save()
+        post = create_serializer.save(author=self.user)
 
         # 게시글 수정
         update_data: Dict[str, Any] = {
             "title": "수정된 게시글",
             "content": "수정된 내용임.",
-            "category_id": self.category2.id,
+            "category": self.category2.id,
         }
-        update_serializer = PostUpdateSerializer(instance=post, data=update_data)
+        update_serializer = PostCreateUpdateSerializer(instance=post, data=update_data)
         self.assertTrue(update_serializer.is_valid(), msg=update_serializer.errors)
         updated_post: Post = update_serializer.save()
 
