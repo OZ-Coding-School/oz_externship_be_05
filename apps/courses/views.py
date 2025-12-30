@@ -20,7 +20,7 @@ from apps.courses.serializers.enrollment import AvailableCourseSerializer
 
 @extend_schema(
     summary="기수 리스트 조회 API",
-    tags=["기수 관리"],
+    tags=["과정-기수 관리"],
 )
 class CohortListView(APIView):
     permission_classes = [IsAdminUser]
@@ -31,7 +31,10 @@ class CohortListView(APIView):
         cohort = Cohort.objects.filter(course=course_id)
         return Response(CohortSerializer(cohort, many=True).data)
 
-
+@extend_schema(
+    summary="과목 리스트 조회 API",
+    tags=["수강 과목 관리"],
+)
 class SubjectListView(APIView):
     permission_classes = [IsAdminUser]
 
@@ -44,7 +47,7 @@ class SubjectListView(APIView):
 
 @extend_schema(
     summary="과정 리스트 조회 API",
-    tags=["과정 관리"],
+    tags=["과정-기수 관리"],
 )
 class CourseListView(APIView):
     permission_classes = [IsAdminUser]
