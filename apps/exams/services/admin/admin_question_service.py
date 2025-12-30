@@ -15,9 +15,8 @@ class AdminQuestionService:
 
         # 문제 수 체크 (생성 시에만)
         if exclude_question_id is None:
-            if query.count() >= 20:
+            if query.count() > 20:
                 raise ValidationError()  # 409
-
         # 총 배점 체크
         if exclude_question_id:
             query = query.exclude(id=exclude_question_id)
@@ -26,13 +25,17 @@ class AdminQuestionService:
         if current_total + added_point > 100:
             raise ValidationError()
 
-    @transaction.atomic
-    def update_question(self, question_id: int, validated_data: dict[str, Any]) -> ExamQuestion:
+    def _get_question_select_lock(self, question_id: int) -> ExamQuestion:
+        """객체 조회 및 락 전용 메서드."""
         try:
-            # 수정할 문제에 락을 걸고 가져옴
-            question = ExamQuestion.objects.select_for_update().get(id=question_id)
+            return ExamQuestion.objects.select_for_update().get(id=question_id)
         except ExamQuestion.DoesNotExist:
             raise NotFound()
+
+    @transaction.atomic
+    def update_question(self, question_id: int, validated_data: dict[str, Any]) -> ExamQuestion:
+
+        question = self._get_question_select_lock(question_id)
 
         # 점수 수정이 포함된 경우에만 제한 검사
         if "point" in validated_data:

@@ -26,5 +26,9 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="exam-deployment-status",
     ),
     path("exams/<int:pk>", ExamAdminRetrieveUpdateDestroyAPIView.as_view(), name="exam-detail"),
-    path("exams/questions/<int:question_id>", ExamAdminQuestionUpdateDestroyAPIView.as_view(), name="exam-questions-detail"),
+    path(
+        "exams/questions/<int:question_id>",
+        ExamAdminQuestionUpdateDestroyAPIView.as_view(),
+        name="exam-questions-detail",
+    ),
 ]
