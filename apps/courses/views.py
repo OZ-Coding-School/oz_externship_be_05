@@ -8,11 +8,12 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.courses.models import Course
+from apps.courses.models import Course, Subject
 from apps.courses.models.cohorts_models import Cohort, CohortStatusChoices
 from apps.courses.serializers.courses_serializers import (
     CohortSerializer,
     CourseSerializer,
+    SubjectSerializer,
 )
 from apps.courses.serializers.enrollment import AvailableCourseSerializer
 
@@ -29,6 +30,16 @@ class CohortListView(APIView):
         course_id = kwargs.get("course_id")
         cohort = Cohort.objects.filter(course=course_id)
         return Response(CohortSerializer(cohort, many=True).data)
+
+
+class SubjectListView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+
+        course_id = kwargs.get("course_id")
+        subject = Subject.objects.filter(course=course_id)
+        return Response(SubjectSerializer(subject, many=True).data)
 
 
 @extend_schema(
