@@ -48,7 +48,18 @@ class IPBasedRateLimiter:
     def _ip_cooldown_key(self, ip_address: str) -> str:
         return f"ip:{ip_address}:{self.policy.work}:cooldown"
 
-    def enforce(self, request_ip: Optional[str]) -> None:
+    def _extract_ip(self, request: Any) -> Optional[str]:
+        meta = getattr(request, "META", None)
+        if not isinstance(meta, dict):
+            return None
+        forwarded_for = meta.get("HTTP_X_FORWARDED_FOR")
+        if forwarded_for:
+            return forwarded_for.split(",")[0].strip()
+        return meta.get("REMOTE_ADDR")
+
+    def enforce(self, request_ip: Optional[str] = None, *, request: Any = None) -> None:
+        if request_ip is None and request is not None:
+            request_ip = self._extract_ip(request)
         cache = self._cache()
         suspend_key = self._global_suspend_key()
         if cache.get(suspend_key):

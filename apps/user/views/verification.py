@@ -63,9 +63,7 @@ class SendSMSVerificationAPIView(APIView):
     def post(self, request: Request) -> Response:
         serializer = SMSRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
-        request_ip = forwarded_for.split(",")[0].strip() if forwarded_for else request.META.get("REMOTE_ADDR")
-        build_sms_rate_limiter().enforce(request_ip)
+        build_sms_rate_limiter().enforce(request=request)
         SMSSender().send(serializer.validated_data["phone_number"])
         return Response({"detail": "SMS 인증 코드가 전송되었습니다."}, status=status.HTTP_200_OK)
 
