@@ -13,6 +13,7 @@ from apps.user.serializers.verification import (
     SignupEmailRequestSerializer,
     SMSRequestSerializer,
 )
+from apps.user.utils.limiter import build_sms_rate_limiter
 from apps.user.utils.sender import EmailSender, SMSSender
 
 
@@ -62,6 +63,7 @@ class SendSMSVerificationAPIView(APIView):
     def post(self, request: Request) -> Response:
         serializer = SMSRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        build_sms_rate_limiter().enforce(request=request)
         SMSSender().send(serializer.validated_data["phone_number"])
         return Response({"detail": "SMS 인증 코드가 전송되었습니다."}, status=status.HTTP_200_OK)
 
