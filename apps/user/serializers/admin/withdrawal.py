@@ -10,6 +10,7 @@ from apps.user.serializers.admin.common import (
     UserWithdrawalMiniSerializer,
 )
 
+
 class AdminAccountWithdrawalListSerializer(serializers.ModelSerializer[Withdrawal]):
     user = UserWithdrawalMiniSerializer(read_only=True)
     reason_display = serializers.CharField(source="get_reason_display", read_only=True)

@@ -13,7 +13,7 @@ from apps.user.views.admin.enrollments import (
 )
 from apps.user.views.admin.withdrawal import (
     AdminAccountWithdrawalListAPIView,
-    AdminAccountWithdrawalRetrieveAPIView
+    AdminAccountWithdrawalRetrieveAPIView,
 )
 
 urlpatterns = [
