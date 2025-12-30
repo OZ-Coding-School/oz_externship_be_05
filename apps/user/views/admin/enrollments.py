@@ -3,6 +3,7 @@ from django.db.models import Exists, OuterRef, Prefetch, Q, QuerySet
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status as drf_status
+from rest_framework.exceptions import ValidationError
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -189,13 +190,19 @@ class AdminStudentEnrollAcceptView(APIView):
             enrollments = StudentEnrollmentRequest.objects.select_for_update().filter(
                 id__in=ids, status=EnrollmentStatus.PENDING
             )
+            if enrollments.count() != len(set(ids)):
+                raise ValidationError({"error_detail": "승인 처리에 실패했습니다."})
 
             user_ids = list(enrollments.values_list("user_id", flat=True))
             user_ids = list(set(user_ids))
 
             enrollments.update(status=EnrollmentStatus.ACCEPTED)
 
-            User.objects.filter(id__in=user_ids).update(role=RoleChoices.ST)
+            User.objects.filter(id__in=user_ids).update(
+                role=RoleChoices.ST,
+                is_staff=False,
+                is_superuser=False,
+            )
 
         data = {"detail": "수강생 등록 신청들에 대한 승인 요청이 처리되었습니다."}
 
@@ -220,9 +227,14 @@ class AdminStudentEnrollRejectView(APIView):
         ids: list[int] = req.validated_data["enrollments"]
 
         with transaction.atomic():
-            StudentEnrollmentRequest.objects.select_for_update().filter(
+            enrollments = StudentEnrollmentRequest.objects.select_for_update().filter(
                 id__in=ids, status=EnrollmentStatus.PENDING
-            ).update(status=EnrollmentStatus.REJECTED)
+            )
+
+            if enrollments.count() != len(set(ids)):
+                raise ValidationError({"error_detail": "거절 처리에 실패했습니다."})
+
+            enrollments.update(status=EnrollmentStatus.REJECTED)
 
         data = {"detail": "수강생 등록 신청들에 대한 거절 요청이 처리되었습니다."}
 
