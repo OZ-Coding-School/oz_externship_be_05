@@ -90,6 +90,20 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     def in_progress_cohortstudent(self) -> "CohortStudent | None":
         return self.cohortstudent_set.select_related("cohort__course").first()
 
+    STAFF_ROLES = {RoleChoices.TA, RoleChoices.LC, RoleChoices.OM, RoleChoices.AD}
+
+    def sync_flags_by_role(self) -> None:
+        self.is_staff = self.role in self.STAFF_ROLES
+
+        self.is_superuser = self.role == RoleChoices.AD
+
+        if self.is_superuser:
+            self.is_staff = True
+
+    def save(self, *args, **kwargs):
+        self.sync_flags_by_role()
+        super().save(*args, **kwargs)
+
     class Meta:
         db_table = "users"
 
