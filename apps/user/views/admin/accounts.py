@@ -2,7 +2,7 @@ from django.db.models import Exists, OuterRef, Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import IsAdminUser
+from apps.user.permissions import IsAdminStaffRole
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -37,7 +37,7 @@ ROLE_FILTERS = {
 
 
 class AdminAccountListAPIView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminStaffRole]
 
     @extend_schema(tags=["회원관리"], summary="전체 회원 목록 조회 API")
     def get(self, request: Request) -> Response:
@@ -83,7 +83,7 @@ class AdminAccountListAPIView(APIView):
 
 
 class AdminAccountRetrieveUpdateView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminStaffRole]
 
     @extend_schema(tags=["회원관리"], summary="회원 상세 정보 조회 API")
     def get(self, request: Request, account_id: int) -> Response:
@@ -113,7 +113,7 @@ class AdminAccountRetrieveUpdateView(APIView):
 
 
 class AdminAccountRoleUpdateView(APIView):
-    permission_classes = [IsAdminUser, AdminAccountRoleUpdatePayloadPermission]
+    permission_classes = [IsAdminStaffRole, AdminAccountRoleUpdatePayloadPermission]
 
     @extend_schema(
         tags=["회원관리"],
