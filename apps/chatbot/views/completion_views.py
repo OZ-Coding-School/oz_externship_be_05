@@ -29,6 +29,7 @@ CompletionAPIView: /sessions/{session_id}/completions/
     DELETE - 세션 내 모든 메시지 삭제
 """
 
+
 class CompletionAPIView(APIView, ChatbotCompletionMixin):
 
     permission_classes = [IsAuthenticated]

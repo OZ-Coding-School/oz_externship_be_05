@@ -23,6 +23,8 @@ Chatbot Views Mixins
 """
 ChatbotCursorPagination: 커서 기반 페이지네이션 (page_size=10, ordering=-created_at)
 """
+
+
 class ChatbotCursorPagination(CursorPagination):
     cursor_query_param = "cursor"
     page_size_query_param = "page_size"
@@ -30,12 +32,14 @@ class ChatbotCursorPagination(CursorPagination):
     max_page_size = 50
     ordering = "-created_at"
 
+
 """
 ChatbotSessionMixin: 세션 공통 로직. 모두 상속
     get_user          - 인증된 사용자 반환 (미인증 시 401)
     get_session_queryset - 사용자의 모든 세션 QuerySet
     get_session       - 특정 세션 조회 (없으면 404)
 """
+
 
 class ChatbotSessionMixin:
     request: Request
@@ -55,10 +59,13 @@ class ChatbotSessionMixin:
             raise NotFound(EMS.E404_CHATBOT_SESSION_NOT_FOUND)
         return session
 
+
 """
 ChatbotCompletionMixin(ChatbotSessionMixin): 메시지 공통 로직
     get_completion_queryset - 세션의 모든 메시지 QuerySet
 """
+
+
 class ChatbotCompletionMixin(ChatbotSessionMixin):
     def get_completion_queryset(self, session: ChatbotSession) -> QuerySet[ChatbotCompletion]:
         return session.messages.all()

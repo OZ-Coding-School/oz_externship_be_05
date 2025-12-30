@@ -21,6 +21,7 @@ SessionCreateListAPIView: /sessions/
     GET  - 세션 목록 조회 (페이지네이션)
 """
 
+
 class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
     serializer_class = SessionSerializer
     permission_classes = [IsAuthenticated]
@@ -76,10 +77,12 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
         serializer = self.serializer_class(page, many=True)
         return paginator.get_paginated_response(serializer.data)
 
+
 """
 SessionDeleteView: /sessions/{session_id}/
     DELETE - 세션 완전삭제
 """
+
 
 class SessionDeleteView(APIView, ChatbotSessionMixin):
     permission_classes = [IsAuthenticated]

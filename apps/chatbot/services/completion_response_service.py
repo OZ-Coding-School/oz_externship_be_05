@@ -36,6 +36,7 @@ Functions:
     create_streaming_response: StreamingHttpResponse 생성
 """
 
+
 def _get_api_key() -> str:
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
