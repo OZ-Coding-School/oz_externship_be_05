@@ -39,13 +39,3 @@ class ExamQuestionResponseSerializer(serializers.Serializer[Any]):
     elapsed_time = serializers.IntegerField()
     cheating_count = serializers.IntegerField()
     questions = ExamQuestionSerializer(many=True)
-
-    def to_representation(self, instance: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "exam_id": instance["exam_id"],
-            "exam_name": instance["exam_name"],
-            "duration_time": instance["duration_time"],
-            "elapsed_time": instance["elapsed_time"],
-            "cheating_count": instance["cheating_count"],
-            "questions": ExamQuestionSerializer(instance["questions"], many=True).data,
-        }
