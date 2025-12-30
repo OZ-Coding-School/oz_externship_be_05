@@ -23,7 +23,7 @@ class AdminSubmissionListSerializer(serializers.ModelSerializer):  # type: ignor
 
     # 시험 정보
     exam_title = serializers.CharField(source="deployment.exam.title")
-    subject_name = serializers.CharField(source="deployment.exam.subject.name", read_only=True)
+    subject_name = serializers.CharField(source="deployment.exam.subject.title", read_only=True)
 
     # 시간 정보
     started_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")

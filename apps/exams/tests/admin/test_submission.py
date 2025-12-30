@@ -132,6 +132,8 @@ class AdminExamSubmissionTest(APITestCase):
         res = self.client.get(self.url, params)
 
         self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.data["total_count"], 0)
+        self.assertEqual(res.data["submissions"], [])
 
     def test_400_invalid_sort(self) -> None:
         self.client.force_authenticate(self.admin)

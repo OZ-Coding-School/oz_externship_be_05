@@ -11,7 +11,6 @@ from apps.exams.models import ExamSubmission
 
 Order = Literal["asc", "desc"]
 
-# sort 파라미터(클라이언트) -> 실제 DB 필드 매핑
 ALLOWED_SORTS: dict[str, str] = {
     "score": "score",
     "started_at": "started_at",
@@ -68,11 +67,9 @@ def _apply_filters(qs: QuerySet[ExamSubmission], params: AdminSubmissionListPara
 
 
 def _apply_sort(qs: QuerySet[ExamSubmission], params: AdminSubmissionListParams) -> QuerySet[ExamSubmission]:
-    # 여기서는 추가 검증하지 않음 (_validate_params에서 이미 보장)
     field = ALLOWED_SORTS[params.sort]
     prefix = "" if params.order == "asc" else "-"
 
-    # 동점일 때 결과가 흔들리지 않도록 id로 2차 정렬
     return qs.order_by(f"{prefix}{field}", f"{prefix}id")
 
 
