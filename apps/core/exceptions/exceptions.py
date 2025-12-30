@@ -11,3 +11,13 @@ class LockedException(APIException):
     status_code = status.HTTP_423_LOCKED
     default_detail = "리소스가 잠겨있습니다."
     default_code = "locked"
+
+
+class GoneException(APIException):
+    """
+    410 Gone: 요청한 리소스가 영구적으로 삭제되었거나 만료됨 (시험 종료 등)
+    """
+
+    status_code = status.HTTP_410_GONE
+    default_detail = "요청한 리소스가 만료되었습니다."
+    default_code = "gone"
