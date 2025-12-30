@@ -186,9 +186,16 @@ class AdminStudentEnrollAcceptView(APIView):
         ids: list[int] = req.validated_data["enrollments"]
 
         with transaction.atomic():
-            StudentEnrollmentRequest.objects.select_for_update().filter(
+            enrollments = StudentEnrollmentRequest.objects.select_for_update().filter(
                 id__in=ids, status=EnrollmentStatus.PENDING
-            ).update(status=EnrollmentStatus.ACCEPTED)
+            )
+
+            user_ids = list(enrollments.values_list("user_id", flat=True))
+            user_ids = list(set(user_ids))
+
+            enrollments.update(status=EnrollmentStatus.ACCEPTED)
+
+            User.objects.filter(id__in=user_ids).update(role=RoleChoices.ST)
 
         data = {"detail": "수강생 등록 신청들에 대한 승인 요청이 처리되었습니다."}
 
