@@ -8,10 +8,10 @@ from rest_framework.views import APIView
 from apps.user.models.user import RoleChoices
 
 ADMIN_STAFF_ROLES = {
-    RoleChoices.AD, 
-    RoleChoices.TA, 
-    RoleChoices.LC, 
-    RoleChoices.OM, 
+    RoleChoices.AD,
+    RoleChoices.TA,
+    RoleChoices.LC,
+    RoleChoices.OM,
 }
 
 
@@ -54,4 +54,3 @@ class AdminAccountRoleUpdatePayloadPermission(BasePermission):
             return True
 
         return True
-

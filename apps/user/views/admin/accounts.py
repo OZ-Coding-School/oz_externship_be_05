@@ -2,7 +2,6 @@ from django.db.models import Exists, OuterRef, Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
-from apps.user.permissions import IsAdminStaffRole
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,7 +9,10 @@ from rest_framework.views import APIView
 from apps.user.models.user import RoleChoices, User
 from apps.user.models.withdraw import Withdrawal
 from apps.user.pagination import AdminAccountPagination
-from apps.user.permissions import AdminAccountRoleUpdatePayloadPermission
+from apps.user.permissions import (
+    AdminAccountRoleUpdatePayloadPermission,
+    IsAdminStaffRole,
+)
 from apps.user.serializers.admin.accounts import (
     AdminAccountListSerializer,
     AdminAccountResponseSerializer,

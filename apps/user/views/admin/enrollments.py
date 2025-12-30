@@ -3,7 +3,6 @@ from django.db.models import Exists, OuterRef, Prefetch, Q, QuerySet
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status as drf_status
-from apps.user.permissions import IsAdminStaffRole
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,6 +16,7 @@ from apps.user.models import (
 from apps.user.models.user import RoleChoices
 from apps.user.models.withdraw import Withdrawal
 from apps.user.pagination import AdminAccountPagination
+from apps.user.permissions import IsAdminStaffRole
 from apps.user.serializers.admin.enrollments import (
     AdminStudentEnrollApprovalStatusSerializer,
     AdminStudentEnrollRequestSerializer,

@@ -100,7 +100,7 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
         if self.is_superuser:
             self.is_staff = True
 
-    def save(self, *args, **kwargs):
+    def save(self, *args: Any, **kwargs: Any) -> None:
         self.sync_flags_by_role()
         super().save(*args, **kwargs)
 
