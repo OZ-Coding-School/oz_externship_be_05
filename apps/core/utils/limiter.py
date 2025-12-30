@@ -53,9 +53,10 @@ class IPBasedRateLimiter:
         if not isinstance(meta, dict):
             return None
         forwarded_for = meta.get("HTTP_X_FORWARDED_FOR")
-        if forwarded_for:
+        if isinstance(forwarded_for, str) and forwarded_for:
             return forwarded_for.split(",")[0].strip()
-        return meta.get("REMOTE_ADDR")
+        remote_addr = meta.get("REMOTE_ADDR")
+        return remote_addr if isinstance(remote_addr, str) else None
 
     def enforce(self, request_ip: Optional[str] = None, *, request: Any = None) -> None:
         if request_ip is None and request is not None:
