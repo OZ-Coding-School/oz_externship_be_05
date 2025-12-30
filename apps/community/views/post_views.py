@@ -2,6 +2,7 @@ import logging
 from typing import Any, Type
 
 from django.db.models import Count, F, QuerySet
+from drf_spectacular.utils import extend_schema
 from rest_framework import serializers
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
@@ -19,6 +20,14 @@ from apps.community.serializers.post_serializers import (
 logger = logging.getLogger(__name__)
 
 
+@extend_schema(
+    summary="게시글 목록 조회 및 작성",
+    description="""
+    GET: 게시글 목록을 조회합니다. ordering 파라미터로 정렬할 수 있습니다.
+    POST: 새로운 게시글을 작성합니다. (인증 필요)
+    """,
+    tags=["게시글"],
+)
 class PostListCreateAPIView(ListCreateAPIView[Post]):
     permission_classes = [IsAuthenticatedOrReadOnly]
     ALLOWED_ORDERING_PARAMS = [
@@ -52,6 +61,7 @@ class PostListCreateAPIView(ListCreateAPIView[Post]):
         serializer.save(author=self.request.user)
 
 
+@extend_schema(tags=["게시글"], summary="게시글 상세 조회/수정/삭제")
 class PostDetailAPIView(RetrieveUpdateDestroyAPIView[Post]):
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
     lookup_url_kwarg = "post_id"
