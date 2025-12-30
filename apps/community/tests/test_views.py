@@ -57,14 +57,12 @@ class PostListCreateAPIViewTests(APITestCase):
         data: Dict[str, Any] = {
             "title": "새로운 게시글",
             "content": "새로운 게시글 내용입니다.",
-            "category_id": self.category1.id,
+            "category": self.category1.id,
         }
         response = self.client.post(self.list_url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertIn("post_id", response.data)
-        self.assertEqual(response.data["detail"], "게시글이 성공적 등록됨.")
-
-        post_id = response.data["post_id"]
+        self.assertIn("id", response.data)
+        post_id = response.data["id"]
         post = Post.objects.get(id=post_id)
         self.assertEqual(post.title, "새로운 게시글")
         self.assertEqual(post.content, "새로운 게시글 내용입니다.")
@@ -75,18 +73,18 @@ class PostListCreateAPIViewTests(APITestCase):
         data: Dict[str, Any] = {
             "title": "새로운 게시글",
             "content": "새로운 게시글 내용입니다.",
-            "category_id": 9999,  # 유효하지 않은 카테고리 ID
+            "category": 9999,  # 유효하지 않은 카테고리 ID
         }
         response = self.client.post(self.list_url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("category_id", response.data.get("errors", response.data))
+        self.assertIn("category", response.data.get("errors", response.data))
 
     def test_create_post_empty_title(self) -> None:
         self.client.force_authenticate(user=self.user1)
         data: Dict[str, Any] = {
             "title": "   ",  # 빈 제목
             "content": "내용입니다.",
-            "category_id": self.category1.id,
+            "category": self.category1.id,
         }
         response = self.client.post(self.list_url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -95,13 +93,13 @@ class PostListCreateAPIViewTests(APITestCase):
     def test_create_post_missing_required_fields(self) -> None:
         self.client.force_authenticate(user=self.user1)
         data: Dict[str, Any] = {
-            "title": "제목만 있음",  # content와 category_id 누락
+            "title": "제목만 있음",  # content와 category 누락
         }
         response = self.client.post(self.list_url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         errors = response.data.get("errors", response.data)
         self.assertIn("content", errors)
-        self.assertIn("category_id", errors)
+        self.assertIn("category", errors)
 
 
 class PostDetailAPIViewTests(APITestCase):
@@ -139,6 +137,7 @@ class PostDetailAPIViewTests(APITestCase):
         self.assertEqual(response.data["id"], self.post.id)
         self.assertEqual(response.data["title"], self.post.title)
         self.assertEqual(response.data["content"], self.post.content)
+        self.assertEqual(response.data["view_count"], self.post.view_count + 1)
 
     def test_update_post_partial_success(self) -> None:
         """PATCH: title만 수정, content는 기존 값 유지"""
@@ -169,7 +168,7 @@ class PostDetailAPIViewTests(APITestCase):
         data: Dict[str, Any] = {
             "title": "수정 시도",
             "content": "수정 시도 내용",
-            "category_id": self.category.id,
+            "category": self.category.id,
         }
         response = self.client.put(self.detail_url, data)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -186,6 +185,5 @@ class PostDetailAPIViewTests(APITestCase):
         self.client.force_authenticate(user=self.user1)
         response = self.client.delete(self.detail_url)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn("detail", response.data)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Post.objects.filter(id=self.post.id).exists())
