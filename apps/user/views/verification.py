@@ -13,6 +13,7 @@ from apps.user.serializers.verification import (
     SignupEmailRequestSerializer,
     SMSRequestSerializer,
 )
+from apps.user.utils.limiter import build_sms_rate_limiter
 from apps.user.utils.sender import EmailSender, SMSSender
 
 
@@ -64,7 +65,8 @@ class SendSMSVerificationAPIView(APIView):
         serializer.is_valid(raise_exception=True)
         forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
         request_ip = forwarded_for.split(",")[0].strip() if forwarded_for else request.META.get("REMOTE_ADDR")
-        SMSSender().send(serializer.validated_data["phone_number"], request_ip=request_ip)
+        build_sms_rate_limiter().enforce(request_ip)
+        SMSSender().send(serializer.validated_data["phone_number"])
         return Response({"detail": "SMS 인증 코드가 전송되었습니다."}, status=status.HTTP_200_OK)
 
 

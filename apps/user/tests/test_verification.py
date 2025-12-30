@@ -1,7 +1,7 @@
 import base64
 from datetime import date
 from typing import Any, cast
-from unittest.mock import ANY, patch
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
@@ -222,7 +222,7 @@ class VerificationAPIViewTests(TestCase):
         response = SendSMSVerificationAPIView.as_view()(request)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        send_mock.assert_called_once_with("01012345678", request_ip=ANY)
+        send_mock.assert_called_once_with("01012345678")
 
     @patch("apps.user.views.verification.SMSSender.verify_code", return_value="token")
     def test_verify_sms_success_returns_token(self, verify_mock: Any) -> None:

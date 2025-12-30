@@ -1,20 +1,3 @@
-"""
-ITS OVER NINE THOUSAND
-
-=========================
-Twilio billing statement
-
-96767 sms requests : 9067.5$
-67 coffees : 112.51$
-surtax : 6.07$
-
-total : 9041.67$
-
-thx for being a sucker we're rich now $$$ 👍
-=========================
-
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -26,12 +9,12 @@ from rest_framework.exceptions import APIException, ValidationError
 
 class RateLimitSuspendedError(APIException):
     status_code = 503
-    default_detail = "현재 사용자가 많아 해당 서비스를 이용 할 수 없습니다. 1분 후 다시 시도해주세요"
+    default_detail = "현재 사용자가 많아 해당 서비스를 이용 할 수 없습니다. 나중에 다시 시도해주세요"
     default_code = "rate_limit_suspended"
 
 
 def _default_cooldown_error() -> Exception:
-    return ValidationError("아직 재시도 할 수 없습니다.")
+    return ValidationError("해당 서비스를 아직 재시도 할 수 없습니다.")
 
 
 def _default_suspend_error() -> Exception:
