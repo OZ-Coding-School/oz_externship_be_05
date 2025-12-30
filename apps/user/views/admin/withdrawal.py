@@ -1,5 +1,7 @@
 from django.db import transaction
 from django.db.models import Q
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -24,8 +26,32 @@ ROLE_QUERY_MAP: dict[str, str] = {
 
 
 class AdminAccountWithdrawalListAPIView(APIView):
+
     permission_classes = [IsAdminStaffRole]
 
+    @extend_schema(
+        tags=["회원관리"],
+        summary="회원탈퇴 요청 목록 조회 API",
+        parameters=[
+            OpenApiParameter("page", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
+            OpenApiParameter("page_size", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
+            OpenApiParameter("search", OpenApiTypes.STR, required=False, location=OpenApiParameter.QUERY),
+            OpenApiParameter(
+                "role",
+                OpenApiTypes.STR,
+                required=False,
+                location=OpenApiParameter.QUERY,
+                enum=list(ROLE_QUERY_MAP.keys()),
+            ),
+            OpenApiParameter(
+                "sort",
+                OpenApiTypes.STR,
+                required=False,
+                location=OpenApiParameter.QUERY,
+                enum=["id", "latest", "oldest"],
+            ),
+        ],
+    )
     def get(self, request: Request) -> Response:
         withdrawal = Withdrawal.objects.select_related("user")
 
@@ -57,9 +83,14 @@ class AdminAccountWithdrawalListAPIView(APIView):
         return paginator.get_paginated_response(serializer.data)
 
 
-class AdminAccountWithdrawalRetrieveAPIView(APIView):
+class AdminAccountWithdrawalRetrieveDestroyAPIView(APIView):
     permission_classes = [IsAdminStaffRole]
 
+    @extend_schema(
+        tags=["회원관리"],
+        summary="회원탈퇴 요청 상세 조회 API",
+        responses={200: AdminAccountWithdrawalRetrieveSerializer},
+    )
     def get(self, request: Request, withdrawal_id: int) -> Response:
         withdrawal = (
             Withdrawal.objects.select_related("user")
@@ -73,6 +104,7 @@ class AdminAccountWithdrawalRetrieveAPIView(APIView):
         serializer = AdminAccountWithdrawalRetrieveSerializer(withdrawal)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    @extend_schema(tags=["회원관리"], summary="회원탈퇴 취소 API", responses={200: OpenApiTypes.OBJECT})
     def delete(self, request: Request, withdrawal_id: int) -> Response:
         withdrawal = Withdrawal.objects.select_related("user").filter(id=withdrawal_id).first()
         if withdrawal is None:
