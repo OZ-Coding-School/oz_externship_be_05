@@ -19,8 +19,8 @@ class EnrollStudentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["accounts"],
-        summary="Enroll student request",
+        tags=["회원관리"],
+        summary="수강신청 API",
         request=EnrollStudentSerializer,
         responses={201: None},
     )
@@ -35,8 +35,8 @@ class EnrolledCoursesAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     @extend_schema(
-        tags=["accounts"],
-        summary="Get enrolled courses",
+        tags=["회원관리"],
+        summary="수강중인 수업 목록 API",
         responses=EnrolledCourseItemSerializer,
     )
     def get(self, request: Request) -> Response:
