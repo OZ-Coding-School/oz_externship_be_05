@@ -7,12 +7,14 @@ from django.utils import timezone
 from drf_spectacular.utils import OpenApiRequest, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.core.constants import USER_PROFILE_IMAGE_UPLOAD_PATH
+from apps.core.utils.image_resizer import ImageResizer
 from apps.user.models import User, Withdrawal, WithdrawalReason
 from apps.user.serializers.account import (
     ChangePasswordSerializer,
@@ -23,8 +25,6 @@ from apps.user.serializers.account import (
     UserUpdateSerializer,
     WithdrawalRequestSerializer,
 )
-from apps.core.constants import USER_PROFILE_IMAGE_UPLOAD_PATH
-from apps.core.utils.image_resizer import ImageResizer
 
 
 def get_authenticated_user(request: Request) -> User:

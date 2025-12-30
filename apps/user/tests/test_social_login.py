@@ -57,7 +57,8 @@ class KakaoSocialLoginTests(TestCase):
         self.assertIn("access_token", resp.cookies)
         self.assertIn("refresh_token", resp.cookies)
 
-    def test_kakao_login_requires_code(self) -> None:
+    @patch("apps.user.views.social_login_views.logger")
+    def test_kakao_login_requires_code(self, _log_mock: Any) -> None:
         url = reverse("kakao-callback")
         resp = self.client.get(url, follow=False)
 
@@ -66,7 +67,8 @@ class KakaoSocialLoginTests(TestCase):
         self.assertIn("is_success=False", resp["Location"])
 
     @patch("apps.user.views.social_login_views.KakaoOAuthService")
-    def test_kakao_login_inactive_user(self, service_mock: Any) -> None:
+    @patch("apps.user.views.social_login_views.logger")
+    def test_kakao_login_inactive_user(self, service_mock: Any, _log_mock: Any) -> None:
         service: Any = MagicMock()
         service_mock.return_value = service
 
@@ -141,7 +143,8 @@ class NaverSocialLoginTests(TestCase):
         self.assertIn("access_token", resp.cookies)
         self.assertIn("refresh_token", resp.cookies)
 
-    def test_naver_requires_code_and_state(self) -> None:
+    @patch("apps.user.views.social_login_views.logger")
+    def test_naver_requires_code_and_state(self, _log_mock: Any) -> None:
         url = reverse("naver-callback")
         resp = self.client.get(url, {"code": "abc"}, follow=False)
 
@@ -150,7 +153,8 @@ class NaverSocialLoginTests(TestCase):
         self.assertIn("is_success=False", resp["Location"])
 
     @patch("apps.user.views.social_login_views.NaverOAuthService")
-    def test_naver_login_inactive_user(self, service_mock: Any) -> None:
+    @patch("apps.user.views.social_login_views.logger")
+    def test_naver_login_inactive_user(self, service_mock: Any, _log_mock: Any) -> None:
         service: Any = MagicMock()
         service_mock.return_value = service
 
