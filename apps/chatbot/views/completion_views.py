@@ -142,7 +142,7 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
             404: {"type": "object", "example": EMS.E404_CHATBOT_SESSION_NOT_FOUND},
         },
     )
-    def delete(self, session_id: int) -> Response:
+    def delete(self, request: Request, session_id: int) -> Response:
         session = self.get_session(session_id)
         session.messages.all().delete()  # 세션 모든 메세지 삭제
         return Response(status=status.HTTP_204_NO_CONTENT)
