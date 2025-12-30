@@ -43,7 +43,7 @@ urlpatterns = [
     path("verification/verify-sms", VerifySMSAPIView.as_view(), name="verify_sms"),
     path("verification/send-email", SendEmailAPIView.as_view(), name="signup_send_email"),
     path("verification/verify-email", VerifyEmailAPIView.as_view(), name="signup_verify_email"),
-    path("verification/restore", RestoreAccountAPIView.as_view(), name="restore_account"),
-    path("verification/find-email", FindEmailAPIView.as_view(), name="find_email"),
-    path("verification/find-password", FindPasswordAPIView.as_view(), name="find_password"),
+    path("restore", RestoreAccountAPIView.as_view(), name="restore_account"),
+    path("find-email", FindEmailAPIView.as_view(), name="find_email"),
+    path("find-password", FindPasswordAPIView.as_view(), name="find_password"),
 ]
