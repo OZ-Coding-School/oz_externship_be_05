@@ -87,7 +87,7 @@ class ExamQuestionViewTestCase(APITestCase):
             explanation="설명설명",
         )
 
-        # 배포 정보 (기본값: 응시 가능 상태)
+        # 배포 정보 (스냅샷 포함)
         now = timezone.now()
         cls.deployment = ExamDeployment.objects.create(
             exam=cls.exam,
@@ -96,7 +96,26 @@ class ExamQuestionViewTestCase(APITestCase):
             access_code="TEST12",
             open_at=now - timedelta(hours=1),
             close_at=now + timedelta(hours=2),
-            questions_snapshot={},
+            questions_snapshot=[
+                {
+                    "question_id": cls.question1.id,
+                    "type": "single_choice",
+                    "question": "단일 선택 문제",
+                    "point": 10,
+                    "prompt": None,
+                    "blank_count": None,
+                    "options": None,
+                },
+                {
+                    "question_id": cls.question2.id,
+                    "type": "fill_blank",
+                    "question": "빈칸 채우기",
+                    "point": 10,
+                    "prompt": None,
+                    "blank_count": 2,
+                    "options": None,
+                },
+            ],
         )
 
     def test_get_exam_questions_success(self) -> None:
@@ -119,12 +138,14 @@ class ExamQuestionViewTestCase(APITestCase):
         # 첫 번째 문제 (SINGLE_CHOICE)
         q1 = data["questions"][0]
         self.assertEqual(q1["question_id"], self.question1.id)
+        self.assertEqual(q1["number"], 1)
         self.assertEqual(q1["type"], "single_choice")
         self.assertIsNone(q1["answer_input"])
 
         # 두 번째 문제 (FILL_BLANK)
         q2 = data["questions"][1]
         self.assertEqual(q2["question_id"], self.question2.id)
+        self.assertEqual(q2["number"], 2)
         self.assertEqual(q2["type"], "fill_blank")
         self.assertEqual(q2["blank_count"], 2)
         self.assertEqual(q2["answer_input"], ["", ""])
@@ -149,7 +170,7 @@ class ExamQuestionViewTestCase(APITestCase):
         response = self.client.get(url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreaterEqual(response.data["elapsed_time"], 5)
+        self.assertGreaterEqual(response.data["elapsed_time"], 300)  # 5분 = 300초
         self.assertEqual(response.data["cheating_count"], 2)
 
     def test_get_exam_questions_forbidden_not_student(self) -> None:
@@ -196,7 +217,7 @@ class ExamQuestionViewTestCase(APITestCase):
             access_code="FUTURE",
             open_at=now + timedelta(hours=1),
             close_at=now + timedelta(hours=3),
-            questions_snapshot={},
+            questions_snapshot=[],  # 빈 스냅샷
         )
 
         self.client.force_authenticate(user=self.student_user)
@@ -204,13 +225,33 @@ class ExamQuestionViewTestCase(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_423_LOCKED)
 
-    def test_questions_ordered_by_id(self) -> None:
+    def test_questions_ordered_by_number(self) -> None:
         """
         문제는 번호 순서대로 정렬되어 반환
         """
-        ExamQuestion.objects.create(
-            exam=self.exam, question="먼저 나와야 하는 문제", type=QuestionType.OX, point=5, answer="o"
+        # 3번째 문제 추가
+        question3 = ExamQuestion.objects.create(
+            exam=self.exam,
+            question="세 번째 문제",
+            type=QuestionType.OX,
+            point=5,
+            answer="o",
+            explanation="O가 정답",
         )
+
+        # 스냅샷에 3번째 문제 추가
+        self.deployment.questions_snapshot.append(
+            {
+                "question_id": question3.id,
+                "type": "ox",
+                "question": "세 번째 문제",
+                "point": 5,
+                "prompt": None,
+                "blank_count": None,
+                "options": None,
+            }
+        )
+        self.deployment.save()
 
         self.client.force_authenticate(user=self.student_user)
         url = reverse("exam_taking", kwargs={"deployment_id": self.deployment.id})
@@ -219,6 +260,23 @@ class ExamQuestionViewTestCase(APITestCase):
         questions = response.data["questions"]
         numbers = [q["number"] for q in questions]
 
-        # Serializer에서 순번 1부터 시작한다고 가정
-        self.assertEqual(numbers, list(range(1, len(numbers) + 1)))
+        # 번호가 1부터 시작하고 순서대로 정렬되어 있는지 확인
+        self.assertEqual(numbers, [1, 2, 3])
         self.assertEqual(numbers, sorted(numbers))
+
+    def test_questions_snapshot_used_not_db(self) -> None:
+        """
+        스냅샷의 문제를 사용하며, DB 문제 변경에 영향받지 않음
+        """
+        # DB의 문제 내용 변경
+        self.question1.question = "변경된 문제"
+        self.question1.save()
+
+        self.client.force_authenticate(user=self.student_user)
+        url = reverse("exam_taking", kwargs={"deployment_id": self.deployment.id})
+        response = self.client.get(url)
+
+        questions = response.data["questions"]
+        # 스냅샷의 원래 내용이 반환되어야 함
+        self.assertEqual(questions[0]["question"], "단일 선택 문제")
+        self.assertNotEqual(questions[0]["question"], "변경된 문제")
