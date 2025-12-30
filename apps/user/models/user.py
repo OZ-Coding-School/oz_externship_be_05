@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from django.contrib.auth.base_user import BaseUserManager
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
@@ -8,6 +8,9 @@ from django.db import models
 
 from apps.core.models import TimeStampedModel
 from apps.user.utils.nickname import generate_nickname
+
+if TYPE_CHECKING:
+    from apps.user.models import CohortStudent
 
 
 class UserManager(BaseUserManager["User"]):
@@ -82,6 +85,24 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
         if is_withdrawing:
             return "withdrew"
         return "active" if self.is_active else "inactive"
+
+    @property
+    def in_progress_cohortstudent(self) -> "CohortStudent | None":
+        return self.cohortstudent_set.select_related("cohort__course").first()
+
+    STAFF_ROLES = {RoleChoices.TA, RoleChoices.LC, RoleChoices.OM, RoleChoices.AD}
+
+    def sync_flags_by_role(self) -> None:
+        self.is_staff = self.role in self.STAFF_ROLES
+
+        self.is_superuser = self.role == RoleChoices.AD
+
+        if self.is_superuser:
+            self.is_staff = True
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.sync_flags_by_role()
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = "users"

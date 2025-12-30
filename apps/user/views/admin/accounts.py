@@ -2,7 +2,6 @@ from django.db.models import Exists, OuterRef, Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import IsAdminUser
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,7 +9,10 @@ from rest_framework.views import APIView
 from apps.user.models.user import RoleChoices, User
 from apps.user.models.withdraw import Withdrawal
 from apps.user.pagination import AdminAccountPagination
-from apps.user.permissions import AdminAccountRoleUpdatePayloadPermission
+from apps.user.permissions import (
+    AdminAccountRoleUpdatePayloadPermission,
+    IsAdminStaffRole,
+)
 from apps.user.serializers.admin.accounts import (
     AdminAccountListSerializer,
     AdminAccountResponseSerializer,
@@ -37,7 +39,7 @@ ROLE_FILTERS = {
 
 
 class AdminAccountListAPIView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminStaffRole]
 
     @extend_schema(tags=["회원관리"], summary="전체 회원 목록 조회 API")
     def get(self, request: Request) -> Response:
@@ -83,7 +85,7 @@ class AdminAccountListAPIView(APIView):
 
 
 class AdminAccountRetrieveUpdateView(APIView):
-    permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminStaffRole]
 
     @extend_schema(tags=["회원관리"], summary="회원 상세 정보 조회 API")
     def get(self, request: Request, account_id: int) -> Response:
@@ -91,7 +93,12 @@ class AdminAccountRetrieveUpdateView(APIView):
         serializer = AdminAccountRetrieveSerializer(instance=user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(tags=["회원관리"], summary="회원 정보 수정 API")
+    @extend_schema(
+        tags=["회원관리"],
+        summary="회원 정보 수정 API",
+        request=AdminAccountUpdateSerializer,
+        responses=AdminAccountResponseSerializer,
+    )
     def patch(self, request: Request, account_id: int) -> Response:
         user = get_object_or_404(User, pk=account_id)
         serializer = AdminAccountUpdateSerializer(instance=user, data=request.data, partial=True)
@@ -108,9 +115,13 @@ class AdminAccountRetrieveUpdateView(APIView):
 
 
 class AdminAccountRoleUpdateView(APIView):
-    permission_classes = [IsAdminUser, AdminAccountRoleUpdatePayloadPermission]
+    permission_classes = [IsAdminStaffRole, AdminAccountRoleUpdatePayloadPermission]
 
-    @extend_schema(tags=["회원관리"], summary="회원 권한 수정 API")
+    @extend_schema(
+        tags=["회원관리"],
+        summary="회원 권한 수정 API",
+        request=AdminAccountRoleUpdateSerializer,
+    )
     def patch(self, request: Request, account_id: int) -> Response:
         user = get_object_or_404(User, pk=account_id)
         serializer = AdminAccountRoleUpdateSerializer(instance=user, data=request.data)
