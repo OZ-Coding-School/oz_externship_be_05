@@ -91,7 +91,6 @@ class CompletionResponseServiceTests(APITestCase):
         history = svc.get_chat_history(self.session)
         self.assertEqual(history, [])
 
-
     def test_build_contents_appends_user_message(self) -> None:
         # 이전 메시지 1개
         ChatbotCompletion.objects.create(session=self.session, message="이전", role=UserRole.USER)
