@@ -7,7 +7,7 @@ from apps.user.models.user import RoleChoices, User
 from apps.user.models.withdraw import Withdrawal
 from apps.user.views.admin.withdrawal import (
     AdminAccountWithdrawalListAPIView,
-    AdminAccountWithdrawalRetrieveAPIView,
+    AdminAccountWithdrawalRetrieveDestroyAPIView,
 )
 
 
@@ -79,7 +79,7 @@ class AdminWithdrawalAPIMinimalTests(TestCase):
         request = self.factory.get("/admin/withdrawals/999999")
         force_authenticate(request, user=self.admin)
 
-        response = AdminAccountWithdrawalRetrieveAPIView.as_view()(request, withdrawal_id=999999)
+        response = AdminAccountWithdrawalRetrieveDestroyAPIView.as_view()(request, withdrawal_id=999999)
 
         self.assertEqual(response.status_code, 404)
 
@@ -87,7 +87,7 @@ class AdminWithdrawalAPIMinimalTests(TestCase):
         request = self.factory.get(f"/admin/withdrawals/{self.w1.id}")
         force_authenticate(request, user=self.admin)
 
-        response = AdminAccountWithdrawalRetrieveAPIView.as_view()(request, withdrawal_id=self.w1.id)
+        response = AdminAccountWithdrawalRetrieveDestroyAPIView.as_view()(request, withdrawal_id=self.w1.id)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data["id"], self.w1.id)
@@ -99,7 +99,7 @@ class AdminWithdrawalAPIMinimalTests(TestCase):
         request = self.factory.delete(f"/admin/withdrawals/{self.w1.id}")
         force_authenticate(request, user=self.admin)
 
-        response = AdminAccountWithdrawalRetrieveAPIView.as_view()(request, withdrawal_id=self.w1.id)
+        response = AdminAccountWithdrawalRetrieveDestroyAPIView.as_view()(request, withdrawal_id=self.w1.id)
 
         self.assertEqual(response.status_code, 200)
         self.assertFalse(Withdrawal.objects.filter(id=self.w1.id).exists())
