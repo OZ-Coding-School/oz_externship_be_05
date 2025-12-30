@@ -13,6 +13,11 @@ from apps.user.views.auth import (
     SignupAPIView,
 )
 from apps.user.views.enrollemnt import EnrolledCoursesAPIView, EnrollStudentAPIView
+from apps.user.views.recovery import (
+    FindEmailAPIView,
+    FindPasswordAPIView,
+    RestoreAccountAPIView,
+)
 from apps.user.views.verification import (
     SendEmailAPIView,
     SendSMSVerificationAPIView,
@@ -38,4 +43,7 @@ urlpatterns = [
     path("verification/verify-sms", VerifySMSAPIView.as_view(), name="verify_sms"),
     path("verification/send-email", SendEmailAPIView.as_view(), name="signup_send_email"),
     path("verification/verify-email", VerifyEmailAPIView.as_view(), name="signup_verify_email"),
+    path("restore", RestoreAccountAPIView.as_view(), name="restore_account"),
+    path("find-email", FindEmailAPIView.as_view(), name="find_email"),
+    path("find-password", FindPasswordAPIView.as_view(), name="find_password"),
 ]
