@@ -6,6 +6,7 @@ from apps.user.views.account import (
     ChangePhoneAPIView,
     CheckNicknameAPIView,
     MeAPIView,
+    ProfileImageAPIView,
 )
 from apps.user.views.auth import (
     LoginAPIView,
@@ -34,6 +35,7 @@ urlpatterns = [
     path("login", LoginAPIView.as_view(), name="login"),
     path("refresh", RefreshAPIView.as_view(), name="refresh"),
     path("me", MeAPIView.as_view(), name="me"),
+    path("me/profile-image", ProfileImageAPIView.as_view(), name="me_profile_image"),
     path("me/enrolled-courses", EnrolledCoursesAPIView.as_view(), name="me_enrolled_courses"),
     path("enroll-student", EnrollStudentAPIView.as_view(), name="enroll_student"),
     path("change-password", ChangePasswordAPIView.as_view(), name="change_password"),

@@ -72,6 +72,10 @@ class ChangePhoneSerializer(SenderMixin, SMSTokenMixin, serializers.Serializer[A
         return instance
 
 
+class ProfileImageUploadSerializer(serializers.Serializer[Any]):
+    image = serializers.ImageField()
+
+
 class WithdrawalRequestSerializer(serializers.Serializer[Any]):
     reason = serializers.ChoiceField(
         choices=WithdrawalReason.choices,

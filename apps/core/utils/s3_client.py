@@ -48,6 +48,22 @@ class S3Client:
             logger.error(f"S3 Upload Error: {e}", exc_info=True)
             raise e
 
+    def upload_with_key(self, file: Any, key: str, extra_args: Optional[Dict[str, Any]] = None) -> str:
+        clean_key = key.lstrip("/")
+        upload_params: Dict[str, Any] = extra_args.copy() if extra_args else {}
+
+        if "ContentType" not in upload_params:
+            content_type = getattr(file, "content_type", None)
+            if content_type:
+                upload_params["ContentType"] = content_type
+
+        try:
+            self.s3.upload_fileobj(file, self.bucket_name, clean_key, ExtraArgs=upload_params)
+            return clean_key
+        except ClientError as e:
+            logger.error(f"S3 Upload Error: {e}", exc_info=True)
+            raise e
+
     def delete(self, key: str) -> None:
         if not key:
             return
