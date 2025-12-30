@@ -15,7 +15,7 @@ class AdminQuestionService:
 
         # 문제 수 체크 (생성 시에만)
         if exclude_question_id is None:
-            if query.count() >= 20:
+            if query.count() > 20:
                 raise ValidationError()  # 409
 
         # 총 배점 체크
