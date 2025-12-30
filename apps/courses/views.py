@@ -22,7 +22,7 @@ from apps.courses.serializers.enrollment import AvailableCourseSerializer
     tags=["기수 관리"],
 )
 class CohortListView(APIView):
-    # permission_classes = [IsAdminUser]
+    permission_classes = [IsAdminUser]
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
 
