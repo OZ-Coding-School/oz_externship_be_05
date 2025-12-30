@@ -18,8 +18,7 @@ from apps.user.models.user import RoleChoices
 from apps.user.models.withdraw import Withdrawal
 from apps.user.pagination import AdminAccountPagination
 from apps.user.serializers.admin.enrollments import (
-    AdminStudentEnrollAcceptSerializer,
-    AdminStudentEnrollRejectSerializer,
+    AdminStudentEnrollApprovalStatusSerializer,
     AdminStudentEnrollRequestSerializer,
     AdminStudentEnrollSerializer,
     AdminStudentSerializer,
@@ -148,7 +147,7 @@ class AdminStudentsEnrollViews(APIView):
     )
     def get(self, request: Request) -> Response:
         enrollments = (
-            StudentEnrollmentRequest.objects.all().select_related("user", "cohort", "cohort__course").order_by("id")
+            StudentEnrollmentRequest.objects.all().select_related("user", "cohort", "cohort__course")
         )
 
         search = request.query_params.get("search")
@@ -181,7 +180,7 @@ class AdminStudentEnrollAcceptView(APIView):
         tags=["회원관리"],
         summary="수강생 등록 요청 승인 API",
         request=AdminStudentEnrollRequestSerializer,
-        responses={200: AdminStudentEnrollAcceptSerializer},
+        responses={200: AdminStudentEnrollApprovalStatusSerializer},
     )
     def post(self, request: Request) -> Response:
         req = AdminStudentEnrollRequestSerializer(data=request.data)
@@ -195,7 +194,7 @@ class AdminStudentEnrollAcceptView(APIView):
 
         data = {"detail": "수강생 등록 신청들에 대한 승인 요청이 처리되었습니다."}
 
-        res = AdminStudentEnrollAcceptSerializer(data=data)
+        res = AdminStudentEnrollApprovalStatusSerializer(data=data)
         res.is_valid(raise_exception=True)
 
         return Response(res.data, status=drf_status.HTTP_200_OK)
@@ -208,7 +207,7 @@ class AdminStudentEnrollRejectView(APIView):
         tags=["회원관리"],
         summary="수강생 등록 요청 거절 API",
         request=AdminStudentEnrollRequestSerializer,
-        responses={200: AdminStudentEnrollRejectSerializer},
+        responses={200: AdminStudentEnrollApprovalStatusSerializer},
     )
     def post(self, request: Request) -> Response:
         req = AdminStudentEnrollRequestSerializer(data=request.data)
@@ -222,7 +221,7 @@ class AdminStudentEnrollRejectView(APIView):
 
         data = {"detail": "수강생 등록 신청들에 대한 거절 요청이 처리되었습니다."}
 
-        res = AdminStudentEnrollRejectSerializer(data=data)
+        res = AdminStudentEnrollApprovalStatusSerializer(data=data)
         res.is_valid(raise_exception=True)
 
         return Response(res.data, status=drf_status.HTTP_200_OK)
