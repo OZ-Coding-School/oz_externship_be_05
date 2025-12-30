@@ -27,7 +27,7 @@ delete_response
 class CompletionAPITestBase(APITestCase):
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(cls) -> None:
         cls.password = "password1234"  # 해싱용 password 설정
         cls.user = User.objects.create_user(
             email="api_tester@example.com",
