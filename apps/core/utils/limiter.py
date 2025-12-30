@@ -49,9 +49,8 @@ class IPWorkPolicy:
     suspend_error_factory: Callable[[], Exception] = _default_suspend_error
 
 
-
 class IPBasedRateLimiter:
-    def __init__(self,policy: IPWorkPolicy):
+    def __init__(self, policy: IPWorkPolicy):
         self.policy = policy
 
     def _cache(self) -> Any:
