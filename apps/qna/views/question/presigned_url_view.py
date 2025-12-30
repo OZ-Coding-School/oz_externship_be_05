@@ -16,7 +16,11 @@ class PresignedUploadAPIView(APIView):
     permission_classes = [IsAuthenticated]
     ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 
-    @extend_schema(request=PresignedUploadSerializer)
+    @extend_schema(
+        tags=["질의응답"],
+        summary="질문 이미지 API",
+        request=PresignedUploadSerializer,
+    )
     def post(self, request: Request) -> Response:
         serializer = PresignedUploadSerializer(data=request.data)
         if not serializer.is_valid():
