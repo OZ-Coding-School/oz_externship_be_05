@@ -2,6 +2,7 @@ from django.urls import URLPattern, URLResolver, path
 
 from apps.exams.views.student import (
     ExamAccessCodeVerifyView,
+    ExamCheatingCheckView,
     ExamDeploymentStatusCheckView,
     ExamQuestionView,
     ExamResultView,
@@ -34,4 +35,5 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path(
         "deployments/<int:deployment_id>/status", ExamDeploymentStatusCheckView.as_view(), name="exam_checking_status"
     ),
+    path("deployments/<int:deployment_id>/cheating", ExamCheatingCheckView.as_view(), name="exam_cheating_check"),
 ]
