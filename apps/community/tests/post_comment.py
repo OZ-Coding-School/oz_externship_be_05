@@ -58,15 +58,12 @@ class TestPostCommentListCreateAPIView(APITestCaseBase):
         response = self.client.get(self.post_url)
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data['count'],3)
+        self.assertEqual(response.data["count"], 3)
 
-        check_author_id = [1,1,2]
-        check_content = ["댓글1", "댓글2","댓글3"]
+        check_author_id = [1, 1, 2]
+        check_content = ["댓글1", "댓글2", "댓글3"]
 
-        print(response.data)
-        print(response.data['results'])
-
-        for i, comment in enumerate(response.data['results']):
+        for i, comment in enumerate(response.data["results"]):
 
             self.check_response(comment, check_author_id[i], check_content[i])
 
@@ -75,19 +72,17 @@ class TestPostCommentListCreateAPIView(APITestCaseBase):
         response = self.client.get(f"/api/v1/posts/999/comments")
 
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.data["error_detail"], "해당 게시글을 찾을 수 없습니다.")
+        self.assertEqual(response.data["error_detail"], "게시글을(를) 찾을 수 없습니다.")
 
     def test_create_comment_without_tag(self) -> None:
 
         data = {"content": "태그 없는 댓글"}
         response = self.client.post(self.post_url, data)
 
-        print(response.data)
-
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.data["detail"], "댓글이 등록되었습니다.")
 
-    def test_create_comment_with_tag(self) -> None:
+    def test_create_comment_with_tags(self) -> None:
 
         data = {"content": "@태그 @누구 태그 있는 댓글"}
         response = self.client.post(self.post_url, data)
@@ -100,121 +95,141 @@ class TestPostCommentListCreateAPIView(APITestCaseBase):
         self.assertEqual(comment.author, self.test_user)
 
         tags = PostCommentTag.objects.filter(comment=comment)
-        check_author_id = [self.other_user.id,self.tagged_user.id]
+        check_author_id = [self.other_user.id, self.tagged_user.id]
         tui = []
         for tag in tags:
             tui.append(tag.tagged_user.id)
 
-        self.assertEqual(check_author_id,tui)
+        self.assertEqual(check_author_id, tui)
+
+    def test_create_comment_with_tag(self) -> None:
+
+        data = {"content": "@태그 @태그 태그 있는 댓글"}
+        response = self.client.post(self.post_url, data)
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data["detail"], "댓글이 등록되었습니다.")
+
+        comment = PostComment.objects.get(content="@태그 @태그 태그 있는 댓글")
+        self.assertIsNotNone(comment)
+        self.assertEqual(comment.author, self.test_user)
+
+        tags = PostCommentTag.objects.filter(comment=comment)
+
+        for tag in tags:
+            self.assertEqual(self.tagged_user.id, tag.tagged_user.id)
 
     def test_create_comment_with_empty_content(self) -> None:
 
         data = {"content": ""}
         response = self.client.post(self.post_url, data)
 
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["errors"]["content"][0], "이 필드는 필수 항목입니다.")
+
+    def test_create_comment_without_auth(self) -> None:
+        self.client.force_authenticate(user=None)
+
+        data = {"content": "댓글"}
+        response = self.client.post(self.post_url, data)
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            response.data["error_detail"], "자격 인증데이터(authentication credentials)가 제공되지 않았습니다."
+        )
+
+    def test_create_comment_without_not_exist(self) -> None:
+        data = {"content": "댓글"}
+        response = self.client.post(f"/api/v1/posts/999/comments", data)
+
         print(response.data)
 
-        self.assertEqual(response.status_code, 400)
-
-    def test_create_comment_with_tagged_user(self) -> None:
-
-        data = {"content": "새 댓글", "tagged_user": [{"tagged_user": self.tagged_user.id}]}
-
-        response = self.client.post(self.post_url, data, format="json")
-
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(PostComment.objects.filter(post=self.post).count(), 3)
-
-        self.check_response(response.data, "test_user", "새 댓글")
-
-        comment = PostComment.objects.filter(post=self.post).latest("id")
-        comment_tag = PostCommentTag.objects.get(comment_id=comment.id)
-
-        self.assertIsNotNone(comment_tag)
-        self.assertEqual(comment_tag.tagged_user.id, self.tagged_user.id)
-        self.assertEqual(User.objects.get(id=comment_tag.tagged_user.id).name, "tagged_user")
-
-    def test_create_comment_with_tagged_users(self) -> None:
-
-        data = {
-            "content": "새 댓글",
-            "tagged_user": [{"tagged_user": self.other_user.id}, {"tagged_user": self.tagged_user.id}],
-        }
-
-        response = self.client.post(self.post_url, data, format="json")
-
-        self.assertEqual(response.status_code, 201)
-        self.assertEqual(PostComment.objects.filter(post=self.post).count(), 3)
-
-        self.check_response(response.data, "test_user", "새 댓글")
-
-        comment = PostComment.objects.filter(post=self.post).latest("id")
-        comment_tags = PostCommentTag.objects.filter(comment_id=comment.id)
-
-        self.assertIsNotNone(comment_tags)
-
-        check_users = [self.other_user.id, self.tagged_user.id]
-        check_names = ["other_user", "tagged_user"]
-
-        for i, comment_tag in enumerate(comment_tags):
-
-            self.assertEqual(comment_tag.tagged_user.id, check_users[i])
-            self.assertEqual(User.objects.get(id=comment_tag.tagged_user.id).name, check_names[i])
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.data["error_detail"], "게시글을(를) 찾을 수 없습니다.")
 
 
 class TestPostCommentUpdateDestroyAPIView(APITestCaseBase):
-
     def setUp(self) -> None:
+
         self.test_user = User.objects.create_user(
             name="test_user", password="password", email="test@test.com", birthday=datetime.now()
         )
 
         self.other_user = User.objects.create_user(
-            name="other_user", password="password", email="other@test.com", birthday=datetime.now()
+            name="other_user", password="password", nickname="누구", email="other@other.com", birthday=datetime.now()
         )
 
         self.tagged_user = User.objects.create_user(
-            name="tagged_user", password="password", email="tagged@tagged.com", birthday=datetime.now()
+            name="tagged_user", password="password", nickname="태그", email="tagged@tagged.com", birthday=datetime.now()
         )
 
         category = PostCategory.objects.create(name="테스트")
 
         self.post = Post.objects.create(title="제목", content="내용", author=self.test_user, category=category)
 
-        self.comment = PostComment.objects.create(post=self.post, author=self.test_user, content="댓글")
+        self.comment = PostComment.objects.create(post=self.post, author=self.test_user, content="댓글1")
 
-        self.comment_tag = PostCommentTag.objects.create(comment=self.comment, tagged_user=self.tagged_user)
+        PostCommentTag.objects.create(comment=self.comment, tagged_user=self.tagged_user)
 
+        self.post_url = f"/api/v1/posts/{self.post.id}/comments"
         self.comment_url = f"/api/v1/posts/{self.post.id}/comments/{self.comment.id}"
 
         self.client.force_authenticate(user=self.test_user)
 
-    def test_update_comment(self) -> None:
-        data = {"content": "수정 댓글", "tagged_user": [{"tagged_user": self.tagged_user.id}]}
+    def test_update_comment_without_tag(self) -> None:
+        data = {"content": "댓글 수정"}
         response = self.client.put(self.comment_url, data, format="json")
 
+        comment = PostComment.objects.get(content="댓글 수정")
+
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["id"], self.comment.id)
+        self.assertEqual(response.data["content"], "댓글 수정")
+        self.assertIn("updated_at", response.data)
 
-        self.check_response(response.data, "test_user", "수정 댓글")
+        self.assertFalse(PostCommentTag.objects.filter(comment=comment).exists())
 
-        comment = PostComment.objects.filter(post=self.post).latest("id")
-        comment_tag = PostCommentTag.objects.get(comment_id=comment.id)
+    def test_update_comment_with_tag(self) -> None:
+        data = {"content": "@태그 댓글 수정"}
+        response = self.client.put(self.comment_url, data, format="json")
 
-        self.assertIsNotNone(comment_tag)
-        self.assertEqual(comment_tag.tagged_user.id, self.tagged_user.id)
-        self.assertEqual(User.objects.get(id=comment_tag.tagged_user.id).name, "tagged_user")
+        comment = PostComment.objects.get(content="@태그 댓글 수정")
 
-    def test_update_comment_by_other(self) -> None:
+        print(response.data)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["id"], self.comment.id)
+        self.assertEqual(response.data["content"], "@태그 댓글 수정")
+        self.assertIn("updated_at", response.data)
+
+        self.assertTrue(PostCommentTag.objects.filter(comment=comment).exists())
+        self.assertEqual(PostCommentTag.objects.filter(comment=comment).count(), 1)
+
+    def test_update_comment_with_tags(self) -> None:
+        data = {"content": "@태그 @누구 댓글 수정"}
+        response = self.client.put(self.comment_url, data, format="json")
+
+        comment = PostComment.objects.get(content="@태그 @누구 댓글 수정")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["id"], self.comment.id)
+        self.assertEqual(response.data["content"], "@태그 @누구 댓글 수정")
+        self.assertIn("updated_at", response.data)
+
+        self.assertTrue(PostCommentTag.objects.filter(comment=comment).exists())
+        self.assertEqual(PostCommentTag.objects.filter(comment=comment).count(), 2)
+
+    def test_update_comment_by_other_user(self) -> None:
         self.client.force_authenticate(user=self.other_user)
 
-        data = {"content": "수정 댓글"}
+        data = {"content": "댓글 수정"}
         response = self.client.put(self.comment_url, data)
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data["error_detail"], "권한이 없습니다.")
 
     def test_update_comment_not_exist(self) -> None:
-        data = {"content": "수정 시도"}
+        data = {"content": "댓글 수정"}
         response = self.client.put(f"/api/v1/posts/{self.post.id}/comments/999", data)
 
         self.assertEqual(response.status_code, 404)
@@ -224,49 +239,21 @@ class TestPostCommentUpdateDestroyAPIView(APITestCaseBase):
         data = {"content": ""}
         response = self.client.put(self.comment_url, data)
 
+        print(response.data)
+
         self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data["errors"]["content"][0], "이 필드는 필수 항목입니다.")
 
-    def test_update_comment_with_add_tag(self) -> None:
-        data = {
-            "content": "태그 추가",
-            "tagged_user": [{"tagged_user": self.tagged_user.id}, {"tagged_user": self.other_user.id}],
-        }
-        response = self.client.put(self.comment_url, data)
+    def test_update_comment_without_auth(self) -> None:
+        self.client.force_authenticate(user=None)
 
-        self.assertEqual(response.status_code, 200)
+        data = {"content": "댓글 수정"}
+        response = self.client.put(self.post_url, data)
 
-        comment = PostComment.objects.filter(post=self.post).latest("id")
-        comment_tags = PostCommentTag.objects.filter(comment_id=comment.id)
-
-        check_users = [self.other_user.id, self.tagged_user.id]
-        check_names = ["other_user", "tagged_user"]
-
-        for i, comment_tag in enumerate(comment_tags):
-
-            self.assertEqual(comment_tag.tagged_user.id, check_users[i])
-            self.assertEqual(User.objects.get(id=comment_tag.tagged_user.id).name, check_names[i])
-
-    def test_update_comment_change_tag(self) -> None:
-        data = {"content": "태그 변경", "tagged_user": [{"tagged_user": self.other_user.id}]}
-        response = self.client.put(self.comment_url, data, format="json")
-
-        self.assertEqual(response.status_code, 200)
-
-        comment = PostComment.objects.filter(post=self.post).latest("id")
-        comment_tag = PostCommentTag.objects.get(comment_id=comment.id)
-
-        self.assertIsNotNone(comment_tag)
-        self.assertEqual(comment_tag.tagged_user.id, self.other_user.id)
-        self.assertEqual(User.objects.get(id=comment_tag.tagged_user.id).name, "other_user")
-
-    def test_update_comment_delete_tag(self) -> None:
-        data = {"content": "태그 제거"}
-        response = self.client.put(self.comment_url, data)
-
-        self.assertEqual(response.status_code, 200)
-
-        comment = PostComment.objects.filter(post=self.post).latest("id")
-        self.assertFalse(PostCommentTag.objects.filter(comment_id=comment.id).exists())
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            response.data["error_detail"], "자격 인증데이터(authentication credentials)가 제공되지 않았습니다."
+        )
 
     def test_delete_comment_not_exist(self) -> None:
         response = self.client.delete(f"/api/v1/posts/{self.post.id}/comments/999")
@@ -281,6 +268,16 @@ class TestPostCommentUpdateDestroyAPIView(APITestCaseBase):
 
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data["error_detail"], "권한이 없습니다.")
+
+    def test_delete_comment_without_auth(self) -> None:
+        self.client.force_authenticate(user=None)
+
+        response = self.client.delete(self.comment_url)
+
+        self.assertEqual(response.status_code, 401)
+        self.assertEqual(
+            response.data["error_detail"], "자격 인증데이터(authentication credentials)가 제공되지 않았습니다."
+        )
 
     def test_delete_comment(self) -> None:
         response = self.client.delete(self.comment_url)
