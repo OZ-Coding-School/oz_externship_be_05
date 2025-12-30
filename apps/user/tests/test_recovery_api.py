@@ -12,7 +12,11 @@ from rest_framework.test import APIRequestFactory
 from apps.user.models import Withdrawal
 from apps.user.models.user import GenderChoices
 from apps.user.utils.sender import EmailSender
-from apps.user.views.recovery import FindEmailAPIView, FindPasswordAPIView, RestoreAccountAPIView
+from apps.user.views.recovery import (
+    FindEmailAPIView,
+    FindPasswordAPIView,
+    RestoreAccountAPIView,
+)
 
 
 def make_token() -> str:
@@ -50,7 +54,7 @@ class RecoveryAPIViewTests(TestCase):
         self.assertTrue(user.is_active)
         self.assertFalse(Withdrawal.objects.filter(user=user).exists())
 
-    @patch("apps.user.serializers.mixins.SMSSender.verify_token", return_value="01012345678")
+    @patch("apps.user.serializers.mixins.SMSSender.verify_token", return_value="01012345679")
     def test_find_email_returns_masked_email(self, _verify_mock: Any) -> None:
         get_user_model().objects.create_user(
             email="bbibbi@example.com",
@@ -69,7 +73,7 @@ class RecoveryAPIViewTests(TestCase):
         response = FindEmailAPIView.as_view()(request)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["masked_email"], EmailSender.mask_email("tester@example.com"))
+        self.assertEqual(response.data["masked_email"], EmailSender.mask_email("bbibbi@example.com"))
 
     @patch("apps.user.serializers.mixins.EmailSender.verify_token", return_value="pw@test.com")
     def test_find_password_updates_password(self, _verify_mock: Any) -> None:
