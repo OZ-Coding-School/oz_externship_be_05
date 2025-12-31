@@ -5,6 +5,10 @@ from apps.user.views.admin.accounts import (
     AdminAccountRetrieveUpdateView,
     AdminAccountRoleUpdateView,
 )
+from apps.user.views.admin.analytics import (
+    AdminSignupStatsAPIView,
+    AdminWithdrawalStatsAPIView,
+)
 from apps.user.views.admin.enrollments import (
     AdminStudentEnrollAcceptView,
     AdminStudentEnrollRejectView,
@@ -26,4 +30,8 @@ urlpatterns = [
     path("student-enrollments/reject", AdminStudentEnrollRejectView.as_view(), name="admin-student-enrollments-reject"),
     path("withdrawals", AdminAccountWithdrawalListAPIView.as_view()),
     path("withdrawals/<withdrawal_id>", AdminAccountWithdrawalRetrieveDestroyAPIView.as_view()),
+    path("analytics/signup/trends", AdminSignupStatsAPIView.as_view(), name="admin-analytics-signup-trends"),
+    path(
+        "analytics/withdrawals/trends", AdminWithdrawalStatsAPIView.as_view(), name="admin-analytics-withdrawals-trends"
+    ),
 ]
