@@ -1,5 +1,10 @@
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema, OpenApiResponse, OpenApiExample
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+)
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -38,13 +43,17 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
         request=SessionCreateSerializer,
         responses={
             200: OpenApiResponse(SessionCreateSerializer, description="세션 생성 성공"),
-            400: OpenApiResponse(EMS.E400_INVALID_REQUEST("세션 생성"),
-                                 description="Bad Request - 유효하지 않은 요청",
-                                 examples=[OpenApiExample(
-                                     name="정보 없음",
-                                     value={"error_detail": "유효하지 않은 세션 생성 요청입니다."})], ),
+            400: OpenApiResponse(
+                EMS.E400_INVALID_REQUEST("세션 생성"),
+                description="Bad Request - 유효하지 않은 요청",
+                examples=[
+                    OpenApiExample(name="정보 없음", value={"error_detail": "유효하지 않은 세션 생성 요청입니다."})
+                ],
+            ),
             401: OpenApiResponse(EMS.E401_USER_ONLY_ACTION("세션 생성"), description="Unauthorized - 인증되지 않음"),
-            403: OpenApiResponse(EMS.E403_PERMISSION_DENIED("세션 생성"), description="Forbidden - 세션 생성 권한이 없음"),
+            403: OpenApiResponse(
+                EMS.E403_PERMISSION_DENIED("세션 생성"), description="Forbidden - 세션 생성 권한이 없음"
+            ),
         },
         examples=[
             OpenApiExample(
@@ -64,12 +73,10 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
             OpenApiExample(
                 name="잘못된 모델 선택으로 400",
                 summary="허용되지 않은 모델 값",
-                value={
-                    "using_model": ["'GROK' is not a valid choice."]
-                },
+                value={"using_model": ["'GROK' is not a valid choice."]},
                 request_only=True,
                 status_codes=["400"],
-            )
+            ),
         ],
     )
     def post(self, request: Request) -> Response:
@@ -99,29 +106,29 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
                 default=None,
             ),
             OpenApiParameter(
-                name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값(min: 10, max: 50)", default=10
+                name="page_size",
+                type=OpenApiTypes.INT,
+                description="페이지 네이션 사이즈 지정을 위한 값(min: 10, max: 50)",
+                default=10,
             ),
         ],
         responses={
-            200: OpenApiResponse(SessionSerializer(many=True), description = "세션 조회 성공"),
-            401: OpenApiResponse(EMS.E401_USER_ONLY_ACTION("조회"),
-                                 description="Unauthorized - 인증되지 않음",
-                                 examples=[OpenApiExample(
-                                     name="인증 실패",
-                                     value=EMS.E401_USER_ONLY_ACTION("조회")
-                                 )]),
-            403: OpenApiResponse(EMS.E403_PERMISSION_DENIED("조회"),
-                                 description="Forbidden - 세션 생성 권한이 없음",
-                                 examples=[OpenApiExample(
-                                     name="권한 없음",
-                                     value=EMS.E403_PERMISSION_DENIED("조회")
-                                 )]),
-            404: OpenApiResponse(EMS.E404_NOT_EXIST("세션"),
-                                 description="Not Found - 세션이 존재하지 않음",
-                                 examples=[OpenApiExample(
-                                     name="세션 없음",
-                                     value=EMS.E404_NOT_EXIST("세션")
-                                 )])
+            200: OpenApiResponse(SessionSerializer(many=True), description="세션 조회 성공"),
+            401: OpenApiResponse(
+                EMS.E401_USER_ONLY_ACTION("조회"),
+                description="Unauthorized - 인증되지 않음",
+                examples=[OpenApiExample(name="인증 실패", value=EMS.E401_USER_ONLY_ACTION("조회"))],
+            ),
+            403: OpenApiResponse(
+                EMS.E403_PERMISSION_DENIED("조회"),
+                description="Forbidden - 세션 생성 권한이 없음",
+                examples=[OpenApiExample(name="권한 없음", value=EMS.E403_PERMISSION_DENIED("조회"))],
+            ),
+            404: OpenApiResponse(
+                EMS.E404_NOT_EXIST("세션"),
+                description="Not Found - 세션이 존재하지 않음",
+                examples=[OpenApiExample(name="세션 없음", value=EMS.E404_NOT_EXIST("세션"))],
+            ),
         },
         examples=[
             OpenApiExample(
@@ -164,7 +171,7 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
                 request_only=True,
                 status_codes=["404"],
             ),
-        ]
+        ],
     )
     def get(self, request: Request) -> Response:
         paginator = self.pagination_class()
@@ -202,21 +209,36 @@ class SessionDeleteView(APIView, ChatbotSessionMixin):
         ],
         responses={
             204: OpenApiResponse(description="세션 삭제 성공 - No Content"),
-            401: OpenApiResponse(EMS.E401_USER_ONLY_ACTION("삭제"), description="Unauthorized - 인증되지 않음",
-                                 examples=[OpenApiExample(
-                                     name="인증 실패",
-                                     value=EMS.E401_USER_ONLY_ACTION("삭제"),
-                                 )]),
-            403: OpenApiResponse(EMS.E403_PERMISSION_DENIED("삭제"), description="Forbidden - 권한 없음",
-                                 examples=[OpenApiExample(
-                                     name="권한 없음",
-                                     value=EMS.E403_PERMISSION_DENIED("삭제"),
-                                 )]),
-            404: OpenApiResponse(EMS.E404_USER_CHATBOT_SESSION_NOT_FOUND, description="Not Found - 세션 없음",
-                                 examples=[OpenApiExample(
-                                     name="세션 없음",
-                                     value=EMS.E404_USER_CHATBOT_SESSION_NOT_FOUND,
-                                 )]),
+            401: OpenApiResponse(
+                EMS.E401_USER_ONLY_ACTION("삭제"),
+                description="Unauthorized - 인증되지 않음",
+                examples=[
+                    OpenApiExample(
+                        name="인증 실패",
+                        value=EMS.E401_USER_ONLY_ACTION("삭제"),
+                    )
+                ],
+            ),
+            403: OpenApiResponse(
+                EMS.E403_PERMISSION_DENIED("삭제"),
+                description="Forbidden - 권한 없음",
+                examples=[
+                    OpenApiExample(
+                        name="권한 없음",
+                        value=EMS.E403_PERMISSION_DENIED("삭제"),
+                    )
+                ],
+            ),
+            404: OpenApiResponse(
+                EMS.E404_USER_CHATBOT_SESSION_NOT_FOUND,
+                description="Not Found - 세션 없음",
+                examples=[
+                    OpenApiExample(
+                        name="세션 없음",
+                        value=EMS.E404_USER_CHATBOT_SESSION_NOT_FOUND,
+                    )
+                ],
+            ),
         },
     )
     def delete(self, request: Request, session_id: int) -> Response:
