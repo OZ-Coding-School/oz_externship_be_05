@@ -74,7 +74,7 @@ class PostListCreateAPIView(ListCreateAPIView[Post]):
             elif search_filter == "title_or_content":
                 cond = Q(title__icontains=search) | Q(content__icontains=search)
                 queryset = queryset.filter(cond)
-            else :
+            else:
                 pass
         elif search:
             cond = Q(title__icontains=search) | Q(content__icontains=search) | Q(author__nickname__icontains=search)
