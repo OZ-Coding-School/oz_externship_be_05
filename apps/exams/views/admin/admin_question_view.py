@@ -111,7 +111,7 @@ class ExamAdminQuestionUpdateDestroyAPIView(AdminUserPermissionView):
     service = AdminQuestionService()
 
     @extend_schema(
-        tags="쪽지시험 관리",
+        tags=["쪽지시험 관리"],
         summary="쪽지시험 문제 수정",
         description="기존 문제를 수정합니다. 문제 유형 변경 및 배점 수정 시 상한선 검증이 다시 수행됩니다.",
         request=AdminExamQuestionSerializer,
