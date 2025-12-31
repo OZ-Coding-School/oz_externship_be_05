@@ -16,7 +16,7 @@ def _load_config() -> configparser.ConfigParser:
     if _CONFIG_CACHE is not None:
         return _CONFIG_CACHE
     parser = configparser.ConfigParser()
-    parser.optionxform = str
+    parser.optionxform = str  # type: ignore[assignment]
     if _CONFIG_PATH.exists():
         parser.read(_CONFIG_PATH, encoding="utf-8")
     _CONFIG_CACHE = parser
@@ -28,7 +28,7 @@ def _extract_country_code(request: Any) -> str:
         return "KR"
     headers = getattr(request, "headers", None)
     if headers is not None:
-        value = headers.get("X-Country-Code") or headers.get("X-Country")  # type: ignore[call-arg]
+        value = headers.get("X-Country-Code") or headers.get("X-Country")
         if isinstance(value, str) and value:
             return value.upper()
     meta = getattr(request, "META", None)
@@ -87,4 +87,3 @@ class MagicException(APIException):
         self.message_code = message_code
         self.variables = variables
         super().__init__(detail=message_code)
-
