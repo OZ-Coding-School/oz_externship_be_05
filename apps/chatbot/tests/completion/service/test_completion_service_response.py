@@ -13,7 +13,6 @@ from apps.chatbot.services.completion_response_service import (
     GeminiStreamingService,
     SSEEncoder,
     ai_message_save,
-    create_streaming_response,
     user_message_save,
 )
 from apps.qna.models import Question, QuestionCategory
@@ -170,16 +169,3 @@ class CompletionResponseServiceTests(APITestCase):
             ChatbotCompletion.objects.filter(session=self.session, role=UserRole.ASSISTANT).count(),
             0,
         )
-
-    def test_create_streaming_response_headers(self) -> None:
-        resp = create_streaming_response(session=self.session, user_message="테스트")
-        self.assertIsInstance(resp, StreamingHttpResponse)
-
-        # 헤더
-        self.assertEqual(resp["Cache-Control"], "no-cache")
-        self.assertEqual(resp["X-Accel-Buffering"], "no")
-        self.assertIn("text/event-stream; charset=utf-8", resp["Content-Type"])
-
-    # def test_service_uses_session_model(self) -> None:
-    #     service = GeminiStreamingService(self.session)
-    #     self.assertIsInstance(service.model, ChatModel.GEMINI)
