@@ -38,32 +38,6 @@ class QuestionCategoryAdmin(_BaseAdmin):
         queryset = super().get_queryset(request)
         return queryset.select_related("parent").prefetch_related("children")
 
-    # --- [권한 설정] ---
-
-    def _has_common_permission(self, request: HttpRequest) -> bool:
-        """
-        [공통 권한 체크]
-        - ST(학생), USER(일반) 제외
-        - 어드민 접속 권한(is_staff)이 있는 운영진(AD, OM, LC, TA)만 허용
-        """
-        if not request.user.is_authenticated:
-            return False
-
-        excluded_roles = [RoleChoices.ST, RoleChoices.USER]
-        return request.user.role not in excluded_roles and request.user.is_staff
-
-    # 통합된 권한 함수 적용
-    def has_add_permission(self, request: HttpRequest) -> bool:
-        return self._has_common_permission(request)
-
-    def has_change_permission(self, request: HttpRequest, obj: Optional[QuestionCategory] = None) -> bool:
-        return self._has_common_permission(request)
-
-    def has_delete_permission(self, request: HttpRequest, obj: Optional[QuestionCategory] = None) -> bool:
-        return self._has_common_permission(request)
-
-    def has_view_permission(self, request: HttpRequest, obj: Optional[QuestionCategory] = None) -> bool:
-        return self._has_common_permission(request)
 
     # --- [삭제 시 경고 메시지 출력] ---
     def delete_view(
