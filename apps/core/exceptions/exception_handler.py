@@ -4,6 +4,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
+from apps.core.response.response_message import MagicException, resolve_message
+
 
 def custom_exception_handler(
     exc: Exception,
@@ -14,6 +16,12 @@ def custom_exception_handler(
         return None
 
     view = context.get("view")
+    request = context.get("request")
+
+    if isinstance(exc, MagicException):
+        message = resolve_message(exc.message_code, request, exc.variables)
+        detail_key = "error_detail" if str(exc.status_code).startswith(("4", "5")) else "detail"
+        return Response({detail_key: message}, status=exc.status_code)
 
     # 400 → validation_error_message / "유효하지 않은 요청입니다."
     if isinstance(exc, ValidationError):
