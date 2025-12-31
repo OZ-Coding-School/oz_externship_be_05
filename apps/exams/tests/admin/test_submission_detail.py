@@ -471,7 +471,7 @@ class ExamAdminSubmissionDetailViewTestCase(APITestCase):
             submitter=self.student_user,
             started_at=timezone.now() - timedelta(minutes=30),
             created_at=timezone.now(),
-            answers="invalid_string",  # type: ignore
+            answers="invalid_string",
             score=0,
             correct_answer_count=0,
             cheating_count=0,
@@ -493,7 +493,7 @@ class ExamAdminSubmissionDetailViewTestCase(APITestCase):
             submitter=self.student_user,
             started_at=timezone.now() - timedelta(minutes=30),
             created_at=timezone.now(),
-            answers=["answer1", "answer2"],  # type: ignore
+            answers=["answer1", "answer2"],
             score=0,
             correct_answer_count=0,
             cheating_count=0,
