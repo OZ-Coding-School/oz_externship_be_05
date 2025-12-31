@@ -2,6 +2,7 @@ from django.urls import URLPattern, URLResolver, path
 
 from apps.exams.views.student import (
     ExamAccessCodeVerifyView,
+    ExamDeploymentListView,
     ExamDeploymentStatusCheckView,
     ExamQuestionView,
     ExamResultView,
@@ -14,6 +15,12 @@ urlpatterns: list[URLPattern | URLResolver] = [
         "submissions",
         ExamSubmissionCreateAPIView.as_view(),
         name="exam_submit",
+    ),
+    path(
+        # student/submit
+        "deployments",
+        ExamDeploymentListView.as_view(),
+        name="exam_deployment",
     ),
     path(
         # student/result

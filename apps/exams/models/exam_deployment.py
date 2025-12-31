@@ -4,8 +4,8 @@ from apps.core.models import TimeStampedModel
 
 
 class DeploymentStatus(models.TextChoices):
-    ACTIVATED = "activated", "활성화"
-    DEACTIVATED = "deactivated", "비활성화"
+    ACTIVATED = "pending", "미응시"
+    DEACTIVATED = "done", "응시"
 
 
 class ExamDeployment(TimeStampedModel):
