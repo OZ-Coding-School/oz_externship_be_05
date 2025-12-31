@@ -64,18 +64,20 @@ class PostListCreateAPIView(ListCreateAPIView[Post]):
         )
         search_filter = self.request.GET.get("search_filter", None)
         search = self.request.query_params.get("search", "")
-        if search_filter:
+        if search_filter and search:
             if search_filter == "author":
-                queryset = queryset.filter(author__name__icontains=search)
-            if search_filter == "title":
+                queryset = queryset.filter(author__nickname__icontains=search)
+            elif search_filter == "title":
                 queryset = queryset.filter(title__icontains=search)
-            if search_filter == "content":
+            elif search_filter == "content":
                 queryset = queryset.filter(content__icontains=search)
-            if search_filter == "title_or_content":
+            elif search_filter == "title_or_content":
                 cond = Q(title__icontains=search) | Q(content__icontains=search)
                 queryset = queryset.filter(cond)
+            else :
+                pass
         elif search:
-            cond = Q(title__icontains=search) | Q(content__icontains=search) | Q(author__name__icontains=search)
+            cond = Q(title__icontains=search) | Q(content__icontains=search) | Q(author__nickname__icontains=search)
             queryset = queryset.filter(cond)
 
         category_id = self.request.query_params.get("category_id", None)
