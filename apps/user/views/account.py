@@ -160,6 +160,4 @@ class ProfileImageAPIView(APIView):
         profile_url = urls.get("256", "")
         user.profile_image_url = profile_url or None
         user.save(update_fields=["profile_image_url", "updated_at"])
-        return Response(
-            status=status.HTTP_200_OK,
-        )
+        return Response({"detail": "프로필 사진이 업데이트 되었습니다."}, status=status.HTTP_200_OK)
