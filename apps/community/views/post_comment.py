@@ -1,5 +1,7 @@
-from typing import Any
+from typing import Any, Union
 
+from django.contrib.auth.models import AnonymousUser
+from django.db import transaction
 from rest_framework import status
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
@@ -21,11 +23,33 @@ class CommentPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class PostCommentListCreateAPIView(APIView):
+class CommentTagMixin:
+
+    @staticmethod
+    def create_tags(comment: PostComment, content: str) -> None:
+        words = content.split()
+        tag_nicknames = [word[1:] for word in words if word.startswith("@")]
+
+        if tag_nicknames:
+            tagged_users = User.objects.filter(nickname__in=tag_nicknames)
+            comment_tags = [PostCommentTag(comment=comment, tagged_user=user) for user in tagged_users]
+            PostCommentTag.objects.bulk_create(comment_tags, ignore_conflicts=True)
+
+
+class CommentPermissionMixin:
+
+    @staticmethod
+    def check_permission(comment: PostComment, user: Union[User, AnonymousUser]) -> None:
+        if comment.author != user:
+            raise PermissionDenied(EMS.E403_PERMISSION_DENIED(""))
+
+
+class PostCommentListCreateAPIView(APIView, CommentTagMixin):
     permission_classes = [IsAuthenticated]
     pagination_class = CommentPagination
 
-    def check_post(self, post_id: int) -> Post:
+    @staticmethod
+    def check_post(post_id: int) -> Post:
         try:
             return Post.objects.get(id=post_id)
         except Post.DoesNotExist:
@@ -56,56 +80,39 @@ class PostCommentListCreateAPIView(APIView):
 
         serializer.is_valid(raise_exception=True)
 
-        comment = serializer.save(author=request.user, post_id=post_id)
-
-        content = serializer.validated_data["content"]
-        words = content.split()
-        tag_nicknames = [word[1:] for word in words if word.startswith("@")]
-
-        if tag_nicknames:
-            tagged_users = User.objects.filter(nickname__in=tag_nicknames)
-
-            comment_tags = [PostCommentTag(comment=comment, tagged_user=user) for user in tagged_users]
-            PostCommentTag.objects.bulk_create(comment_tags, ignore_conflicts=True)
+        with transaction.atomic():
+            comment = serializer.save(author=request.user, post_id=post_id)
+            content = serializer.validated_data["content"]
+            self.create_tags(comment, content)
 
         return Response({"detail": "댓글이 등록되었습니다."}, status=status.HTTP_201_CREATED)
 
 
-class PostCommentUpdateDestroyAPIView(APIView):
+class PostCommentUpdateDestroyAPIView(APIView, CommentTagMixin, CommentPermissionMixin):
     permission_classes = [IsAuthenticated]
 
-    def check_comment(self, comment_id: int) -> PostComment:
+    @staticmethod
+    def check_comment(comment_id: int) -> PostComment:
         try:
             comment = PostComment.objects.get(id=comment_id)
         except PostComment.DoesNotExist:
-            raise NotFound("해당 댓글을 찾을 수 없습니다.")
-
-        if comment.author != self.request.user:
-            raise PermissionDenied("권한이 없습니다.")
+            raise NotFound(EMS.E404_NOT_FOUND("해당 댓글"))
 
         return comment
 
     def put(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         comment_id: int = int(kwargs["comment_id"])
         comment = self.check_comment(comment_id)
+        self.check_permission(comment, self.request.user)
 
         serializer = PostCommentSerializer(comment, data=request.data)
-
-        PostCommentTag.objects.filter(comment_id=comment_id).delete()
-
         serializer.is_valid(raise_exception=True)
 
-        comment = serializer.save(author=request.user, id=comment_id)
-
-        content = serializer.validated_data["content"]
-        words = content.split()
-        tag_nicknames = [word[1:] for word in words if word.startswith("@")]
-
-        if tag_nicknames:
-            tagged_users = User.objects.filter(nickname__in=tag_nicknames)
-
-            comment_tags = [PostCommentTag(comment=comment, tagged_user=user) for user in tagged_users]
-            PostCommentTag.objects.bulk_create(comment_tags, ignore_conflicts=True)
+        with transaction.atomic():
+            PostCommentTag.objects.filter(comment_id=comment_id).delete()
+            comment = serializer.save(author=request.user, id=comment_id)
+            content = serializer.validated_data["content"]
+            self.create_tags(comment, content)
 
         response_data = {"id": comment.id, "content": comment.content, "updated_at": comment.updated_at.isoformat()}
 
@@ -114,6 +121,7 @@ class PostCommentUpdateDestroyAPIView(APIView):
     def delete(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         comment_id: int = int(kwargs["comment_id"])
         comment = self.check_comment(comment_id)
+        self.check_permission(comment, self.request.user)
 
         comment.delete()
 
