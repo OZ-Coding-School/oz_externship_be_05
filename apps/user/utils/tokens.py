@@ -11,8 +11,8 @@ def issue_token_pair(refresh: RefreshToken) -> Response:
     samesite = cast(Literal["Lax", "Strict", "None", False] | None, getattr(settings, "SESSION_COOKIE_SAMESITE", "Lax"))
     response = Response({"access_token": str(refresh.access_token)}, status=status.HTTP_200_OK)
     if settings.DEBUG:
-        secure=True
-        samesite="None"
+        secure = True
+        samesite = "None"
     response.set_cookie(
         "refresh_token",
         str(refresh),
