@@ -135,3 +135,19 @@ class ExamAdminQuestionUpdateDestroyAPIView(AdminUserPermissionView):
             return Response(EMS.E404_NOT_FOUND("수정하려는 문제 정보"), status=status.HTTP_404_NOT_FOUND)
         except ValidationError:
             return Response(EMS.E409_QUIZ_LIMIT_EXCEEDED_EDIT, status=status.HTTP_409_CONFLICT)
+
+    @extend_schema(
+        tags=["쪽지시험 관리"],
+        summary="쪽지시험 문제 삭제",
+        responses={
+            204: OpenApiResponse(description="삭제 성공"),
+            404: OpenApiResponse(description="삭제할 문제 정보를 찾을 수 없습니다."),
+        },
+    )
+    def delete(self, request: Request, question_id: int) -> Response:
+        try:
+            self.service.delete_question(question_id)
+            # 삭제 성공 시 204 No Content 반환 (명세서에 따라 200 OK로 변경 가능)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except NotFound:
+            return Response(EMS.E404_NOT_FOUND("삭제할 문제 정보"), status=status.HTTP_404_NOT_FOUND)

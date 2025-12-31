@@ -11,7 +11,6 @@ from apps.exams.views.admin.admin_question_view import (
     ExamAdminQuestionUpdateDestroyAPIView,
 )
 
-# from .admin_question_view import
 # from .admin_submission_view import
 
 __all__ = [

@@ -15,7 +15,7 @@ class AdminQuestionService:
 
         # 문제 수 체크 (생성 시에만)
         if exclude_question_id is None:
-            if query.count() > 20:
+            if query.count() >= 20:
                 raise ValidationError()  # 409
         # 총 배점 체크
         if exclude_question_id:
@@ -46,3 +46,11 @@ class AdminQuestionService:
 
         question.save()
         return question
+
+    @transaction.atomic
+    def delete_question(self, question_id: int) -> None:
+        try:
+            question_to_delete = self._get_question_select_lock(question_id)
+            question_to_delete.delete()
+        except ExamQuestion.DoesNotExist:
+            raise NotFound()
