@@ -11,3 +11,4 @@ class PostCommentTag(TimeStampedModel):
 
     class Meta:
         db_table = "post_comment_tags"
+        unique_together = ["comment", "tagged_user"]
