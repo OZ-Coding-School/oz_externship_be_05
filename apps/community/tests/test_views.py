@@ -188,6 +188,7 @@ class PostDetailAPIViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertFalse(Post.objects.filter(id=self.post.id).exists())
 
+
 class PostSearchFilterTests(APITestCase):
     """게시글 검색 및 필터링 기능 테스트"""
 
@@ -232,10 +233,7 @@ class PostSearchFilterTests(APITestCase):
 
     def test_search_by_author_name(self) -> None:
         """작성자 이름으로 검색"""
-        response = self.client.get(
-            self.list_url,
-            {"search_filter": "author", "search": "김철수"}
-        )
+        response = self.client.get(self.list_url, {"search_filter": "author", "search": "김철수"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.data["results"]
@@ -246,10 +244,7 @@ class PostSearchFilterTests(APITestCase):
 
     def test_search_by_title_only(self) -> None:
         """제목으로만 검색"""
-        response = self.client.get(
-            self.list_url,
-            {"search_filter": "title", "search": "Django"}
-        )
+        response = self.client.get(self.list_url, {"search_filter": "title", "search": "Django"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.data["results"]
@@ -258,10 +253,7 @@ class PostSearchFilterTests(APITestCase):
 
     def test_search_by_content_only(self) -> None:
         """내용으로만 검색"""
-        response = self.client.get(
-            self.list_url,
-            {"search_filter": "content", "search": "Django"}
-        )
+        response = self.client.get(self.list_url, {"search_filter": "content", "search": "Django"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.data["results"]
@@ -269,10 +261,7 @@ class PostSearchFilterTests(APITestCase):
 
     def test_search_by_title_or_content(self) -> None:
         """제목 또는 내용으로 검색"""
-        response = self.client.get(
-            self.list_url,
-            {"search_filter": "title_or_content", "search": "Django"}
-        )
+        response = self.client.get(self.list_url, {"search_filter": "title_or_content", "search": "Django"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.data["results"]
@@ -280,10 +269,7 @@ class PostSearchFilterTests(APITestCase):
 
     def test_search_without_filter_searches_all(self) -> None:
         """필터 없이 검색 - 제목, 내용, 작성자 모두에서 검색"""
-        response = self.client.get(
-            self.list_url,
-            {"search": "Django"}
-        )
+        response = self.client.get(self.list_url, {"search": "Django"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.data["results"]
@@ -291,10 +277,7 @@ class PostSearchFilterTests(APITestCase):
 
     def test_search_with_empty_string(self) -> None:
         """빈 문자열로 검색 - 모든 게시글 반환"""
-        response = self.client.get(
-            self.list_url,
-            {"search": ""}
-        )
+        response = self.client.get(self.list_url, {"search": ""})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.data["results"]
@@ -302,21 +285,15 @@ class PostSearchFilterTests(APITestCase):
 
     def test_search_no_results(self) -> None:
         """검색 결과가 없는 경우"""
-        response = self.client.get(
-            self.list_url,
-            {"search_filter": "title", "search": "존재하지않는검색어"}
-        )
+        response = self.client.get(self.list_url, {"search_filter": "title", "search": "존재하지않는검색어"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.data["results"]
         self.assertEqual(len(results), 0)  # 결과 없음
 
     def test_search_case_insensitive(self) -> None:
-        """대소문자 구분 없이 검색 """
-        response = self.client.get(
-            self.list_url,
-            {"search_filter": "title", "search": "django"}  # 소문자로 검색
-        )
+        """대소문자 구분 없이 검색"""
+        response = self.client.get(self.list_url, {"search_filter": "title", "search": "django"})  # 소문자로 검색
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.data["results"]
@@ -324,10 +301,7 @@ class PostSearchFilterTests(APITestCase):
 
     def test_search_partial_match(self) -> None:
         """부분 일치 검색 - '파이'로 검색하면 '파이썬'을 찾음"""
-        response = self.client.get(
-            self.list_url,
-            {"search_filter": "title", "search": "파이"}
-        )
+        response = self.client.get(self.list_url, {"search_filter": "title", "search": "파이"})
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         results = response.data["results"]
