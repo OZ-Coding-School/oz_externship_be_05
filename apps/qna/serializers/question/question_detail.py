@@ -1,10 +1,9 @@
 from rest_framework import serializers
+from rest_framework.request import Request
 
 from apps.qna.models import Answer, AnswerComment, Question
 from apps.qna.serializers.common.author_serializer import AuthorSerializer
-from apps.qna.serializers.common.question_image_serializer import (
-    QuestionImageSerializer,
-)
+from apps.qna.serializers.question.question_images import QuestionImageSerializer
 from apps.qna.services.question.question_list.category_utils import (
     CategoryInfo,
     build_category_info,

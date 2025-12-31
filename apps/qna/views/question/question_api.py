@@ -41,6 +41,8 @@ class QuestionAPIView(APIView):
     @extend_schema(
         tags=["질의응답"],
         summary="질문응답 목록 조회 API",
+        parameters=[QuestionListQuerySerializer],
+        responses=QuestionListSerializer,
     )
     def get(self, request: Request) -> Response:
         self.validation_error_message = EMS.E400_INVALID_REQUEST("질문 목록 조회")["error_detail"]
@@ -65,6 +67,7 @@ class QuestionAPIView(APIView):
     @extend_schema(
         tags=["질의응답"],
         summary="질문등록 API",
+        request=QuestionCreateSerializer,
     )
     def post(self, request: Request) -> Response:
         self.validation_error_message = EMS.E400_INVALID_REQUEST("질문 등록")["error_detail"]

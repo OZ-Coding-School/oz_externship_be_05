@@ -7,6 +7,7 @@ from mypy_boto3_s3 import S3Client
 from mypy_boto3_s3.type_defs import DeleteTypeDef, ObjectIdentifierTypeDef
 
 from apps.core.utils.s3_client import S3Client as MyS3ClientWrapper
+from apps.qna.models import QuestionImage
 
 # 관리할 모델 임포트
 from apps.qna.models.answer.images import AnswerImage
@@ -43,6 +44,7 @@ class Command(BaseCommand):
         # 청소대상 목록
         targets: List[Tuple[str, Type[Model], str]] = [
             ("answer_images/", AnswerImage, "image_url"),
+            ("question_images/", QuestionImage, "img_url"),
         ]
         total_scanned = 0
         total_deleted = 0

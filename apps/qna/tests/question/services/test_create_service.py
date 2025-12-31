@@ -1,6 +1,8 @@
-from django.test import TestCase
+from typing import Any
 
-from apps.qna.models import Question, QuestionCategory, QuestionImage
+from django.test import TestCase, override_settings
+
+from apps.qna.models import QuestionCategory, QuestionImage
 from apps.qna.services.question.question_create_service import create_question
 from apps.user.models.user import RoleChoices, User
 
@@ -19,18 +21,25 @@ class QuestionCreateServiceTests(TestCase):
 
         self.category = QuestionCategory.objects.create(name="백엔드")
 
-    # 질문 생성 성공
-    def test_create_question_success(self) -> None:
-        question = create_question(
-            author=self.user,
-            category=self.category,
-            validated_data={
-                "title": "질문 제목",
-                "content": "질문 내용",
-                "image_urls": ["https://test.com/img1.png"],
-            },
-        )
+        self.valid_s3_url = "https://test-bucket.s3.ap-northeast-2.amazonaws.com/question_images/test.jpg"
 
-        self.assertEqual(Question.objects.count(), 1)
+    @override_settings(AWS_S3_BUCKET_NAME="test-bucket")
+    def test_create_question_success(self) -> None:
+        # HTML <img> 태그(http 기준) 사용
+        content = f'이미지 포함 질문 <img src="{self.valid_s3_url}">'
+
+        data: dict[str, Any] = {
+            "title": "Test Question",
+            "content": content,
+        }
+
+        create_question(author=self.user, category=self.category, validated_data=data)
+
+        # 1개가 정상적으로 생성되어야 함
         self.assertEqual(QuestionImage.objects.count(), 1)
-        self.assertEqual(question.title, "질문 제목")
+
+        # DB에는 Key만 저장되어야 함
+        image = QuestionImage.objects.first()
+        self.assertIsNotNone(image)
+        if image:
+            self.assertEqual(image.img_url, "question_images/test.jpg")
