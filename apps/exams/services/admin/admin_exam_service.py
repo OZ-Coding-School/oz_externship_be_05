@@ -121,10 +121,11 @@ class AdminExamService:
     # ----------------------------------------------------------------------
     # DELETE(삭제)
     # ----------------------------------------------------------------------
+    @transaction.atomic
     def delete_exam(self, exam_id: int) -> None:
         """
         지정된 ID의 쪽지시험을 삭제합니다.
         """
         # 뷰에서 PK 포맷 검증을 이미 수행했으므로, 여기서는 Exam 객체 존재 여부만 확인합니다.
-        exam_to_delete = self.get_exam_by_id(exam_id)
+        exam_to_delete = Exam.objects.select_for_update().get(id=exam_id)
         exam_to_delete.delete()

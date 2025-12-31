@@ -4,6 +4,7 @@ from apps.exams.views.admin import (
     AdminDeploymentDetailUpdateDeleteView,
     DeploymentListCreateAPIView,
     ExamAdminListCreateAPIView,
+    ExamAdminQuestionCreateAPIView,
     ExamAdminQuestionUpdateDestroyAPIView,
     ExamAdminRetrieveUpdateDestroyAPIView,
     ExamDeploymentStatusAPIView,
@@ -26,6 +27,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
         name="exam-deployment-status",
     ),
     path("exams/<int:pk>", ExamAdminRetrieveUpdateDestroyAPIView.as_view(), name="exam-detail"),
+    path("exams/<int:exam_id>/questions", ExamAdminQuestionCreateAPIView.as_view(), name="exam-questions"),
     path(
         "exams/questions/<int:question_id>",
         ExamAdminQuestionUpdateDestroyAPIView.as_view(),

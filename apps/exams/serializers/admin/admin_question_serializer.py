@@ -28,7 +28,7 @@ class AdminExamQuestionSerializer(serializers.ModelSerializer[ExamQuestion]):
 
     options = serializers.JSONField(required=False, allow_null=True)
     correct_answer = serializers.JSONField(source="answer")  #  요구사항 필드명
-    explanation = serializers.CharField(required=True, allow_blank=True, allow_null=True)
+    explanation = serializers.CharField(required=False, allow_blank=True)
 
     exam_id = serializers.IntegerField(source="exam.id", read_only=True)
 
@@ -59,8 +59,6 @@ class AdminExamQuestionSerializer(serializers.ModelSerializer[ExamQuestion]):
         """
         문제 유형(type)별 필수 필드 유효성 검사
         """
-        if not attrs.get("explanation"):
-            attrs["explanation"] = ""
 
         question_type = attrs.get("type")
         options = attrs.get("options")  # source="options_json"이므로 attrs에는 options_json으로 들어옴
@@ -71,7 +69,9 @@ class AdminExamQuestionSerializer(serializers.ModelSerializer[ExamQuestion]):
                 raise serializers.ValidationError({"options": "보기를 2개 이상 입력해야 합니다."})
 
         elif question_type == "blank_fill":  # 빈칸 채우기
-            if blank_count is None or blank_count < 1:
-                raise serializers.ValidationError({"blank_count": "빈칸 개수는 최소 1개 이상이어야 합니다."})
+            if blank_count is None or blank_count < 1 or blank_count > 5:
+                raise serializers.ValidationError(
+                    {"blank_count": "빈칸 개수는 최소 1개 이상, 최대 5개 이하여야 합니다."}
+                )
 
         return attrs

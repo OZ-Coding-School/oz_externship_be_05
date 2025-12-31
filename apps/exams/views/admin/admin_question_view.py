@@ -105,32 +105,67 @@ QUESTION_EXAMPLES = [
 ]
 
 
+class ExamAdminQuestionCreateAPIView(AdminUserPermissionView):
+    """쪽지시험 문제 등록 API"""
+
+    serializer_class = AdminExamQuestionSerializer
+    service = AdminQuestionService()
+
+    @extend_schema(
+        tags=["쪽지시험 관리"],
+        summary="쪽지시험 문제 등록",
+        description="특정 쪽지시험에 새로운 문제를 추가합니다. 한 시험당 최대 20개, 총 배점 100점 제한이 있습니다.",
+        request=serializer_class,
+        examples=QUESTION_EXAMPLES,
+        responses={
+            201: serializer_class,
+            400: OpenApiResponse(description="유효하지 않은 문제 등록 데이터입니다."),
+            404: OpenApiResponse(description="해당 쪽지시험 정보를 찾을 수 없습니다."),
+            409: OpenApiResponse(description="문제 수 또는 총 배점 초과"),
+        },
+    )
+    def post(self, request: Request, exam_id: int) -> Response:
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            # 서비스 레이어에서 비즈니스 로직(제한 사항 체크) 수행
+            question = self.service.create_question(exam_id, serializer.validated_data)
+            # 반환 시에는 최신 데이터가 반영된 시리얼라이저 사용
+            return Response(self.serializer_class(question).data, status=status.HTTP_201_CREATED)
+        except NotFound:
+            return Response(EMS.E404_NOT_FOUND("해당 쪽지시험 정보"), status=status.HTTP_404_NOT_FOUND)
+        except ValidationError:
+            return Response(EMS.E409_QUIZ_LIMIT_EXCEEDED_REG, status=status.HTTP_409_CONFLICT)
+
+
 class ExamAdminQuestionUpdateDestroyAPIView(AdminUserPermissionView):
     """쪽지시험 문제 수정 및 삭제 API"""
 
+    serializer_class = AdminExamQuestionSerializer
     service = AdminQuestionService()
 
     @extend_schema(
         tags=["쪽지시험 관리"],
         summary="쪽지시험 문제 수정",
         description="기존 문제를 수정합니다. 문제 유형 변경 및 배점 수정 시 상한선 검증이 다시 수행됩니다.",
-        request=AdminExamQuestionSerializer,
+        request=serializer_class,
         examples=QUESTION_EXAMPLES,
         responses={
-            200: AdminExamQuestionSerializer,
+            200: serializer_class,
             400: OpenApiResponse(description="유효하지 않은 문제 수정 데이터입니다."),
             404: OpenApiResponse(description="수정하려는 문제 정보를 찾을 수 없습니다."),
             409: OpenApiResponse(description="문제 수 또는 총 배점 초과"),
         },
     )
-    def put(self, request: Request, question_id: int) -> Response:
-        # partial=True를 통해 일부 필드만 수정하는 것도 허용
-        serializer = AdminExamQuestionSerializer(data=request.data, partial=True)
+    def patch(self, request: Request, question_id: int) -> Response:
+        # partial=True를 통해 일부 필드만 수정하는 것 허용
+        serializer = self.serializer_class(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
         try:
             question = self.service.update_question(question_id, serializer.validated_data)
-            return Response(AdminExamQuestionSerializer(question).data, status=status.HTTP_200_OK)
+            return Response(self.serializer_class(question).data, status=status.HTTP_200_OK)
         except NotFound:
             return Response(EMS.E404_NOT_FOUND("수정하려는 문제 정보"), status=status.HTTP_404_NOT_FOUND)
         except ValidationError:
