@@ -9,6 +9,7 @@ from drf_spectacular.views import (
 )
 
 urlpatterns: list[URLPattern | URLResolver] = [
+    path('admin_tools_stats/', include('admin_tools_stats.urls')),
     path("api/v1/accounts/", include("apps.user.urls")),
     path("api/v1/admin/", include("apps.user.admin_urls")),
     path("api/v1/admin/", include("apps.exams.urls.admin_urls")),

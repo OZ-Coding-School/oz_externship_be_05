@@ -18,6 +18,8 @@ AUTH_USER_MODEL = "user.User"
 
 # Application definition
 DJANGO_APPS = [
+    'admin_tools_stats',
+    'django_nvd3',
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -251,3 +253,7 @@ WITHDRAWAL_GRACE_DAYS = int(os.getenv("WITHDRAWAL_GRACE_DAYS", "14"))
 
 # frontend domain
 FRONTEND_DOMAIN = "https://my.ozcodingschool.site"
+
+ADMIN_CHARTS_QUERYSET_MODIFIERS = {
+    'course_filter': 'your_app.utils.get_course_choices',
+}

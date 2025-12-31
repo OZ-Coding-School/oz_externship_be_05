@@ -3,6 +3,7 @@ from typing import Any
 from django.db.models import Count, F, Q
 
 from apps.community.admin.utils.filter import TimeOrderingFilter
+from apps.courses.models import Course
 from apps.courses.models.cohorts_models import CohortStatusChoices
 
 
@@ -29,3 +30,18 @@ class CourseOrderingFilter(TimeOrderingFilter):
                 )
             ).order_by(F("_operating_cohorts_count").desc(nulls_last=True))
         return super().queryset(request, queryset)
+
+
+def get_course_choices():
+    """
+    장고 어드민 차트에 드롭다운 메뉴
+    courses 추가 될때마다 자동으로 추가
+    """
+    courses = Course.objects.all().order_by('-created_at')
+    choices = {
+        "": [None, "전체 과정"]
+    }
+    for course in courses:
+        choices[str(course.id)] = [course.id, course.name]
+
+    return choices
