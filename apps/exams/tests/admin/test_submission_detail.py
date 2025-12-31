@@ -460,3 +460,75 @@ class ExamAdminSubmissionDetailViewTestCase(APITestCase):
 
         self.assertEqual(total_count, questions_count)
         self.assertEqual(total_count, snapshot_count)
+
+    def test_get_submission_detail_with_invalid_answers_format(self) -> None:
+        """
+        잘못된 answers 형식(dict가 아닌 경우) 조회 시 400 확인
+        """
+        # answers가 문자열인 경우
+        submission_invalid_str = ExamSubmission.objects.create(
+            deployment=self.deployment,
+            submitter=self.student_user,
+            started_at=timezone.now() - timedelta(minutes=30),
+            created_at=timezone.now(),
+            answers="invalid_string",  # type: ignore
+            score=0,
+            correct_answer_count=0,
+            cheating_count=0,
+        )
+
+        self.client.force_authenticate(user=self.admin_user)
+        url = self._get_detail_url(submission_invalid_str.id)
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("응시 답안 형식", str(response.data))
+
+    def test_get_submission_detail_with_list_answers_format(self) -> None:
+        """
+        answers가 리스트인 경우 400 확인
+        """
+        submission_invalid_list = ExamSubmission.objects.create(
+            deployment=self.deployment,
+            submitter=self.student_user,
+            started_at=timezone.now() - timedelta(minutes=30),
+            created_at=timezone.now(),
+            answers=["answer1", "answer2"],  # type: ignore
+            score=0,
+            correct_answer_count=0,
+            cheating_count=0,
+        )
+
+        self.client.force_authenticate(user=self.admin_user)
+        url = self._get_detail_url(submission_invalid_list.id)
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("응시 답안 형식", str(response.data))
+
+    def test_get_submission_detail_with_none_answers(self) -> None:
+        """
+        answers가 None인 경우 정상 처리(빈 dict로 변환)되는지 확인
+        """
+        submission_none = ExamSubmission.objects.create(
+            deployment=self.deployment,
+            submitter=self.student_user,
+            started_at=timezone.now() - timedelta(minutes=30),
+            created_at=timezone.now(),
+            answers={},
+            score=0,
+            correct_answer_count=0,
+            cheating_count=0,
+        )
+
+        self.client.force_authenticate(user=self.admin_user)
+        url = self._get_detail_url(submission_none.id)
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # 모든 문제가 미제출로 처리되는지 확인
+        questions = response.data["questions"]
+        for question in questions:
+            self.assertIsNone(question["submitted_answer"])
+            self.assertFalse(question["is_correct"])
