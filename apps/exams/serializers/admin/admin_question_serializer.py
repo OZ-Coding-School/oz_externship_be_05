@@ -16,7 +16,7 @@ class ExamQuestionDetailSerializer(serializers.ModelSerializer[ExamQuestion]):
 
     class Meta:
         model = ExamQuestion
-        fields = ["id", "type", "question", "prompt", "point", "options", "correct_answer"]
+        fields = ["id", "type", "question", "prompt", "point", "options", "correct_answer", "explanation"]
 
 
 class AdminExamQuestionSerializer(serializers.ModelSerializer[ExamQuestion]):

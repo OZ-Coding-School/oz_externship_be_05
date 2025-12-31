@@ -49,8 +49,8 @@ class AdminQuestionService:
 
     @transaction.atomic
     def delete_question(self, question_id: int) -> None:
-        question_exists = ExamQuestion.objects.filter(id=question_id).exists()
-        if not question_exists:
+        try:
+            question_to_delete = self._get_question_select_lock(question_id)
+            question_to_delete.delete()
+        except ExamQuestion.DoesNotExist:
             raise NotFound()
-
-        ExamQuestion.objects.filter(id=question_id).delete()
