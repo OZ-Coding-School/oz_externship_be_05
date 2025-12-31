@@ -2,85 +2,79 @@ from typing import Any
 
 from rest_framework import serializers
 
+from apps.exams.models import ExamDeployment
+from apps.exams.models.exam_question import QuestionType
 from apps.exams.models.exam_submission import ExamSubmission
-from apps.exams.services.admin.admin_submission_detail_services import (
-    calculate_submission_elapsed_time,
-)
 
 
-class ExamInfoSerializer(serializers.Serializer[Any]):
+class ExamInfoSerializer(serializers.ModelSerializer[ExamDeployment]):
     """시험 정보"""
 
-    exam_title = serializers.CharField(source="deployment.exam.title")
-    subject_name = serializers.CharField(source="deployment.exam.subject.title")
-    duration_time = serializers.IntegerField(source="deployment.duration_time")
-    open_at = serializers.SerializerMethodField()
-    close_at = serializers.SerializerMethodField()
+    exam_title = serializers.CharField(source="exam.title", read_only=True)
+    subject_name = serializers.CharField(source="exam.subject.title", read_only=True)
 
-    def get_open_at(self, obj: ExamSubmission) -> str:
-        return obj.deployment.open_at.strftime("%Y-%m-%d %H:%M:%S")
-
-    def get_close_at(self, obj: ExamSubmission) -> str:
-        return obj.deployment.close_at.strftime("%Y-%m-%d %H:%M:%S")
+    class Meta:
+        model = ExamDeployment
+        fields = ["exam_title", "subject_name", "duration_time", "open_at", "close_at"]
+        read_only_fields = fields
 
 
-class StudentInfoSerializer(serializers.Serializer[Any]):
+class StudentInfoSerializer(serializers.ModelSerializer[ExamSubmission]):
     """응시자 정보"""
 
-    nickname = serializers.CharField(source="submitter.nickname")
-    name = serializers.CharField(source="submitter.name")
-    course_name = serializers.CharField(source="deployment.cohort.course.name")
-    cohort_number = serializers.IntegerField(source="deployment.cohort.number")
+    nickname = serializers.CharField(source="submitter.nickname", read_only=True)
+    name = serializers.CharField(source="submitter.name", read_only=True)
+    course_name = serializers.CharField(source="deployment.cohort.course.name", read_only=True)
+    cohort_number = serializers.IntegerField(source="deployment.cohort.number", read_only=True)
+
+    class Meta:
+        model = ExamSubmission
+        fields = ["nickname", "name", "course_name", "cohort_number"]
+        read_only_fields = fields
 
 
-class ResultInfoSerializer(serializers.Serializer[Any]):
+class ResultInfoSerializer(serializers.ModelSerializer[ExamSubmission]):
     """시험 결과 정보"""
 
-    score = serializers.IntegerField()
-    correct_answer_count = serializers.IntegerField()
-    total_question_count = serializers.SerializerMethodField()
-    cheating_count = serializers.IntegerField()
-    elapsed_time = serializers.SerializerMethodField()
+    total_question_count = serializers.SerializerMethodField(read_only=True)
+    elapsed_time = serializers.TimeField(read_only=True)
+
+    class Meta:
+        model = ExamSubmission
+        fields = ["score", "correct_answer_count", "total_question_count", "cheating_count", "elapsed_time"]
+        read_only_fields = fields
 
     def get_total_question_count(self, obj: ExamSubmission) -> int:
         return len(obj.deployment.questions_snapshot)
 
-    def get_elapsed_time(self, obj: ExamSubmission) -> int:
-        return calculate_submission_elapsed_time(obj)
 
-
-class QuestionDetailSerializer(serializers.Serializer[Any]):
+class QuestionDetailSerializer(serializers.Serializer[dict[str, Any]]):
     """문제 풀이 내역"""
 
-    question_id = serializers.IntegerField()
-    number = serializers.IntegerField()
-    type = serializers.CharField()
-    question = serializers.CharField()
-    prompt = serializers.CharField(allow_null=True)
-    options = serializers.ListField(
-        child=serializers.CharField(),
-        allow_null=True,
+    id = serializers.IntegerField(read_only=True)
+    number = serializers.IntegerField(read_only=True)
+    type = serializers.ChoiceField(choices=QuestionType.choices, read_only=True)
+    question = serializers.CharField(read_only=True)
+    prompt = serializers.CharField(read_only=True)
+    options = serializers.ListField(child=serializers.CharField(), read_only=True)
+    point = serializers.IntegerField(read_only=True)
+    answer = serializers.ListField(child=serializers.CharField(), read_only=True, help_text="문제 정답")
+    submitted_answer = serializers.ListField(
+        child=serializers.CharField(), read_only=True, help_text="사용자가 제출한 정답"
     )
-    point = serializers.IntegerField()
-    submitted_answer = serializers.JSONField()
-    correct_answer = serializers.JSONField(source="answer")
-    is_correct = serializers.BooleanField()
-    explanation = serializers.CharField()
+    explanation = serializers.CharField(read_only=True)
+    is_correct = serializers.BooleanField(read_only=True, help_text="문제를 맞혔는지 여부")
 
 
 class ExamSubmissionDetailSerializer(serializers.ModelSerializer[ExamSubmission]):
     """쪽지시험 응시 내역 상세 조회 응답"""
 
-    exam = ExamInfoSerializer(source="*")
-    student = StudentInfoSerializer(source="*")
-    result = ResultInfoSerializer(source="*")
-    questions = serializers.SerializerMethodField()
+    exam = ExamInfoSerializer(source="deployment", read_only=True)
+    student = StudentInfoSerializer(source="*", read_only=True)
+    result = ResultInfoSerializer(source="*", read_only=True)
+    questions = QuestionDetailSerializer(source="merged_questions", many=True, read_only=True)
 
     class Meta:
         model = ExamSubmission
         fields = ["exam", "student", "result", "questions"]
-
-    def get_questions(self, obj: ExamSubmission) -> Any:
-        # 뷰에서 비즈니스 로직(채점)이 완료된 데이터를 가져옴
-        questions_data = self.context.get("questions_data", [])
-        return QuestionDetailSerializer(questions_data, many=True).data
+        read_only_fields = fields
