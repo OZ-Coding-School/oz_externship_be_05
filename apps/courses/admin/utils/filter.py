@@ -38,10 +38,9 @@ def get_course_choices():
     courses 추가 될때마다 자동으로 추가
     """
     courses = Course.objects.all().order_by('-created_at')
-    choices = {
-        "": [None, "전체 과정"]
-    }
+    choices = {"": "전체 과정"}
+
     for course in courses:
-        choices[str(course.id)] = [course.id, course.name]
+        choices[str(course.id)] = course.name
 
     return choices
