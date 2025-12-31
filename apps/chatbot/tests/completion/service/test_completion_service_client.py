@@ -1,10 +1,10 @@
 import unittest
 from unittest.mock import MagicMock, patch
 
-from apps.chatbot.services.completion_response_service import _get_client
+from apps.chatbot.services.completion_response_service import GeminiStreamingService
 
 """
-_get_client 함수 테스트
+GeminiStreamingService._get_client 함수 테스트
 API KEY 설정되어 있으면 정상 반환
 API KEY 설정X → RuntimeError 발생
 """
@@ -26,7 +26,7 @@ class TestGetClient(unittest.TestCase):
         mocked_get_api_key = patcher_get_api_key.start()
         mocked_client_class = patcher_client_class.start()
         try:
-            result = _get_client()
+            result = GeminiStreamingService._get_client()
 
             mocked_get_api_key.assert_called_once()
             mocked_client_class.assert_called_once_with(api_key="test-api-key")
@@ -44,6 +44,6 @@ class TestGetClient(unittest.TestCase):
         patcher_get_api_key.start()
         try:
             with self.assertRaisesRegex(RuntimeError, r"GEMINI_API_KEY not set"):
-                _get_client()
+                GeminiStreamingService._get_client()
         finally:
             patcher_get_api_key.stop()
