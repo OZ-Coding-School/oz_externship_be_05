@@ -20,14 +20,17 @@ from apps.chatbot.services.completion_response_service import (
 from apps.chatbot.views.mixins import ChatbotCompletionMixin, ChatbotCursorPagination
 from apps.core.exceptions.exception_messages import EMS
 
+"""
+Completion API Views
+
+CompletionAPIView: /sessions/{session_id}/completions/
+    POST   - AI 응답 생성 (SSE 스트리밍)
+    GET    - 메시지 목록 조회 (페이지네이션)
+    DELETE - 세션 내 모든 메시지 삭제
+"""
+
 
 class CompletionAPIView(APIView, ChatbotCompletionMixin):
-    """
-    SSE 스트리밍 AI 응답 생성 API
-    GET: /sessions/{session_id}/completion  메세지 목록 조회
-    POST:  /sessions/{session_id}/completion  AI 응답 생성 (SSE 스트리밍)
-    DELETE:  /sessions/{session_id}/completion  모든 메세지 삭제
-    """
 
     permission_classes = [IsAuthenticated]
     pagination_class = ChatbotCursorPagination
@@ -142,7 +145,7 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
             404: {"type": "object", "example": EMS.E404_CHATBOT_SESSION_NOT_FOUND},
         },
     )
-    def delete(self, session_id: int) -> Response:
+    def delete(self, request: Request, session_id: int) -> Response:
         session = self.get_session(session_id)
         session.messages.all().delete()  # 세션 모든 메세지 삭제
         return Response(status=status.HTTP_204_NO_CONTENT)

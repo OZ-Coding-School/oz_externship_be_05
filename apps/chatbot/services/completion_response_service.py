@@ -19,10 +19,26 @@ logger = logging.getLogger(__name__)
 DEFAULT_MODEL = "gemini-2.5-flash"
 
 
-# environ vs getenv?
+"""
+Gemini API SSE 스트리밍 서비스
+
+Functions:
+    _get_api_key: 환경변수에서 GEMINI_API_KEY 조회
+    _get_client: Gemini Client 인스턴스 생성
+    _sse_encode: SSE 포맷 인코딩
+    _sse_json: SSE JSON 메시지 생성 (content/done/error)
+    user_message_save: 사용자 메시지 DB 저장
+    ai_message_save: AI 메시지 DB 저장
+    get_chat_history: 세션 대화 이력 → Gemini API 형식 변환
+    _build_contents: 대화 이력 + 새 메시지 → contents 생성
+    _iter_gemini_text_stream: Gemini 스트리밍 텍스트 iterator
+    generate_streaming_response: SSE 스트리밍 제너레이터 (chunk yield + DB 저장)
+    create_streaming_response: StreamingHttpResponse 생성
+"""
+
+
 def _get_api_key() -> str:
     api_key = os.getenv("GEMINI_API_KEY")
-    # api_key 없을 때, 잘못됐을 때
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY not set")
     return api_key

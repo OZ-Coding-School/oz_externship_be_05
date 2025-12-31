@@ -13,8 +13,18 @@ from apps.chatbot.models.chatbot_sessions import ChatbotSession
 from apps.core.exceptions.exception_messages import EMS
 from apps.user.models import User
 
+"""
+Chatbot Views Mixins
+    ChatbotCursorPagination: 커서 기반 페이지네이션 (page_size=10, ordering=-created_at)
+    ChatbotSessionMixin: 세션 공통 로직
+    ChatbotCompletionMixin(ChatbotSessionMixin): 메시지 공통 로직
+"""
 
-# Chatbot 전용 커서 페이지네이션
+"""
+ChatbotCursorPagination: 커서 기반 페이지네이션 (page_size=10, ordering=-created_at)
+"""
+
+
 class ChatbotCursorPagination(CursorPagination):
     cursor_query_param = "cursor"
     page_size_query_param = "page_size"
@@ -23,14 +33,15 @@ class ChatbotCursorPagination(CursorPagination):
     ordering = "-created_at"
 
 
-class ChatbotSessionMixin:
-    """
-    ChatbotSession 공통 로직 제공
-        - get_user(): 현재 인증된 사용자 반환
-        - get_session_queryset(): 사용자의 모든 세션 QuerySet 반환
-        - get_session(session_id): 특정 세션 조회 + EMS 404 처리
-    """
+"""
+ChatbotSessionMixin: 세션 공통 로직. 모두 상속
+    get_user          - 인증된 사용자 반환 (미인증 시 401)
+    get_session_queryset - 사용자의 모든 세션 QuerySet
+    get_session       - 특정 세션 조회 (없으면 404)
+"""
 
+
+class ChatbotSessionMixin:
     request: Request
 
     def get_user(self) -> User:
@@ -49,15 +60,12 @@ class ChatbotSessionMixin:
         return session
 
 
-class ChatbotCompletionMixin(ChatbotSessionMixin):
-    """
-    ChatbotCompletion 공통 로직 제공 Mixin
-    ChatbotSessionMixin 상속->세션 관련 기능포함
-        - (상속) get_user()
-        - (상속) get_session_queryset()
-        - (상속) get_session(session_id)
-        - get_completion_queryset(session): 세션의 모든 메시지 QuerySet 반환
-    """
+"""
+ChatbotCompletionMixin(ChatbotSessionMixin): 메시지 공통 로직
+    get_completion_queryset - 세션의 모든 메시지 QuerySet
+"""
 
+
+class ChatbotCompletionMixin(ChatbotSessionMixin):
     def get_completion_queryset(self, session: ChatbotSession) -> QuerySet[ChatbotCompletion]:
         return session.messages.all()
