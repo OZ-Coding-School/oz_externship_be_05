@@ -11,7 +11,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.test import APIRequestFactory
 
-from apps.user.views.auth import LoginAPIView, SignupAPIView
+from apps.user.views.auth import LoginAPIView, LogoutAPIView, SignupAPIView
 
 
 class SignupAPIViewTests(TestCase):
@@ -88,3 +88,19 @@ class LoginAPIViewTests(TestCase):
         response = LoginAPIView.as_view()(request)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class LogoutAPIViewTests(TestCase):
+    def setUp(self) -> None:
+        self.factory = APIRequestFactory()
+
+    def test_logout_clears_cookies(self) -> None:
+        request = self.factory.post("/api/v1/accounts/logout", {}, format="json")
+
+        response = LogoutAPIView.as_view()(request)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("refresh_token", response.cookies)
+        self.assertIn("access_token", response.cookies)
+        self.assertEqual(response.cookies["refresh_token"]["max-age"], "0")
+        self.assertEqual(response.cookies["access_token"]["max-age"], "0")

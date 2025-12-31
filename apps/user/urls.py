@@ -10,6 +10,7 @@ from apps.user.views.account import (
 )
 from apps.user.views.auth import (
     LoginAPIView,
+    LogoutAPIView,
     RefreshAPIView,
     SignupAPIView,
 )
@@ -33,6 +34,7 @@ urlpatterns = [
     path("social-login/naver/callback", social_login_views.NaverCallbackAPIView.as_view(), name="naver-callback"),
     path("signup", SignupAPIView.as_view(), name="signup"),
     path("login", LoginAPIView.as_view(), name="login"),
+    path("logout", LogoutAPIView.as_view(), name="logout"),
     path("refresh", RefreshAPIView.as_view(), name="refresh"),
     path("me", MeAPIView.as_view(), name="me"),
     path("me/profile-image", ProfileImageAPIView.as_view(), name="me_profile_image"),
