@@ -47,18 +47,15 @@ class AnswerListAPIView(BaseAnswerAPIView):
 
         content_data = cast(str, serializer.validated_data["content"])
 
-        try:
-            answer = AnswerService.create_answer(
-                user=request.user,
-                question_id=question_id,
-                content=content_data,
-            )
-            return Response(
-                AnswerCreateResponseSerializer(answer).data,
-                status=status.HTTP_201_CREATED,
-            )
-        except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        answer = AnswerService.create_answer(
+            user=request.user,
+            question_id=question_id,
+            content=content_data,
+        )
+        return Response(
+            AnswerCreateResponseSerializer(answer).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class AnswerDetailAPIView(BaseAnswerAPIView):
@@ -87,25 +84,18 @@ class AnswerDetailAPIView(BaseAnswerAPIView):
 
         content_data = cast(str, serializer.validated_data["content"])
 
-        try:
-            updated_answer = AnswerService.update_answer(
-                user=request.user,
-                answer=answer,
-                content=content_data,
-            )
-            return Response(AnswerUpdateResponseSerializer(updated_answer).data)
-        except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        updated_answer = AnswerService.update_answer(
+            user=request.user,
+            answer=answer,
+            content=content_data,
+        )
+        return Response(AnswerUpdateResponseSerializer(updated_answer).data)
 
     @extend_schema(summary="답변 삭제")
     def delete(self, request: Request, pk: int) -> Response:
         answer = self.get_object(pk)
-
-        try:
-            AnswerService.delete_answer(request.user, answer)
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        AnswerService.delete_answer(request.user, answer)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AnswerAdoptAPIView(BaseAnswerAPIView):
@@ -116,14 +106,11 @@ class AnswerAdoptAPIView(BaseAnswerAPIView):
         answer = get_object_or_404(Answer, pk=pk)
         self.check_object_permissions(request, answer)
 
-        try:
-            answer = AnswerService.toggle_adoption(
-                user=request.user,
-                answer_id=pk,
-            )
-            return Response(
-                AnswerAdoptResponseSerializer(answer).data,
-                status=status.HTTP_200_OK,
-            )
-        except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        answer = AnswerService.toggle_adoption(
+            user=request.user,
+            answer_id=pk,
+        )
+        return Response(
+            AnswerAdoptResponseSerializer(answer).data,
+            status=status.HTTP_200_OK,
+        )

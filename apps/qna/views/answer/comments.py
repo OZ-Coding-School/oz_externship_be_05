@@ -49,18 +49,15 @@ class CommentListAPIView(BaseAnswerAPIView):
 
         content_data = cast(str, serializer.validated_data["content"])
 
-        try:
-            comment = CommentService.create_comment(
-                user=request.user,
-                answer_id=answer_id,
-                content=content_data,
-            )
-            return Response(
-                CommentCreateResponseSerializer(comment).data,
-                status=status.HTTP_201_CREATED,
-            )
-        except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        comment = CommentService.create_comment(
+            user=request.user,
+            answer_id=answer_id,
+            content=content_data,
+        )
+        return Response(
+            CommentCreateResponseSerializer(comment).data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class CommentDetailAPIView(BaseAnswerAPIView):
@@ -79,22 +76,16 @@ class CommentDetailAPIView(BaseAnswerAPIView):
 
         content_data = cast(str, serializer.validated_data["content"])
 
-        try:
-            updated_comment = CommentService.update_comment(
-                user=request.user,
-                comment=comment,
-                content=content_data,
-            )
-            return Response(AnswerCommentSerializer(updated_comment).data)
-        except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        updated_comment = CommentService.update_comment(
+            user=request.user,
+            comment=comment,
+            content=content_data,
+        )
+        return Response(AnswerCommentSerializer(updated_comment).data)
 
     @extend_schema(summary="댓글 삭제")
     def delete(self, request: Request, pk: int) -> Response:
         comment = self.get_object(pk)
 
-        try:
-            CommentService.delete_comment(request.user, comment)
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        CommentService.delete_comment(request.user, comment)
+        return Response(status=status.HTTP_204_NO_CONTENT)
