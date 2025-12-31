@@ -186,11 +186,37 @@ class SessionDeleteView(APIView, ChatbotSessionMixin):
     @extend_schema(
         tags=["AI 챗봇"],
         summary="세션 삭제 API",
+        description="""
+        특정 Chatbot Session을 완전 삭제하는 API입니다.
+        세션 삭제 시 해당 세션의 모든 대화 내역(Completion)도 삭제됩니다.
+        본인의 세션만 삭제 가능합니다.
+        """,
+        parameters=[
+            OpenApiParameter(
+                name="session_id",
+                type=OpenApiTypes.INT,
+                location="path",
+                description="삭제할 세션의 PK ID",
+                required=True,
+            )
+        ],
         responses={
-            "204": None,
-            401: {"type": "object", "example": EMS.E401_USER_ONLY_ACTION("삭제")},
-            403: {"type": "object", "example": EMS.E403_PERMISSION_DENIED("삭제")},
-            404: {"type": "object", "example": EMS.E404_USER_CHATBOT_SESSION_NOT_FOUND},
+            204: OpenApiResponse(description="세션 삭제 성공 - No Content"),
+            401: OpenApiResponse(EMS.E401_USER_ONLY_ACTION("삭제"), description="Unauthorized - 인증되지 않음",
+                                 examples=[OpenApiExample(
+                                     name="인증 실패",
+                                     value=EMS.E401_USER_ONLY_ACTION("삭제"),
+                                 )]),
+            403: OpenApiResponse(EMS.E403_PERMISSION_DENIED("삭제"), description="Forbidden - 권한 없음",
+                                 examples=[OpenApiExample(
+                                     name="권한 없음",
+                                     value=EMS.E403_PERMISSION_DENIED("삭제"),
+                                 )]),
+            404: OpenApiResponse(EMS.E404_USER_CHATBOT_SESSION_NOT_FOUND, description="Not Found - 세션 없음",
+                                 examples=[OpenApiExample(
+                                     name="세션 없음",
+                                     value=EMS.E404_USER_CHATBOT_SESSION_NOT_FOUND,
+                                 )]),
         },
     )
     def delete(self, request: Request, session_id: int) -> Response:
