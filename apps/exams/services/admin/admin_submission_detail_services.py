@@ -26,3 +26,16 @@ def check_answer_correctness(submitted: Any, correct: Any) -> bool:
 
     # 일반 단일 값 비교
     return bool(submitted == correct)
+
+
+def normalize_answers(raw_answers: object) -> dict[str, object]:
+    """
+    ExamSubmission.answers 를 안전하게 dict로 변환
+    """
+    if raw_answers is None:
+        return {}
+
+    if isinstance(raw_answers, dict):
+        return raw_answers
+
+    raise ValueError("응시 답안 형식이 올바르지 않습니다.")
