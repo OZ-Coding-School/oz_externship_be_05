@@ -40,7 +40,7 @@ class SubjectAdmin(BaseAdmin):
         "updated_at",
     )
 
-    readonly_fields = ("id", "course", "created_at", "updated_at")
+    readonly_fields = ("id", "created_at", "updated_at")
 
     search_fields = ("title",)
 
