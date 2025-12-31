@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
     GET: 게시글 목록을 조회합니다. ordering 파라미터로 정렬할 수 있습니다.
     POST: 새로운 게시글을 작성합니다. (인증 필요)
     """,
-    tags=["게시글"],
+    tags=["커뮤니티"],
     parameters=[
         OpenApiParameter("category_id", OpenApiTypes.STR, required=False),
         OpenApiParameter(
@@ -97,7 +97,7 @@ class PostListCreateAPIView(ListCreateAPIView[Post]):
         serializer.save(author=self.request.user)
 
 
-@extend_schema(tags=["게시글"], summary="게시글 상세 조회/수정/삭제")
+@extend_schema(tags=["커뮤니티"], summary="게시글 상세 조회/수정/삭제")
 class PostDetailAPIView(RetrieveUpdateDestroyAPIView[Post]):
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
     lookup_url_kwarg = "post_id"
@@ -130,7 +130,9 @@ class PostDetailAPIView(RetrieveUpdateDestroyAPIView[Post]):
         return Response(serializer.data)
 
 
-@extend_schema(summary="카테고리 목록 조회", description="GET: 모든 카테고리 목록을 조회합니다.", tags=["카테고리"])
+@extend_schema(
+    summary="카테고리 목록 조회", description="GET: 모든 카테고리 목록을 조회합니다.", tags=["커뮤니티 관리"]
+)
 class PostCategoryListAPIView(ListCreateAPIView[PostCategory]):
     permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = PostCategory.objects.all()

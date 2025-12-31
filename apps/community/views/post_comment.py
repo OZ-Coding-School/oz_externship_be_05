@@ -2,7 +2,8 @@ from typing import Any, Union
 
 from django.contrib.auth.models import AnonymousUser
 from django.db import transaction
-from rest_framework import status
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import serializers, status
 from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
@@ -44,6 +45,7 @@ class CommentPermissionMixin:
             raise PermissionDenied(EMS.E403_PERMISSION_DENIED(""))
 
 
+@extend_schema(tags=["커뮤니티"])
 class PostCommentListCreateAPIView(APIView, CommentTagMixin):
     permission_classes = [IsAuthenticated]
     pagination_class = CommentPagination
@@ -55,6 +57,7 @@ class PostCommentListCreateAPIView(APIView, CommentTagMixin):
         except Post.DoesNotExist:
             raise NotFound(EMS.E404_NOT_FOUND("게시글"))
 
+    @extend_schema(summary="댓글 목록 조회", description=("특정 게시글의 댓글 목록을 페이지네이션하여 조회합니다."))
     def get(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         post_id: int = int(kwargs["post_id"])
 
@@ -70,6 +73,13 @@ class PostCommentListCreateAPIView(APIView, CommentTagMixin):
 
         return paginator.get_paginated_response(serializer.data)
 
+    @extend_schema(
+        summary="댓글 작성",
+        description=("특정 게시글에 댓글을 작성합니다. @닉네임 형식으로 사용자를 태그할 수 있습니다."),
+        request=inline_serializer(
+            name="PostCommentCreateRequest", fields={"content": serializers.CharField(required=True, max_length=300)}
+        ),
+    )
     def post(self, request: Any, *args: Any, **kwargs: Any) -> Response:
 
         post_id: int = int(kwargs["post_id"])
@@ -88,6 +98,7 @@ class PostCommentListCreateAPIView(APIView, CommentTagMixin):
         return Response({"detail": "댓글이 등록되었습니다."}, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(tags=["커뮤니티"])
 class PostCommentUpdateDestroyAPIView(APIView, CommentTagMixin, CommentPermissionMixin):
     permission_classes = [IsAuthenticated]
 
@@ -100,6 +111,13 @@ class PostCommentUpdateDestroyAPIView(APIView, CommentTagMixin, CommentPermissio
 
         return comment
 
+    @extend_schema(
+        summary="댓글 수정",
+        description="작성한 댓글을 수정합니다. 본인이 작성한 댓글만 수정할 수 있습니다.",
+        request=inline_serializer(
+            name="PostCommentCreateRequest", fields={"content": serializers.CharField(required=True, max_length=300)}
+        ),
+    )
     def put(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         comment_id: int = int(kwargs["comment_id"])
         comment = self.check_comment(comment_id)
@@ -118,6 +136,9 @@ class PostCommentUpdateDestroyAPIView(APIView, CommentTagMixin, CommentPermissio
 
         return Response(response_data, status=status.HTTP_200_OK)
 
+    @extend_schema(
+        summary="댓글 삭제", description="작성한 댓글을 삭제합니다. 본인이 작성한 댓글만 삭제할 수 있습니다."
+    )
     def delete(self, request: Any, *args: Any, **kwargs: Any) -> Response:
         comment_id: int = int(kwargs["comment_id"])
         comment = self.check_comment(comment_id)
