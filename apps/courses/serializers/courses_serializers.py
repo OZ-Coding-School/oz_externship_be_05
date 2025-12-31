@@ -10,6 +10,7 @@ class CourseSerializer(serializers.ModelSerializer[Course]):
             "id",
             "name",
             "tag",
+            "thumbnail_img_url",
         ]
 
 
@@ -27,4 +28,5 @@ class SubjectSerializer(serializers.ModelSerializer[Subject]):
             "course_id",
             "title",
             "status",
+            "thumbnail_img_url",
         ]
