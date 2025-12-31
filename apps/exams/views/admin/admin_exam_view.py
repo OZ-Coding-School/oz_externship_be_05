@@ -142,7 +142,7 @@ class ExamAdminRetrieveUpdateDestroyAPIView(AdminUserPermissionView):
     DELETE: 쪽지시험 삭제
     """
 
-    serializer_class: Type[BaseSerializer[Any]] = AdminExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
+    serializer_class = AdminExamSerializer  # 기본 시리얼라이저 - POST, PUT, GET 상세용
 
     def get_object_for_detail(self, pk: int) -> Exam:
         """
