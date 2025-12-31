@@ -14,8 +14,9 @@ class TestGetClient(unittest.TestCase):
     def test_get_client_success(self) -> None:
         mock_client_instance = MagicMock()
 
-        patcher_get_api_key = patch(
-            "apps.chatbot.services.completion_response_service._get_api_key",
+        patcher_get_api_key = patch.object(
+            GeminiStreamingService,
+            "_get_api_key",
             return_value="test-api-key",
         )
         patcher_client_class = patch(
@@ -36,8 +37,9 @@ class TestGetClient(unittest.TestCase):
             patcher_get_api_key.stop()
 
     def test_get_client_raises_when_no_api_key(self) -> None:
-        patcher_get_api_key = patch(
-            "apps.chatbot.services.completion_response_service._get_api_key",
+        patcher_get_api_key = patch.object(
+            GeminiStreamingService,
+            "_get_api_key",
             side_effect=RuntimeError("GEMINI_API_KEY not set"),
         )
 
