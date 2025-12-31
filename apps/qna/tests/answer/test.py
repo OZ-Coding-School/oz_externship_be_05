@@ -11,7 +11,7 @@ User = get_user_model()
 
 class AnswerViewTestCase(APITestCase):
     def setUp(self) -> None:
-        # 1. 수강생 
+        # 1. 수강생
         self.student = User.objects.create_user(
             email="student@test.com",
             password="password",
@@ -19,9 +19,9 @@ class AnswerViewTestCase(APITestCase):
             role=RoleChoices.ST,
             birthday="2000-01-01",
             gender="M",
-            phone_number="010-1111-1111"
+            phone_number="010-1111-1111",
         )
-        
+
         # 2. 튜터
         self.tutor = User.objects.create_user(
             email="tutor@test.com",
@@ -30,9 +30,9 @@ class AnswerViewTestCase(APITestCase):
             role=RoleChoices.TA,
             birthday="1990-01-01",
             gender="F",
-            phone_number="010-2222-2222"
+            phone_number="010-2222-2222",
         )
-        
+
         # 3. 일반 유저
         self.normal_user = User.objects.create_user(
             email="user@test.com",
@@ -41,7 +41,7 @@ class AnswerViewTestCase(APITestCase):
             role=RoleChoices.USER,
             birthday="2000-05-05",
             gender="M",
-            phone_number="010-3333-3333"
+            phone_number="010-3333-3333",
         )
 
         # 4. 질문자
@@ -52,7 +52,7 @@ class AnswerViewTestCase(APITestCase):
             role=RoleChoices.ST,
             birthday="2001-01-01",
             gender="F",
-            phone_number="010-4444-4444"
+            phone_number="010-4444-4444",
         )
 
         # 질문 및 답변 기본 데이터
