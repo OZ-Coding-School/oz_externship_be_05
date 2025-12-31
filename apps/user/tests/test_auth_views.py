@@ -102,5 +102,5 @@ class LogoutAPIViewTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn("refresh_token", response.cookies)
         self.assertIn("access_token", response.cookies)
-        self.assertEqual(response.cookies["refresh_token"]["max-age"], "0")
-        self.assertEqual(response.cookies["access_token"]["max-age"], "0")
+        self.assertEqual(response.cookies["refresh_token"]["max-age"], 0)
+        self.assertEqual(response.cookies["access_token"]["max-age"], 0)
