@@ -66,7 +66,7 @@ class PostListCreateAPIView(ListCreateAPIView[Post]):
         search = self.request.query_params.get("search", "")
         if search_filter:
             if search_filter == "author":
-                queryset = queryset.filter(author__nickname__icontains=search)
+                queryset = queryset.filter(author__name__icontains=search)
             if search_filter == "title":
                 queryset = queryset.filter(title__icontains=search)
             if search_filter == "content":
@@ -75,7 +75,7 @@ class PostListCreateAPIView(ListCreateAPIView[Post]):
                 cond = Q(title__icontains=search) | Q(content__icontains=search)
                 queryset = queryset.filter(cond)
         elif search:
-            cond = Q(title__icontains=search) | Q(content__icontains=search) | Q(author__nickname__icontains=search)
+            cond = Q(title__icontains=search) | Q(content__icontains=search) | Q(author__name__icontains=search)
             queryset = queryset.filter(cond)
 
         category_id = self.request.query_params.get("category_id", None)
