@@ -45,27 +45,35 @@ def _format_hhmmss(seconds: int) -> str:
     return f"{hh:02d}:{mm:02d}:{ss:02d}"
 
 
-def attach_exam_result_properties(submission: ExamSubmission) -> ExamSubmission:
-    # 시험 결과 조회용 응답 데이터 조립
-    deployment = submission.deployment
-
+def calculate_elapsed_time(submission: ExamSubmission) -> int:
     # 응시 시간 계산 후 submission에 setattr (시작 시각 ~ 제출 시각)
-    submitted_at = submission.created_at
-    duration_seconds = int((submitted_at - submission.started_at).total_seconds())
-    setattr(submission, "elapsed_time", _format_hhmmss(duration_seconds))
+    return int((submission.created_at - submission.started_at).total_seconds())
 
-    # 시험 배포 시 저장된 문항 스냅샷
-    questions_snapshot = deployment.questions_snapshot
-    # 사용자가 제출한 답안
-    submitted_answers = _simplify_submitted_answers(submission.answers)
+
+def add_submitted_answer_to_questions_snapshot(
+    snapshot: list[dict[str, Any]], submitted_answers: dict[int, dict[str, Any]]
+) -> list[dict[str, Any]]:
     added_questions_snapshot = []
 
-    for question in questions_snapshot:
+    for question in snapshot:
         question["is_correct"] = submitted_answers[question["id"]]["is_correct"]
         question["submitted_answer"] = submitted_answers[question["id"]]["submitted_answer"]
         added_questions_snapshot.append(question)
 
-    setattr(submission, "result_questions", added_questions_snapshot)
+    return added_questions_snapshot
+
+
+def attach_exam_result_properties(submission: ExamSubmission) -> ExamSubmission:
+    # 시험 배포 시 저장된 문항 스냅샷
+    questions_snapshot = submission.deployment.questions_snapshot
+    # 사용자가 제출한 답안
+    submitted_answers = _simplify_submitted_answers(submission.answers)
+    setattr(submission, "elapsed_time", _format_hhmmss(calculate_elapsed_time(submission)))
+    setattr(
+        submission,
+        "result_questions",
+        add_submitted_answer_to_questions_snapshot(questions_snapshot, submitted_answers),
+    )
 
     return submission
 
