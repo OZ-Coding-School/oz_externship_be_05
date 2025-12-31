@@ -1,5 +1,5 @@
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema
+from drf_spectacular.utils import OpenApiParameter, extend_schema, OpenApiResponse, OpenApiExample
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -30,13 +30,47 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
     @extend_schema(
         tags=["AI 챗봇"],
         summary="세션 생성 API",
+        description="""
+        Chatbot Session을 생성하는 API입니다.
+        Question.id, User.id가 필요하며, Question에 해당하는 채팅 세션을 만듭니다.
+        using_model은 gemini가 기본입니다.
+        """,
         request=SessionCreateSerializer,
         responses={
-            201: SessionCreateSerializer,
-            400: {"type": "object", "example": EMS.E400_INVALID_REQUEST("세션 생성")},
-            403: {"type": "object", "example": EMS.E401_USER_ONLY_ACTION("세션 생성")},
-            404: {"type": "object", "example": EMS.E403_PERMISSION_DENIED("세션 생성")},
+            200: OpenApiResponse(SessionCreateSerializer, description="세션 생성 성공"),
+            400: OpenApiResponse(EMS.E400_INVALID_REQUEST("세션 생성"),
+                                 description="Bad Request - 유효하지 않은 요청",
+                                 examples=[OpenApiExample(
+                                     name="정보 없음",
+                                     value={"error_detail": "유효하지 않은 세션 생성 요청입니다."})], ),
+            401: OpenApiResponse(EMS.E401_USER_ONLY_ACTION("세션 생성"), description="Unauthorized - 인증되지 않음"),
+            403: OpenApiResponse(EMS.E403_PERMISSION_DENIED("세션 생성"), description="Forbidden - 세션 생성 권한이 없음"),
         },
+        examples=[
+            OpenApiExample(
+                name="세션 생성 - 기본(GEMINI), 성공 응답",
+                summary="기본 모델(GEMINI)로 세션 생성 후 세션 반환",
+                value={
+                    "id": 55,
+                    "user": 10,
+                    "question_id": 101,
+                    "title": "python try-exception 질문",
+                    "using_model": "GEMINI",
+                    "created_at": "2025-01-01T01:01:01+09:00",
+                },
+                request_only=True,
+                status_codes=["201"],
+            ),
+            OpenApiExample(
+                name="잘못된 모델 선택으로 400",
+                summary="허용되지 않은 모델 값",
+                value={
+                    "using_model": ["'GROK' is not a valid choice."]
+                },
+                request_only=True,
+                status_codes=["400"],
+            )
+        ],
     )
     def post(self, request: Request) -> Response:
         serializer = SessionCreateSerializer(
@@ -51,6 +85,11 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
     @extend_schema(
         tags=["AI 챗봇"],
         summary="세션 리스트 확인 API",
+        description="""
+        사용자의 Chatbot Session 목록을 조회하는 API입니다.
+        커서 기반 페이지네이션을 지원하며, 본인의 세션만 조회 가능합니다.
+        최신 세션이 먼저 반환됩니다.
+        """,
         parameters=[
             OpenApiParameter(
                 name="cursor",
@@ -60,15 +99,72 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
                 default=None,
             ),
             OpenApiParameter(
-                name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값", default=10
+                name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값(min: 10, max: 50)", default=10
             ),
         ],
         responses={
-            200: SessionSerializer,
-            401: {"type": "object", "example": EMS.E401_USER_ONLY_ACTION("조회")},
-            403: {"type": "object", "example": EMS.E403_PERMISSION_DENIED("조회")},
-            404: {"type": "object", "example": EMS.E404_NOT_EXIST("세션")},
+            200: OpenApiResponse(SessionSerializer(many=True), description = "세션 조회 성공"),
+            401: OpenApiResponse(EMS.E401_USER_ONLY_ACTION("조회"),
+                                 description="Unauthorized - 인증되지 않음",
+                                 examples=[OpenApiExample(
+                                     name="인증 실패",
+                                     value=EMS.E401_USER_ONLY_ACTION("조회")
+                                 )]),
+            403: OpenApiResponse(EMS.E403_PERMISSION_DENIED("조회"),
+                                 description="Forbidden - 세션 생성 권한이 없음",
+                                 examples=[OpenApiExample(
+                                     name="권한 없음",
+                                     value=EMS.E403_PERMISSION_DENIED("조회")
+                                 )]),
+            404: OpenApiResponse(EMS.E404_NOT_EXIST("세션"),
+                                 description="Not Found - 세션이 존재하지 않음",
+                                 examples=[OpenApiExample(
+                                     name="세션 없음",
+                                     value=EMS.E404_NOT_EXIST("세션")
+                                 )])
         },
+        examples=[
+            OpenApiExample(
+                name="세션 조회 성공(200)",
+                summary="페이지네이션된 세션 목록 반환",
+                value={
+                    "next": "http://",
+                    "previous": None,
+                    "results": [
+                        {
+                            "id": 2,
+                            "user": 1,
+                            "question_id": 1,
+                            "title": "python try-exception 질문",
+                            "using_model": "GEMINI",
+                            "created_at": "2025-01-01T01:01:01+09:00",
+                        },
+                        {
+                            "id": 54,
+                            "user": 10,
+                            "question": 99,
+                            "title": "Django ORM 질문",
+                            "using_model": "gemini-2.5-flash",
+                            "created_at": "2025-01-14T10:00:00+09:00",
+                            "updated_at": "2025-01-14T10:30:00+09:00",
+                        },
+                    ],
+                },
+                response_only=True,
+                status_codes=["200"],
+            ),
+            OpenApiExample(
+                name="세션 없음",
+                summary="세션이 없는 경우 빈 배열 반환",
+                value={
+                    "next": None,
+                    "previous": None,
+                    "results": [],
+                },
+                request_only=True,
+                status_codes=["404"],
+            ),
+        ]
     )
     def get(self, request: Request) -> Response:
         paginator = self.pagination_class()
