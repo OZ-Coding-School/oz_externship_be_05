@@ -8,8 +8,8 @@ from apps.courses.views import (
 )
 
 urlpatterns: list[URLPattern | URLResolver] = [
-    path("<int:course_id>/cohorts", CohortListView.as_view(), name="cohort-list-detail"),
-    path("<int:course_id>/subjects", SubjectListView.as_view(), name="subject-list-detail"),
-    path("", CourseListView.as_view(), name="course-list"),
-    path("available", AvailableCoursesAPIView.as_view(), name="available-courses-list"),
+    path("courses/<int:course_id>/cohorts", CohortListView.as_view(), name="cohort-list-detail"),
+    path("courses/<int:course_id>/subjects", SubjectListView.as_view(), name="subject-list-detail"),
+    path("courses", CourseListView.as_view(), name="course-list"),
+    path("courses/available", AvailableCoursesAPIView.as_view(), name="available-courses-list"),
 ]

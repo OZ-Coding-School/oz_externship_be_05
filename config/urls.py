@@ -13,12 +13,12 @@ urlpatterns: list[URLPattern | URLResolver] = [
     path("api/v1/admin/", include("apps.user.admin_urls")),
     path("api/v1/admin/", include("apps.exams.urls.admin_urls")),
     path("api/v1/qna/", include("apps.qna.urls.question_urls")),
-    path("api/v1/posts/", include("apps.community.urls")),
+    path("api/v1/", include("apps.community.urls")),
     path("api/v1/exams/", include("apps.exams.urls.student_urls")),
     path("admin/", admin.site.urls),
     path("api/v1/qna/", include("apps.qna.urls.answer_urls")),
     path("api/v1/chatbot/", include("apps.chatbot.urls")),
-    path("api/v1/courses/", include("apps.courses.urls")),
+    path("api/v1/", include("apps.courses.urls")),
 ]
 
 if settings.DEBUG:
