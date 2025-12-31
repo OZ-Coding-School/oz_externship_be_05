@@ -45,7 +45,7 @@ class CommentPermissionMixin:
             raise PermissionDenied(EMS.E403_PERMISSION_DENIED(""))
 
 
-@extend_schema(tags=["댓글"])
+@extend_schema(tags=["커뮤니티"])
 class PostCommentListCreateAPIView(APIView, CommentTagMixin):
     permission_classes = [IsAuthenticated]
     pagination_class = CommentPagination
@@ -98,7 +98,7 @@ class PostCommentListCreateAPIView(APIView, CommentTagMixin):
         return Response({"detail": "댓글이 등록되었습니다."}, status=status.HTTP_201_CREATED)
 
 
-@extend_schema(tags=["댓글"])
+@extend_schema(tags=["커뮤니티"])
 class PostCommentUpdateDestroyAPIView(APIView, CommentTagMixin, CommentPermissionMixin):
     permission_classes = [IsAuthenticated]
 
