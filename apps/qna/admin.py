@@ -38,7 +38,6 @@ class QuestionCategoryAdmin(_BaseAdmin):
         queryset = super().get_queryset(request)
         return queryset.select_related("parent").prefetch_related("children")
 
-
     # --- [삭제 시 경고 메시지 출력] ---
     def delete_view(
         self, request: HttpRequest, object_id: str, extra_context: Optional[dict[str, Any]] = None
