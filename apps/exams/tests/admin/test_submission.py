@@ -115,7 +115,6 @@ class AdminExamSubmissionTest(APITestCase):
         }
 
         res = self.client.get(self.url, params)
-        print(res.status_code, res.data)
 
         self.assertEqual(res.status_code, 200)
         self.assertEqual(res.data["count"], 1)

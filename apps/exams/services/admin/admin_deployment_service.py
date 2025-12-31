@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from django.db import transaction
 from django.db.models import Avg, Count, FloatField, QuerySet, Value
@@ -12,7 +12,7 @@ from apps.core.utils.base62 import Base62
 from apps.courses.models import Cohort
 from apps.exams.constants import DEFAULT_DEPLOYMENT_SORT, DEPLOYMENT_SORT_OPTIONS
 from apps.exams.exceptions import DeploymentConflictException
-from apps.exams.models import Exam, ExamDeployment, ExamQuestion
+from apps.exams.models import Exam, ExamDeployment
 from apps.exams.models.exam_deployment import DeploymentStatus
 from apps.exams.services.admin.validators.deployment_validator import (
     DeploymentValidator,
@@ -177,9 +177,7 @@ def delete_deployment(*, deployment: ExamDeployment) -> None:
 
 # ExamQuestion 목록을 기반으로 배포용 문항 스냅샷 생성 --------------------------
 # 어드민용
-def _build_questions_snapshot(exam: Exam) -> List[Dict[str, Any]]:
-    questions: QuerySet[ExamQuestion] = ExamQuestion.objects.filter(exam=exam).order_by("id")
-
+def _build_questions_snapshot(exam: Exam) -> list[dict[str, Any]]:
     return [
         {
             "id": q.id,
@@ -192,5 +190,5 @@ def _build_questions_snapshot(exam: Exam) -> List[Dict[str, Any]]:
             "point": q.point,
             "explanation": q.explanation,
         }
-        for q in questions
+        for q in exam.questions.all()
     ]

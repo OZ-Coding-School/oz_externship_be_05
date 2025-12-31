@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from datetime import timedelta
-from typing import Any, Dict, List, Optional, TypedDict, cast
+from typing import Any, List, Optional, TypedDict
 
-from django.utils import timezone
+from apps.exams.models import ExamSubmission
 
 
 class SnapshotQuestion(TypedDict, total=False):
@@ -26,23 +25,12 @@ class ResultQuestion(TypedDict):
     type: str
     question: str
     prompt: str
+    options: list[str]
     point: int
-    options: List[str]
-    submitted_answer: Any
-    correct_answer: Any
-    is_correct: bool
+    answer: list[str]
     explanation: str
-
-
-class ResultResponse(TypedDict):
-    # 결과 조회 API의 최상위 응답 구조
-    exam_title: str
-    thumbnail_img_url: str
-    duration: str
-    score: int
-    total_score: int
-    cheating_count: int
-    questions: List[ResultQuestion]
+    submitted_answer: list[str]
+    is_correct: bool
 
 
 def _format_hhmmss(seconds: int) -> str:
@@ -57,96 +45,45 @@ def _format_hhmmss(seconds: int) -> str:
     return f"{hh:02d}:{mm:02d}:{ss:02d}"
 
 
-def build_exam_result(submission: Any) -> ResultResponse:
-    # 시험 결과 조회용 응답 데이터 조립
-    deployment = submission.deployment
-    exam = deployment.exam
+def calculate_elapsed_time(submission: ExamSubmission) -> int:
+    # 응시 시간 계산 후 submission에 setattr (시작 시각 ~ 제출 시각)
+    return int((submission.created_at - submission.started_at).total_seconds())
 
-    # 응시 시간 계산 (시작 시각 ~ 제출 시각)
-    submitted_at = submission.created_at
-    duration_seconds = int((submitted_at - submission.started_at).total_seconds())
-    duration_str = _format_hhmmss(duration_seconds)
 
-    # 시험 배포 시 저장된 문항 스냅샷 가져오기
-    snapshot_any = deployment.questions_snapshot
-    questions_snapshot: List[SnapshotQuestion] = []
+def add_submitted_answer_to_questions_snapshot(
+    snapshot: list[dict[str, Any]], submitted_answers: dict[int, dict[str, Any]]
+) -> list[dict[str, Any]]:
+    added_questions_snapshot = []
 
-    if isinstance(snapshot_any, dict):
-        raw_list = snapshot_any.get("questions", [])
-        if isinstance(raw_list, list):
-            questions_snapshot = cast(List[SnapshotQuestion], raw_list)
-    elif isinstance(snapshot_any, list):
-        questions_snapshot = cast(List[SnapshotQuestion], snapshot_any)
+    for question in snapshot:
+        question["is_correct"] = submitted_answers[question["id"]]["is_correct"]
+        question["submitted_answer"] = submitted_answers[question["id"]]["submitted_answer"]
+        added_questions_snapshot.append(question)
 
-    # 제출한 답안을 question_id → answer 형태로 변환
-    answers_any: Any = submission.answers
-    answers_map: Dict[int, Any] = {}
+    return added_questions_snapshot
 
-    if isinstance(answers_any, dict):
-        if "questions" not in answers_any:
-            for k, v in answers_any.items():
-                try:
-                    answers_map[int(k)] = v
-                except (TypeError, ValueError):
-                    continue
-        # 제출 payload 그대로 저장
-        else:
-            q_list = answers_any.get("questions", [])
-            if isinstance(q_list, list):
-                for item in q_list:
-                    if not isinstance(item, dict):
-                        continue
-                    qid = item.get("question_id")
-                    if qid is None:
-                        continue
-                    try:
-                        answers_map[int(qid)] = item.get("answer")
-                    except (TypeError, ValueError):
-                        continue
 
-    questions: List[ResultQuestion] = []
-    total_score = 0
+def attach_exam_result_properties(submission: ExamSubmission) -> ExamSubmission:
+    # 시험 배포 시 저장된 문항 스냅샷
+    questions_snapshot = submission.deployment.questions_snapshot
+    # 사용자가 제출한 답안
+    submitted_answers = _simplify_submitted_answers(submission.answers)
+    setattr(submission, "elapsed_time", _format_hhmmss(calculate_elapsed_time(submission)))
+    setattr(
+        submission,
+        "result_questions",
+        add_submitted_answer_to_questions_snapshot(questions_snapshot, submitted_answers),
+    )
 
-    # 문항별 결과 조립
-    for idx, q in enumerate(questions_snapshot, start=1):
-        qid = q.get("question_id")
-        if qid is None:
-            continue
+    return submission
 
-        point = int(q.get("point") or 0)
-        total_score += point
 
-        correct_answer = q.get("answer")
-        submitted_answer = answers_map.get(int(qid))
+def _simplify_submitted_answers(submitted_answers: list[dict[str, Any]]) -> dict[int, dict[str, Any]]:
+    submitted_answers_simplified = {}
+    for answer in submitted_answers:
+        submitted_answers_simplified[answer["question_id"]] = {
+            "is_correct": answer["is_correct"],
+            "submitted_answer": answer["submitted_answer"],
+        }
 
-        # 정답 비교
-        is_correct = submitted_answer == correct_answer
-
-        questions.append(
-            {
-                "question_id": int(qid),
-                "number": idx,
-                "type": str(q.get("type", "")),
-                "question": str(q.get("question", "")),
-                "prompt": str(q.get("prompt", "") or ""),
-                "point": point,
-                "options": list(q.get("options", []) or []),
-                "submitted_answer": submitted_answer,
-                "correct_answer": correct_answer,
-                "is_correct": bool(is_correct),
-                "explanation": str(q.get("explanation", "") or ""),
-            }
-        )
-
-    # 시험 기본 정보 + 결과 요약 반환
-    thumbnail = getattr(exam, "thumbnail_img_url", "") or ""
-
-    return {
-        "exam_title": str(exam.title),
-        "thumbnail_img_url": str(thumbnail),
-        "duration": duration_str,
-        "score": int(submission.score),
-        "total_score": int(total_score),
-        "cheating_count": int(submission.cheating_count),
-        "questions": questions,
-    }
+    return submitted_answers_simplified

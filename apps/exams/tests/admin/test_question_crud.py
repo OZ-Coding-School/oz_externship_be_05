@@ -134,7 +134,6 @@ class ExamAdminQuestionViewTest(APITestCase):
 
         data = {"type": "ox", "question": "21번째", "correct_answer": ["O"], "point": 1, "explanation": ""}
         response = self.client.post(self.create_url, data, format="json")
-        print(ExamQuestion.objects.count())
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
     def test_update_question_success(self) -> None:

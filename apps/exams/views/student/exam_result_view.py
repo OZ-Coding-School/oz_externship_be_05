@@ -3,32 +3,36 @@ from __future__ import annotations
 from typing import Any
 
 from drf_spectacular.utils import extend_schema
-from rest_framework.exceptions import NotFound, PermissionDenied
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import NotFound
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from apps.core.exceptions.exception_messages import EMS
 from apps.exams.models.exam_submission import ExamSubmission
-from apps.exams.permissions.student_permission import IsSubmissionOwner
+from apps.exams.permissions.student_permission import (
+    IsSubmissionOwner,
+    StudentUserPermissionView,
+)
 from apps.exams.serializers.student.exam_result_serializer import ExamResultSerializer
-from apps.exams.services.student.exam_result_service import build_exam_result
+from apps.exams.services.student.exam_result_service import (
+    attach_exam_result_properties,
+)
 
 
-class ExamResultView(APIView):
+class ExamResultView(StudentUserPermissionView):
     """
     쪽지시험 결과 조회 API
     """
 
     # 인증된 사용자만 접근 가능
-    permission_classes = [IsAuthenticated, IsSubmissionOwner]
+    permission_classes = StudentUserPermissionView.permission_classes + [IsSubmissionOwner]
 
     @extend_schema(
         tags=["쪽지시험"],
         summary="쪽지시험 결과 조회 API",
-        description=" ",
-        operation_id="submission_id",
+        responses={
+            200: ExamResultSerializer,
+        },
     )
     def get(
         self,
@@ -40,7 +44,7 @@ class ExamResultView(APIView):
         # submission_id로 시험 제출 내역 조회
         # deployment, exam을 함께 가져와 DB 조회 최소화
         try:
-            submission = ExamSubmission.objects.select_related("deployment__exam").get(pk=submission_id)
+            submission = ExamSubmission.objects.select_related("deployment", "deployment__exam").get(pk=submission_id)
         except ExamSubmission.DoesNotExist:
             # 제출 내역이 없는 경우
             raise NotFound(detail=EMS.E404_NOT_FOUND("쪽지시험"))
@@ -49,11 +53,10 @@ class ExamResultView(APIView):
         self.check_object_permissions(request, submission)
 
         # 결과 조회용 응답 데이터 조립
-        data = build_exam_result(submission)
+        instance = attach_exam_result_properties(submission)
 
         # Serializer로 응답 형태 검증
-        serializer = ExamResultSerializer(data=data)
-        serializer.is_valid(raise_exception=True)
+        serializer = ExamResultSerializer(instance)
 
         # 결과 응답 반환
         return Response(serializer.data, status=200)
