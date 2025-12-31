@@ -138,7 +138,7 @@ class ExamAdminQuestionViewTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
 
     def test_update_question_success(self) -> None:
-        """문제 수정 성공 테스트 PATCH """
+        """문제 수정 성공 테스트 PATCH"""
         data = {"question": "수정된 질문 내용", "point": 7, "explanation": "해설 수정"}
         response = self.client.patch(self.detail_url, data, format="json")
 
