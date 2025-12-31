@@ -87,7 +87,7 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
         service = GeminiStreamingService(session)
         response = StreamingHttpResponse(
             streaming_content=service.generate_streaming_response(user_message),
-            content_type="text/event-stream; charset=utf-8,",
+            content_type="text/event-stream; charset=utf-8",
         )
         response["Cache-Control"] = "no-cache"
         response["X-Accel-Buffering"] = "no"
