@@ -2,7 +2,12 @@ from __future__ import annotations
 
 from django.http import StreamingHttpResponse
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import OpenApiParameter, extend_schema, OpenApiResponse, OpenApiExample
+from drf_spectacular.utils import (
+    OpenApiExample,
+    OpenApiParameter,
+    OpenApiResponse,
+    extend_schema,
+)
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
@@ -14,7 +19,8 @@ from apps.chatbot.serializers.completion_serializers import (
     CompletionSerializer,
 )
 from apps.chatbot.services.completion_response_service import (
-    user_message_save, GeminiStreamingService,
+    GeminiStreamingService,
+    user_message_save,
 )
 from apps.chatbot.views.mixins import ChatbotCompletionMixin, ChatbotCursorPagination
 from apps.core.exceptions.exception_messages import EMS
@@ -81,7 +87,8 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
         service = GeminiStreamingService(session)
         response = StreamingHttpResponse(
             streaming_content=service.generate_streaming_response(user_message),
-            content_type="text/event-stream; charset=utf-8,")
+            content_type="text/event-stream; charset=utf-8,",
+        )
         response["Cache-Control"] = "no-cache"
         response["X-Accel-Buffering"] = "no"
         return response
@@ -108,19 +115,28 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
             ),
         ],
         responses={
-            200: OpenApiResponse(CompletionSerializer(many=True), description="메세지 목록 조회 성공",),
-            401: OpenApiResponse(EMS.E401_USER_ONLY_ACTION("조회"),
-                                 examples=[
-                                     OpenApiExample(
-                                         name="인증 실패",
-                                         value=EMS.E401_USER_ONLY_ACTION("조회"),
-                                     )],),
-            404: OpenApiResponse(EMS.E404_CHATBOT_SESSION_NOT_FOUND,
-                                 examples=[
-                                     OpenApiExample(
-                                         name="세션 없음",
-                                         value=EMS.E404_CHATBOT_SESSION_NOT_FOUND,
-                                     ),]),
+            200: OpenApiResponse(
+                CompletionSerializer(many=True),
+                description="메세지 목록 조회 성공",
+            ),
+            401: OpenApiResponse(
+                EMS.E401_USER_ONLY_ACTION("조회"),
+                examples=[
+                    OpenApiExample(
+                        name="인증 실패",
+                        value=EMS.E401_USER_ONLY_ACTION("조회"),
+                    )
+                ],
+            ),
+            404: OpenApiResponse(
+                EMS.E404_CHATBOT_SESSION_NOT_FOUND,
+                examples=[
+                    OpenApiExample(
+                        name="세션 없음",
+                        value=EMS.E404_CHATBOT_SESSION_NOT_FOUND,
+                    ),
+                ],
+            ),
         },
         examples=[
             OpenApiExample(
@@ -147,7 +163,7 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
                 response_only=True,
                 status_codes=["200"],
             )
-        ]
+        ],
     )
 
     # 메세지 목록 조회
@@ -168,28 +184,35 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
         세션 자체는 유지되며, 메시지만 삭제됩니다.
         본인의 세션만 삭제 가능합니다.
         """,
-        parameters=[OpenApiParameter(
-            name="session_id",
-            type=OpenApiTypes.INT,
-            location="path",
-            description="세션 PK ID",
-            required=True,)],
+        parameters=[
+            OpenApiParameter(
+                name="session_id",
+                type=OpenApiTypes.INT,
+                location="path",
+                description="세션 PK ID",
+                required=True,
+            )
+        ],
         request=CompletionSerializer,
         responses={
             204: OpenApiResponse(description="메세지 삭제 성공 - No Content"),
-            401: OpenApiResponse(EMS.E401_USER_ONLY_ACTION("채팅"),
-                                 examples=[OpenApiExample(
-                                     name="인증 실패",
-                                     value=EMS.E401_USER_ONLY_ACTION("삭제"))]),
-            403: OpenApiResponse(EMS.E403_PERMISSION_DENIED("삭제"),
-                                 examples=[OpenApiExample(
-                                     name="권한 없음",
-                                     value=EMS.E403_PERMISSION_DENIED("삭제"))]),
-            404: OpenApiResponse(EMS.E404_CHATBOT_SESSION_NOT_FOUND,
-                                 examples=[OpenApiExample(
-                                     name="세션 없음",
-                                     value=EMS.E404_CHATBOT_SESSION_NOT_FOUND,
-                                 )]),
+            401: OpenApiResponse(
+                EMS.E401_USER_ONLY_ACTION("채팅"),
+                examples=[OpenApiExample(name="인증 실패", value=EMS.E401_USER_ONLY_ACTION("삭제"))],
+            ),
+            403: OpenApiResponse(
+                EMS.E403_PERMISSION_DENIED("삭제"),
+                examples=[OpenApiExample(name="권한 없음", value=EMS.E403_PERMISSION_DENIED("삭제"))],
+            ),
+            404: OpenApiResponse(
+                EMS.E404_CHATBOT_SESSION_NOT_FOUND,
+                examples=[
+                    OpenApiExample(
+                        name="세션 없음",
+                        value=EMS.E404_CHATBOT_SESSION_NOT_FOUND,
+                    )
+                ],
+            ),
         },
     )
     def delete(self, request: Request, session_id: int) -> Response:
