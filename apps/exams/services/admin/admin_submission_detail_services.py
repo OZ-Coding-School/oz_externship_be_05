@@ -1,41 +1,35 @@
 from typing import Any
 
-from apps.exams.models.exam_submission import ExamSubmission
+from apps.exams.models import ExamSubmission
 
 
-def calculate_submission_elapsed_time(submission: ExamSubmission) -> int:
+def get_merged_submission_detail(submission: ExamSubmission) -> ExamSubmission:
     """
-    응시에 걸린 시간 계산 (분 단위)
+    Submission 객체에 시험 Snapshot 데이터를 병합
     """
-    if not submission or not submission.started_at or not submission.created_at:
-        return 0
+    # 제출 답안 dict로 맵핑 (id를 키로 사용)
+    answers_map = {str(a["id"]): a for a in submission.answers}
 
-    return int((submission.created_at - submission.started_at).total_seconds() // 60)
+    # 시험 문항 스냅샷 가져오기
+    snapshot = submission.deployment.questions_snapshot
 
+    merged_questions: list[dict[str, Any]] = []
 
-def check_answer_correctness(submitted: Any, correct: Any) -> bool:
-    """
-    제출한 답안의 정답 여부 확인
-    """
-    if submitted is None:
-        return False
+    # 스냅샷 기준으로 루프를 돌며 병합
+    for idx, q in enumerate(snapshot, start=1):
+        q_id = str(q["id"])
+        answer_data = answers_map.get(q_id, {})
 
-    # 순서 정렬, 다중 선택 등 리스트 비교
-    if isinstance(correct, list) and isinstance(submitted, list):
-        return bool(submitted == correct)
+        merged_questions.append(
+            {
+                **q,
+                "number": idx,  # 문제 번호 (1부터 시작)
+                "submitted_answer": answer_data.get("submitted_answer"),
+                "is_correct": answer_data.get("is_correct", False),
+            }
+        )
 
-    # 일반 단일 값 비교
-    return bool(submitted == correct)
+    # Serializer에서 source="merged_questions"로 쓸거임
+    setattr(submission, "merged_questions", merged_questions)
 
-
-def normalize_answers(raw_answers: object) -> dict[str, object]:
-    """
-    ExamSubmission.answers 를 안전하게 dict로 변환
-    """
-    if raw_answers is None:
-        return {}
-
-    if isinstance(raw_answers, dict):
-        return raw_answers
-
-    raise ValueError("응시 답안 형식이 올바르지 않습니다.")
+    return submission
