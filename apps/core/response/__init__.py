@@ -1,3 +1,3 @@
-from apps.core.response.response_message import ResponseMessage, ResponseMessageException
+from apps.core.response.response_message import MagicException, ResponseMessage
 
-__all__ = ["ResponseMessage", "MagicException"]
+__all__ = ["MagicException", "ResponseMessage"]

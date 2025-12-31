@@ -57,6 +57,8 @@ def resolve_message(message_code: str, request: Any, variables: dict[str, Any]) 
         section = config["KR"]
     if section is not None:
         template = section.get(message_code)
+        if not template and country_code != "KR" and config.has_section("KR"):
+            template = config["KR"].get(message_code)
         if template:
             message = _render_template(template, variables)
     return message
@@ -68,11 +70,14 @@ class ResponseMessage(Response):
         request: Any,
         status_code: int,
         message_code: str,
+        payload: dict[str, Any] | None = None,
         **variables: Any,
     ) -> None:
         message = resolve_message(message_code, request, variables)
         detail_key = "error_detail" if str(status_code).startswith(("4", "5")) else "detail"
-        data = {detail_key: message}
+        data: dict[str, Any] = {detail_key: message}
+        if payload:
+            data.update(payload)
         super().__init__(data, status=status_code)
 
 
@@ -82,3 +87,4 @@ class MagicException(APIException):
         self.message_code = message_code
         self.variables = variables
         super().__init__(detail=message_code)
+

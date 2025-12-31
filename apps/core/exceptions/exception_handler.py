@@ -4,7 +4,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
-from apps.core.response.response_message import ResponseMessageException, resolve_message
+from apps.core.response.response_message import MagicException, resolve_message
 
 
 def custom_exception_handler(
@@ -18,7 +18,7 @@ def custom_exception_handler(
     view = context.get("view")
     request = context.get("request")
 
-    if isinstance(exc, ResponseMessageException):
+    if isinstance(exc, MagicException):
         message = resolve_message(exc.message_code, request, exc.variables)
         detail_key = "error_detail" if str(exc.status_code).startswith(("4", "5")) else "detail"
         return Response({detail_key: message}, status=exc.status_code)
