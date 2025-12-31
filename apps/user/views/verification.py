@@ -23,6 +23,7 @@ class SendEmailAPIView(APIView):
     @extend_schema(
         tags=["회원관리"],
         summary="이메일 인증코드 전송 API",
+        request=SignupEmailRequestSerializer,
         responses={200: None},
     )
     def post(self, request: Request) -> Response:
@@ -37,7 +38,7 @@ class VerifyEmailAPIView(APIView):
 
     @extend_schema(
         tags=["회원관리"],
-        summary="이메일 인증코드 전송 API",
+        summary="이메일 인증코드 검증 API",
         request=EmailCodeSerializer,
         responses={200: None},
     )
