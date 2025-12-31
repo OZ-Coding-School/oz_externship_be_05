@@ -67,10 +67,12 @@ class AnswerViewTestCase(APITestCase):
             content="기존 답변입니다.",
         )
 
+        base_prefix = "/api/qna"
+
         # API 엔드포인트
-        self.list_create_url = f"/api/answers/{self.question.id}/"
-        self.detail_url = f"/api/answers/detail/{self.answer.id}/"
-        self.adopt_url = f"/api/answers/{self.answer.id}/adopt/"
+        self.list_create_url = f"{base_prefix}/questions/{self.question.id}/answers/"
+        self.detail_url = f"{base_prefix}/questions/{self.question.id}/answers/{self.answer.id}/"
+        self.adopt_url = f"{base_prefix}/questions/{self.question.id}/answers/{self.answer.id}/adopt/"
 
     # ---------- Answer 생성 ----------
 
