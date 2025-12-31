@@ -10,5 +10,5 @@ class SubjectSimpleSerializer(serializers.ModelSerializer[Subject]):
 
     class Meta:
         model = Subject
-        fields = ["id", "title"]
+        fields = ["id", "title", "thumbnail_img_url"]
         read_only_fields = fields
