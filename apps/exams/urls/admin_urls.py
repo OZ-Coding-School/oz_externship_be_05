@@ -14,7 +14,7 @@ urlpatterns: list[URLPattern | URLResolver] = [
     # /api/v1/admin/ 경로에 ExamAdminViewSet을 연결합니다.
     path("exams", ExamAdminListCreateAPIView.as_view(), name="exam"),
     path("exams/deployments", DeploymentListCreateAPIView.as_view(), name="exam-deployments"),
-    path("exam/submissions", AdminSubmissionListAPIView.as_view(), name="exam-submission"),
+    path("exams/submissions", AdminSubmissionListAPIView.as_view(), name="exam-submission"),
     path(
         "exams/deployments/<int:deployment_id>",
         AdminDeploymentDetailUpdateDeleteView.as_view(),
