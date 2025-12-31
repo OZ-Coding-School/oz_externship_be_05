@@ -38,6 +38,7 @@ class PostReadSerializer(serializers.ModelSerializer[Post]):
             "id",
             "title",
             "author",
+            "category_id",
             "content",
             "like_count",
             "comment_count",
