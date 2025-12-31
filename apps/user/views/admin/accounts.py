@@ -1,5 +1,6 @@
 from django.db.models import Exists, OuterRef, Q
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from rest_framework.request import Request
@@ -41,7 +42,30 @@ ROLE_FILTERS = {
 class AdminAccountListAPIView(APIView):
     permission_classes = [IsAdminStaffRole]
 
-    @extend_schema(tags=["회원관리"], summary="전체 회원 목록 조회 API")
+    @extend_schema(
+        tags=["회원관리"],
+        summary="전체 회원 목록 조회 API",
+        responses=AdminAccountListSerializer,
+        parameters=[
+            OpenApiParameter("page", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
+            OpenApiParameter("page_size", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
+            OpenApiParameter("search", OpenApiTypes.STR, required=False, location=OpenApiParameter.QUERY),
+            OpenApiParameter(
+                "status",
+                OpenApiTypes.STR,
+                required=False,
+                location=OpenApiParameter.QUERY,
+                enum=["activated", "deactivated", "withdrew"],
+            ),
+            OpenApiParameter(
+                "role",
+                OpenApiTypes.STR,
+                required=False,
+                location=OpenApiParameter.QUERY,
+                enum=["admin", "user", "student", "staff"],
+            ),
+        ],
+    )
     def get(self, request: Request) -> Response:
         qs = User.objects.all()
 

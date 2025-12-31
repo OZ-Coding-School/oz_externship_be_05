@@ -48,6 +48,7 @@ class AdminStudentView(APIView):
     @extend_schema(
         tags=["회원관리"],
         summary="수강생 목록 조회 API",
+        responses={200: AdminStudentSerializer},
         parameters=[
             OpenApiParameter("page", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
             OpenApiParameter("page_size", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
@@ -126,6 +127,7 @@ class AdminStudentsEnrollViews(APIView):
     @extend_schema(
         tags=["회원관리"],
         summary="수강생 등록 요청 목록 조회 API",
+        responses={200: AdminStudentEnrollSerializer},
         parameters=[
             OpenApiParameter("page", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
             OpenApiParameter("page_size", OpenApiTypes.INT, required=False, location=OpenApiParameter.QUERY),
