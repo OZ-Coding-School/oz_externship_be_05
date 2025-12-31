@@ -72,7 +72,6 @@ GeminiStreamingService: Gemini API 스트리밍 처리
     get_chat_history: 세션 대화 이력 → Gemini API 형식 변환
     _build_contents: 대화 이력 + 새 메시지 → contents 생성
     _iter_gemini_text_stream: Gemini 스트리밍 텍스트 iterator
-    generate_streaming_response: SSE 스트리밍 제너레이터 (chunk yield + DB 저장)
 """
 
 
@@ -150,16 +149,3 @@ class GeminiStreamingService:
             logger.exception("Gemini Streaming Error: %s: %s", type(e).__name__, e)
             yield SSEEncoder.json("", error=True)
             yield SSEEncoder.json("", done=True)
-
-
-# StreamingHttpResponse 생성 (async 삭제)
-def create_streaming_response(*, session: ChatbotSession, user_message: str) -> StreamingHttpResponse:
-    service = GeminiStreamingService(session)
-
-    response = StreamingHttpResponse(
-        streaming_content=service.generate_streaming_response(user_message),
-        content_type="text/event-stream; charset=utf-8",
-    )
-    response["Cache-Control"] = "no-cache"
-    response["X-Accel-Buffering"] = "no"
-    return response
