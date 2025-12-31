@@ -1,92 +1,62 @@
 from __future__ import annotations
 
+from typing import Any
+
 from rest_framework import serializers
 
+from apps.exams.models import Exam, ExamSubmission
+from apps.exams.models.exam_question import QuestionType
 
-class ExamResultQuestionSerializer(serializers.Serializer):  # type: ignore[type-arg]
-    """
-    결과 화면에서 문제 1개를 표현하는 Serializer
-    - DB 모델과 1:1 매핑이 아니라, 결과 응답 JSON 형태를 맞추기 위한 용도
-    """
 
-    # 문제 ID
-    question_id = serializers.IntegerField()
+class ExamSerializer(serializers.ModelSerializer[Exam]):
+    class Meta:
+        model = Exam
+        fields = [
+            "id",
+            "title",
+            "thumbnail_img_url",
+        ]
 
-    # 문제 번호(1, 2, 3 ...)
-    number = serializers.IntegerField()
 
-    # 문제 유형
-    type = serializers.CharField()
-
-    # 문제 내용
-    question = serializers.CharField()
-    prompt = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        default="",
-    )
-
-    # 배점
-    point = serializers.IntegerField()
-
-    # 선택지 목록
-    options = serializers.ListField(
-        child=serializers.CharField(),
-        required=False,
-        default=list,
-    )
-
-    # 사용자가 제출한 답안
-    submitted_answer = serializers.JSONField(
-        required=False,
-        allow_null=True,
-    )
-
-    # 정답
-    correct_answer = serializers.JSONField(
-        required=False,
-        allow_null=True,
-    )
-
-    # 정답 여부
-    is_correct = serializers.BooleanField()
-
-    # 해설
-    explanation = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        default="",
+class ExamResultQuestionSerializer(serializers.Serializer[dict[str, Any]]):
+    id = serializers.IntegerField(read_only=True)
+    question = serializers.CharField(read_only=True)
+    prompt = serializers.CharField(read_only=True)
+    blank_count = serializers.IntegerField(read_only=True)
+    options = serializers.ListField(child=serializers.CharField(), read_only=True)
+    type = serializers.ChoiceField(choices=QuestionType.choices, read_only=True)
+    answer = serializers.ListField(child=serializers.CharField(), read_only=True, help_text="문제 정답")
+    point = serializers.IntegerField(read_only=True)
+    explanation = serializers.CharField(read_only=True)
+    is_correct = serializers.BooleanField(read_only=True, help_text="문제를 맞혔는지 여부")
+    submitted_answer = serializers.ListField(
+        child=serializers.CharField(), read_only=True, help_text="사용자가 제출한 정답"
     )
 
 
-class ExamResultSerializer(serializers.Serializer):  # type: ignore[type-arg]
+class ExamResultSerializer(serializers.ModelSerializer[ExamSubmission]):
     """
     시험 결과 조회 API의 최상위 응답 Serializer
     """
 
-    # 시험 제목
-    exam_title = serializers.CharField()
+    exam = ExamSerializer(source="deployment.exam", read_only=True)
+    elapsed_time = serializers.TimeField(read_only=True)
+    questions = ExamResultQuestionSerializer(source="result_questions", many=True, read_only=True)
+    total_score = serializers.IntegerField(source="score", read_only=True)
+    submitted_at = serializers.DateTimeField(source="created_at", read_only=True)
 
-    # 시험 썸네일 이미지 URL
-    thumbnail_img_url = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        default="",
-    )
-
-    # 응시 시간("HH:MM:SS")
-    duration = serializers.CharField()
-
-    # 획득 점수
-    score = serializers.IntegerField()
-
-    # 총점
-    total_score = serializers.IntegerField()
-
-    # 부정행위 횟수
-    cheating_count = serializers.IntegerField()
-
-    # 문항별 결과 목록
-    questions = ExamResultQuestionSerializer(
-        many=True,
-    )
+    class Meta:
+        model = ExamSubmission
+        fields = [
+            "id",
+            "submitter_id",
+            "deployment_id",
+            "exam",
+            "questions",
+            "cheating_count",
+            "total_score",
+            "correct_answer_count",
+            "elapsed_time",
+            "started_at",
+            "submitted_at",
+        ]

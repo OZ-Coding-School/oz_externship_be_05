@@ -1,16 +1,24 @@
 from __future__ import annotations
 
-from drf_spectacular.utils import extend_schema
-from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.request import Request
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from typing import cast
 
-from apps.exams.models.exam_deployment import ExamDeployment
+from django.conf import settings
+from django.http import HttpResponseRedirect
+from django.shortcuts import redirect
+from drf_spectacular.utils import extend_schema
+from rest_framework.request import Request
+
+from apps.exams.permissions.student_permission import StudentUserPermissionView
 from apps.exams.serializers.student.exam_submit_serializer import (
     ExamSubmissionCreateSerializer,
 )
+from apps.exams.services.student.exam_submit_service import (
+    create_exam_submission,
+    validate_exam_submission_limit,
+    validate_exam_total_seconds,
+    validate_submission_time_limit,
+)
+from apps.user.models import User
 
 
 @extend_schema(
@@ -23,43 +31,17 @@ from apps.exams.serializers.student.exam_submit_serializer import (
     ),
     operation_id="exam_submit",
 )
-class ExamSubmissionCreateAPIView(APIView):
-
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request: Request, deployment_pk: int | None = None) -> Response:
-        # deployment_pk 없으면 400
-        if deployment_pk is None:
-            return Response(
-                {"error_detail": "자격 인증 데이터가 제공되지 않았습니다."}, status=status.HTTP_401_UNAUTHORIZED
-            )
-
-        try:
-            deployment = ExamDeployment.objects.get(pk=deployment_pk)
-        except ExamDeployment.DoesNotExist:
-            return Response({"error_detail": "해당 시험 정보를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = ExamSubmissionCreateSerializer(
-            data=request.data,
-            context={
-                "request": request,
-                "deployment": deployment,
-            },
-        )
+class ExamSubmissionCreateAPIView(StudentUserPermissionView):
+    def post(self, request: Request) -> HttpResponseRedirect:
+        serializer = ExamSubmissionCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        validate_submission_time_limit(deployment=serializer.validated_data["deployment"])
+        validate_exam_submission_limit(
+            deployment=serializer.validated_data["deployment"], submitter=cast(User, request.user)
+        )
+        validate_exam_total_seconds(
+            deployment=serializer.validated_data["deployment"], started_at=serializer.validated_data["started_at"]
+        )
+        instance = create_exam_submission(submitter=cast(User, request.user), **serializer.validated_data)
 
-        try:
-            submission = serializer.save(submitter=request.user, deployment=deployment)
-        except ValueError as e:
-            error_detail = str(e)
-
-            if isinstance(error_detail, str):
-                msg = error_detail
-                if "2회" in msg:
-                    return Response({"error_detail": msg}, status=status.HTTP_409_CONFLICT)
-                if "error_detail" in error_detail:
-                    return Response(error_detail, status=status.HTTP_400_BAD_REQUEST)
-
-                raise
-
-        return Response(serializer.to_representation(submission), status=201)
+        return redirect(f"{settings.FRONTEND_DOMAIN}/exams/submissions/{instance.pk}")
