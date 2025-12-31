@@ -5,6 +5,7 @@ from apps.community.views.post_comment import (
     PostCommentUpdateDestroyAPIView,
 )
 from apps.community.views.post_views import (
+    PostCategoryListAPIView,
     PostDetailAPIView,
     PostListCreateAPIView,
 )
@@ -12,6 +13,7 @@ from apps.community.views.post_views import (
 urlpatterns = [
     path("", PostListCreateAPIView.as_view(), name="post-list-create"),
     path("<int:post_id>/", PostDetailAPIView.as_view(), name="post-detail"),
+    path("post-categories/", PostCategoryListAPIView.as_view(), name="post-category-list"),
     path("<int:post_id>/comments", PostCommentListCreateAPIView.as_view(), name="post_comment_list_create"),
     path(
         "<int:post_id>/comments/<int:comment_id>",
