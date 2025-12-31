@@ -10,8 +10,7 @@ from apps.exams.serializers.admin.admin_submission_detail_serializer import (
     ExamSubmissionDetailSerializer,
 )
 from apps.exams.services.admin.admin_submission_detail_services import (
-    check_answer_correctness,
-    normalize_answers,
+    get_merged_submission_detail,
 )
 
 
@@ -56,20 +55,8 @@ class ExamAdminSubmissionDetailView(AdminUserPermissionView):
         except ExamSubmission.DoesNotExist:
             return Response(EMS.E404_NOT_FOUND("응시 내역"), status=status.HTTP_404_NOT_FOUND)
 
-        # 채점 (기존 snapshot 활용)
-        snapshot = submission.deployment.questions_snapshot
+        detail_data = get_merged_submission_detail(submission)
 
-        try:
-            answers = normalize_answers(submission.answers)
-        except ValueError:
-            return Response(EMS.E400_INVALID_REQUEST("응시 답안 형식"), status=status.HTTP_400_BAD_REQUEST)
-
-        for idx, q in enumerate(snapshot, start=1):
-            submitted = answers.get(str(q["question_id"]))
-            q["number"] = idx
-            q["submitted_answer"] = submitted
-            q["is_correct"] = check_answer_correctness(submitted, q["answer"])
-
-        serializer = ExamSubmissionDetailSerializer(submission, context={"questions_data": snapshot})
+        serializer = ExamSubmissionDetailSerializer(detail_data)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
