@@ -8,9 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 def issue_token_pair(refresh: RefreshToken) -> Response:
     secure = getattr(settings, "SESSION_COOKIE_SECURE", True)
-    allowed = {"Lax", "Strict", "None", False, None}
-    raw = getattr(settings, "SESSION_COOKIE_SAMESITE", "Lax")
-    samesite = raw if raw in allowed else "Lax"
+    samesite = cast(Literal["Lax", "Strict", "None", False] | None, getattr(settings, "SESSION_COOKIE_SAMESITE", "Lax"))
     response = Response({"access_token": str(refresh.access_token)}, status=status.HTTP_200_OK)
     if settings.DEBUG:
         secure=True
