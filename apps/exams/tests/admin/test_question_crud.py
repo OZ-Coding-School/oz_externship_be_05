@@ -80,8 +80,16 @@ class ExamAdminQuestionViewTest(APITestCase):
                 "point": 1,
                 "explanation": "해설",
             }
+
+            # fill_blank 유형일 경우 필수 필드인 blank_count 추가
+            if q_type == "fill_blank":
+                data["blank_count"] = 1
+
             response = self.client.post(self.create_url, data, format="json")
-            self.assertEqual(response.status_code, status.HTTP_201_CREATED, f"Failed on type: {q_type}")
+
+            self.assertEqual(
+                response.status_code, status.HTTP_201_CREATED, f"Failed on type: {q_type}, Error: {response.data}"
+            )
 
     def test_create_question_explanation_empty_success(self) -> None:
         """explanation이 null로 들어와도 저장되는지 확인"""
