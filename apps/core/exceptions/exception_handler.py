@@ -11,6 +11,7 @@ from apps.core.response.response_message import MagicException, resolve_message
 
 logger = logging.getLogger(__name__)
 
+
 def custom_exception_handler(
     exc: Exception,
     context: dict[str, Any],
