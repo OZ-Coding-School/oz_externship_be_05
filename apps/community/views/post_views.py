@@ -130,7 +130,9 @@ class PostDetailAPIView(RetrieveUpdateDestroyAPIView[Post]):
         return Response(serializer.data)
 
 
-@extend_schema(summary="카테고리 목록 조회", description="GET: 모든 카테고리 목록을 조회합니다.", tags=["커뮤니티 관리"])
+@extend_schema(
+    summary="카테고리 목록 조회", description="GET: 모든 카테고리 목록을 조회합니다.", tags=["커뮤니티 관리"]
+)
 class PostCategoryListAPIView(ListCreateAPIView[PostCategory]):
     permission_classes = [IsAuthenticatedOrReadOnly]
     queryset = PostCategory.objects.all()
