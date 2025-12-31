@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 from rest_framework import status
 
 from apps.chatbot.models.chatbot_completions import ChatbotCompletion, UserRole
+from apps.chatbot.services.completion_response_service import GeminiStreamingService
 from apps.chatbot.tests.completion.api.test_completion_api_base import (
     CompletionAPITestBase,
 )
@@ -33,7 +34,7 @@ test_completion_create_404_other_session
 # POST 테스트
 class CompletionCreateAPITest(CompletionAPITestBase):
 
-    @patch("apps.chatbot.services.completion_response_service._iter_gemini_text_stream")
+    @patch.object(GeminiStreamingService, "_iter_gemini_text_stream")
     def test_completion_create_200(self, mock_stream: MagicMock) -> None:
         mock_stream.return_value = iter(["Greetings", "World"])
         response = self.post_response(self.session.id, "Hello World")

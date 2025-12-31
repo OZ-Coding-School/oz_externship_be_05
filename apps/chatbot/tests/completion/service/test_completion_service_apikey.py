@@ -2,10 +2,10 @@ import os
 import unittest
 from unittest.mock import patch
 
-from apps.chatbot.services.completion_response_service import _get_api_key
+from apps.chatbot.services.completion_response_service import GeminiStreamingService
 
 """
-_get_api_key 함수 테스트
+GeminiStreamingService._get_api_key 함수 테스트
 API KEY 설정되어 있으면 정상 반환
 API KEY 설정X → RuntimeError 발생
 API KEY 빈 문자열 → RuntimeError 발생
@@ -20,7 +20,7 @@ class TestGetApiKey(unittest.TestCase):
         patcher = patch.dict("os.environ", env, clear=True)
         patcher.start()
         try:
-            result = _get_api_key()
+            result = GeminiStreamingService._get_api_key()
             self.assertEqual(result, "test-api-key-123")
         finally:
             patcher.stop()
@@ -33,7 +33,7 @@ class TestGetApiKey(unittest.TestCase):
         patcher.start()
         try:
             with self.assertRaisesRegex(RuntimeError, r"GEMINI_API_KEY not set"):
-                _get_api_key()
+                GeminiStreamingService._get_api_key()
         finally:
             patcher.stop()
 
@@ -45,6 +45,6 @@ class TestGetApiKey(unittest.TestCase):
         patcher.start()
         try:
             with self.assertRaisesRegex(RuntimeError, r"GEMINI_API_KEY not set"):
-                _get_api_key()
+                GeminiStreamingService._get_api_key()
         finally:
             patcher.stop()
