@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing import Any
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
@@ -9,7 +9,6 @@ from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.response import Response
-from rest_framework.serializers import BaseSerializer
 
 from apps.core.exceptions.exception_messages import EMS
 from apps.exams.models import Exam
