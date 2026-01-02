@@ -1,3 +1,5 @@
+import html
+import re
 from typing import Any
 
 from django.utils.html import strip_tags
@@ -54,5 +56,13 @@ class QuestionListSerializer(serializers.ModelSerializer[Question]):
 
     # obj.content_preview가 존재하면 태그를 제거하고 반환, 없으면 빈 문자열
     def get_content_preview(self, obj: Question) -> str:
-        content = getattr(obj, "content_preview", "")
-        return strip_tags(content)
+        content = getattr(obj, "content_preview", None)
+        if not content:
+            content = obj.content or ""
+        text = strip_tags(content)
+        text = html.unescape(text)
+        text = re.sub(r"[\r\n\t]+", " ", text)
+        text = re.sub(r"([.!?])(?=\S)", r"\1 ", text)
+        text = re.sub(r"\s+", " ", text).strip()
+
+        return text[:100]
