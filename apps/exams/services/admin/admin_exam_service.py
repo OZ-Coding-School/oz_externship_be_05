@@ -3,7 +3,8 @@ from typing import Any, Dict, Optional
 from django.db import transaction
 from django.db.models import Count, QuerySet
 
-from apps.core.constants import VALID_SORT_FIELDS
+from apps.core.constants import THUMBNAIL_IMAGE_UPLOAD_PATH, VALID_SORT_FIELDS
+from apps.core.utils.image_resizer import ImageResizer
 from apps.courses.models import Subject
 from apps.exams.models import Exam
 
@@ -78,6 +79,19 @@ class AdminExamService:
         return queryset.order_by(f"{order_prefix}{sort_field}")
 
     # ----------------------------------------------------------------------
+    # thumbnail update
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def exam_thumbnail_update(image_file: Any, pk: int) -> dict[str, str]:
+        urls = ImageResizer().upload_square_resizes(
+            image_file=image_file,
+            sizes=(256,),
+            path_prefix=f"{THUMBNAIL_IMAGE_UPLOAD_PATH}{pk}",
+        )
+
+        return urls
+
+    # ----------------------------------------------------------------------
     # CREATE(생성)
     # ----------------------------------------------------------------------
     def create_exam(self, validated_data: Dict[str, Any]) -> Exam:
@@ -87,9 +101,21 @@ class AdminExamService:
         # subject_id(FK) 존재 여부 확인
         subject_id = validated_data.pop("subject_id")
         subject_instance = self.get_subject_by_id(subject_id)
+        # 이미지파일 여부 확인
+        image_file = validated_data.pop("thumbnail_img", None)
 
-        # Exam 생성. 로직 추가시 atomic 추가 권장.
-        exam = Exam.objects.create(subject=subject_instance, **validated_data)
+        with transaction.atomic():
+            exam = Exam.objects.create(subject=subject_instance, **validated_data)  # pk 값 확보를 위한 우선작업
+
+            if image_file:
+                urls = self.exam_thumbnail_update(image_file, exam.id)
+                thumbnail_img_url = urls.get("256")
+
+                if thumbnail_img_url:
+                    # 업로드된 Url만 저장
+                    exam.thumbnail_img_url = thumbnail_img_url
+                    exam.save(update_fields=["thumbnail_img_url"])
+
         return exam
 
     # ----------------------------------------------------------------------
@@ -104,12 +130,23 @@ class AdminExamService:
             validated_data: 시리얼라이저를 통과한 데이터
         """
         subject_id = validated_data.pop("subject_id", None)  # KeyError 방지
+        image_file = validated_data.pop("thumbnail_img", None)  # 이미지파일 여부 확인
 
         with transaction.atomic():
             if subject_id is not None:
                 # subject_id 존재 여부 확인
-                subject_instance = self.get_subject_by_id(subject_id)
-                exam.subject = subject_instance
+                exam.subject = self.get_subject_by_id(subject_id)
+
+            if image_file:
+                # 기존 이미지 삭제
+                if exam.thumbnail_img_url:
+                    ImageResizer().delete_all_by_id_path(exam.thumbnail_img_url)
+                # 저장
+                urls = self.exam_thumbnail_update(image_file, exam.id)
+                thumbnail_img_url = urls.get("256")
+
+                if thumbnail_img_url:
+                    exam.thumbnail_img_url = thumbnail_img_url
 
             # 나머지  데이터 필드 업데이트
             for key, value in validated_data.items():
@@ -128,4 +165,8 @@ class AdminExamService:
         """
         # 뷰에서 PK 포맷 검증을 이미 수행했으므로, 여기서는 Exam 객체 존재 여부만 확인합니다.
         exam_to_delete = Exam.objects.select_for_update().get(id=exam_id)
+
+        if exam_to_delete.thumbnail_img_url:
+            ImageResizer().delete_all_by_id_path(exam_to_delete.thumbnail_img_url)
+
         exam_to_delete.delete()

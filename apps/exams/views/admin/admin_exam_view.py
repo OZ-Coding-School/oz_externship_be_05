@@ -102,16 +102,16 @@ class ExamAdminListCreateAPIView(AdminUserPermissionView):
         tags=["쪽지시험 관리"],
         summary="쪽지시험 생성",
         description="새로운 쪽지시험을 생성합니다. 과목 ID, 시험 제목, 썸네일 URL을 입력받습니다.",
-        request=AdminExamSerializer,  # 요청 시 사용할 시리얼라이저
+        request=serializer_class,  # 요청 시 사용할 시리얼라이저
         responses={
-            201: AdminExamSerializer,  # 성공 시 생성된 데이터 반환
+            201: serializer_class,  # 성공 시 생성된 데이터 반환
             400: OpenApiResponse(description="유효하지 않은 입력 데이터"),
             404: OpenApiResponse(description="해당 과목 정보를 찾을 수 없음"),
         },
     )
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         """POST: 시험 생성 view (create)"""
-        serializer = AdminExamSerializer(data=request.data)
+        serializer = self.serializer_class(data=request.data)
 
         try:
             serializer.is_valid(raise_exception=True)  # 시리얼라이저로 유효성 검사
@@ -129,7 +129,7 @@ class ExamAdminListCreateAPIView(AdminUserPermissionView):
 
         # subject_name N+1 쿼리 방지.
         exam_with_subject = exam_service.get_exam_by_id(exam.pk)
-        response_serializer = AdminExamSerializer(exam_with_subject)
+        response_serializer = self.serializer_class(exam_with_subject)
 
         return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
@@ -177,9 +177,9 @@ class ExamAdminRetrieveUpdateDestroyAPIView(AdminUserPermissionView):
         tags=["쪽지시험 관리"],
         summary="쪽지시험 수정",
         description="시험 제목, 과목 ID, 썸네일 등을 수정합니다.",
-        request=AdminExamSerializer,
+        request=serializer_class,
         responses={
-            200: AdminExamSerializer,
+            200: serializer_class,
             400: OpenApiResponse(description="유효하지 않은 요청 데이터입니다."),
             404: OpenApiResponse(description="수정할 쪽지시험 정보을(를) 찾을 수 없습니다."),
         },

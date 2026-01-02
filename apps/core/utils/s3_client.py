@@ -73,6 +73,14 @@ class S3Client:
         except ClientError as e:
             logger.warning(f"S3 Delete Failed (Key: {key}): {e}", exc_info=True)
 
+    def delete_prefix(self, prefix: str) -> None:
+        """특정 경로(prefix)로 시작하는 모든 객체를 삭제"""
+        objects_to_delete = self.s3.list_objects_v2(Bucket=self.bucket_name, Prefix=prefix)
+
+        if "Contents" in objects_to_delete:
+            delete_keys: Any = [{"Key": obj["Key"]} for obj in objects_to_delete["Contents"]]
+            self.s3.delete_objects(Bucket=self.bucket_name, Delete={"Objects": delete_keys})
+
     def build_url(self, key: str) -> str:
         if not key:
             return ""
