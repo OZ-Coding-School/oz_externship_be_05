@@ -15,10 +15,20 @@ class AdminExamSerializer(serializers.ModelSerializer[Exam]):
     subject_id = serializers.IntegerField(required=True)
     # SerializerMethodField 대신 CharField + source 사용 (Swagger 반영 및 N+1 방지)
     subject_name = serializers.CharField(source="subject.title", read_only=True)
+    thumbnail_img = serializers.ImageField(write_only=True, required=False)
 
     class Meta:
         model = Exam
-        fields = ["id", "title", "subject_id", "subject_name", "thumbnail_img_url", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "title",
+            "subject_id",
+            "subject_name",
+            "thumbnail_img",
+            "thumbnail_img_url",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["id", "subject_name", "created_at", "updated_at"]
 
 
