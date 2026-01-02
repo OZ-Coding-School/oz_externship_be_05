@@ -1,5 +1,6 @@
 from typing import Any, cast
 
+from django.db import transaction
 from rest_framework import serializers
 
 from apps.courses.models.cohorts_models import Cohort
@@ -104,16 +105,37 @@ class AdminAccountRoleUpdateSerializer(serializers.Serializer[User]):
 
         return attrs
 
+    @transaction.atomic
     def update(self, instance: User, validated_data: dict[str, Any]) -> User:
-        role = validated_data.get("role")
-        if role is not None:
-            instance.role = role
+        role = cast(str, validated_data.get("role"))
+        # 기존 역할 정리
+        self._clear_exists_role_relations(instance)
+        match role:
+            case RoleChoices.OM | RoleChoices.LC:
+                courses = validated_data["assigned_courses"]
+                if role == RoleChoices.OM:
+                    instance.operationmanager_set.set(courses)
+                elif role == RoleChoices.LC:
+                    instance.learningcoach_set.set(courses)
 
-        if "cohort" in validated_data:
-            cast(Any, instance).cohort = validated_data["cohort"]
+            case RoleChoices.TA | RoleChoices.ST:
+                cohort = validated_data["cohort"]
+                if role == RoleChoices.TA:
+                    instance.trainingassistant_set.set([cohort])
+                elif role == RoleChoices.ST:
+                    instance.cohortstudent_set.set([cohort])
 
-        if "assigned_courses" in validated_data:
-            cast(Any, instance).assigned_courses.set(validated_data["assigned_courses"])
-
+        instance.role = role
         instance.save()
         return instance
+
+    def _clear_exists_role_relations(self, user: User) -> None:
+        match user.role:
+            case RoleChoices.OM:
+                user.operationmanager_set.all().delete()
+            case RoleChoices.LC:
+                user.learningcoach_set.all().delete()
+            case RoleChoices.TA:
+                user.trainingassistant_set.all().delete()
+            case RoleChoices.ST:
+                user.cohortstudent_set.all().delete()
