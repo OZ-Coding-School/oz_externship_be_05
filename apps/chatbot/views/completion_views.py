@@ -46,7 +46,22 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
     @extend_schema(
         tags=["AI 챗봇"],
         summary="AI 챗봇 응답 생성 API (with Streaming)",
-        description="AI 챗봇과 사용자의 메세지를 생성/저장하는 API. user 메세지 저장 → AI 응답 생성·저장, 이후 둘 다 반환",
+        description="AI 챗봇과 사용자의 메세지를 생성/저장하는 API\n\n"
+        "처리 흐름: \n"
+        "- 사용자 메세지 DB 저장 \n"
+        "- 세션에 설정된 AI 모델로 응답 생성 (SSE 스트리밍) * 현재 GEMINI만 연동\n"
+        "- AI 응답 DB 저장\n"
+        "- 스트리밍 완료 시 [DONE] 전송\n\n"
+        "SSE 응답 형식: \n"
+        "- 정상 chunk: data: {'context': '텍스트'} \n"
+        "- 완료: data: [DONE] \n"
+        "- 에러: data: [ERROR] \n\n"
+        "지원 모델: \n"
+        "- gemini-2.5-flash (기본) \n\n"
+        " 주의사항: \n"
+        "- 빈 문자열 메세지는 허용되지 않음 \n"
+        "- 본인의 세션에만 메세지 보낼 수 있음 \n"
+        "- 타인의 세션 접근 시 보안상 404를 반환\n",
         request=CompletionCreateSerializer,
         parameters=[
             OpenApiParameter(
@@ -57,16 +72,90 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
             ),
         ],
         responses={
-            "200": {
-                "type": "string",
-                "description": "SSE 스트리밍 응답",
-                "example": 'data: {"contents": "안녕하세요"}\n\ndata: [DONE]\n\n',
-            },
-            "204": {"type": "object", "example": ""},  # 204 내역
-            "400": {"type": "object", "example": EMS.E400_REQUIRED_FIELD},
-            "401": {"type": "object", "example": EMS.E401_USER_ONLY_ACTION("채팅")},
-            "403": {"type": "object", "example": EMS.E403_PERMISSION_DENIED("채팅")},
+            200: OpenApiResponse(
+                CompletionCreateSerializer,
+                description="SSE 스트리밍 응답 성공",
+                examples=[
+                    OpenApiExample(
+                        name="스트리밍 응답 - 정상",
+                        summary="AI가 정상적으로 응답을 생성하는 경우",
+                        value=(
+                            'data: {"content": "안녕하세요}\n\n'
+                            'data: {"content": "! Django ORM"}\n\n'
+                            'data: {"content": " 최적화 방법을 알려드릴게요."}\n\n'
+                            "data: [DONE]\n\n"
+                        ),
+                    ),
+                    OpenApiExample(
+                        name="스트리밍 응답 - 에러 발생",
+                        summary="AI 응답 생성 중 에러가 발생한 경우",
+                        value=('data: {"content": "응답 시작..."}\n\n' "data: [ERROR]\n\n" "data: [DONE]\n\n"),
+                    ),
+                ],
+            ),
+            400: OpenApiResponse(
+                description="Bad Request - 메시지 필드 누락 또는 빈 문자열",
+                examples=[
+                    OpenApiExample(
+                        name="메시지 필드 누락",
+                        summary="request body에 message 필드가 없는 경우",
+                        value={"message": ["이 필드는 필수 항목입니다."]},
+                    ),
+                    OpenApiExample(
+                        name="빈 문자열 메시지",
+                        summary="message가 빈 문자열인 경우",
+                        value={"message": ["이 필드는 blank일 수 없습니다."]},
+                    ),
+                ],
+            ),
+            401: OpenApiResponse(
+                description="Unauthorized - 인증되지 않음",
+                examples=[
+                    OpenApiExample(
+                        name="인증 실패",
+                        summary="로그인하지 않은 사용자가 요청한 경우",
+                        value=EMS.E401_USER_ONLY_ACTION("채팅"),
+                    ),
+                ],
+            ),
+            404: OpenApiResponse(
+                description="Not Found - 세션을 찾을 수 없음",
+                examples=[
+                    OpenApiExample(
+                        name="존재하지 않는 세션",
+                        summary="session_id에 해당하는 세션이 DB에 없는 경우",
+                        value=EMS.E404_CHATBOT_SESSION_NOT_FOUND,
+                    ),
+                    OpenApiExample(
+                        name="타인의 세션 접근",
+                        summary="본인 소유가 아닌 세션에 접근한 경우 (보안상 404 반환)",
+                        value=EMS.E404_CHATBOT_SESSION_NOT_FOUND,
+                    ),
+                ],
+            ),
         },
+        examples=[
+            OpenApiExample(
+                name="메시지 전송 요청",
+                summary="기본 메시지 전송 요청",
+                value={"message": "Django에서 select_related와 prefetch_related 차이점 알려줘"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                name="간단한 질문",
+                summary="짧은 질문 예시",
+                value={"message": "안녕하세요"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                name="코드 관련 질문",
+                summary="코드 분석 요청 예시",
+                value={
+                    "message": "이 코드에서 N+1 문제가 발생하는 부분을 찾아줘:\n\nfor user in User.objects.all():\n    print(user.profile.bio)"
+                },
+                request_only=True,
+            ),
+        ],
     )
 
     # SSE 스트리밍 응답 생성.
@@ -97,21 +186,22 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
     @extend_schema(
         tags=["AI 챗봇"],
         summary="챗봇 대화 내역 조회 API",
-        description="""
-        특정 세션의 대화 내역을 조회하는 API입니다.
-        커서 기반 페이지네이션을 지원하며, 최신 메세지가 먼저 반환됩니다.
-        본인의 세션만 조회 가능합니다.
-        """,
+        description="특정 세션의 대화 내역을 조회하는 API입니다.\n"
+        "- 커서 기반 페이지네이션을 지원하며, 최신 메세지가 먼저 반환됩니다.\n"
+        "- 본인의 세션만 조회 가능합니다.",
         parameters=[
             OpenApiParameter(
                 name="cursor",
                 type=OpenApiTypes.STR,
-                description="커서 페이지 네이션 적용을 위한 커서 값",
+                description="커서 페이지 네이션 적용을 위한 커서 값. 문자열(STR)\n" "(required=False, default=None)",
                 required=False,
                 default=None,
             ),
             OpenApiParameter(
-                name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값", default=10
+                name="page_size",
+                type=OpenApiTypes.INT,
+                description="페이지 네이션 사이즈 지정을 위한 값. 문자열(INT)" "(default=10)",
+                default=10,
             ),
         ],
         responses={
@@ -179,17 +269,15 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
     @extend_schema(
         tags=["AI 챗봇"],
         summary="세션 내 메세지 기록 삭제 API",
-        description="""
-        특정 세션의 모든 대화 내역을 삭제하는 API입니다.
-        세션 자체는 유지되며, 메시지만 삭제됩니다.
-        본인의 세션만 삭제 가능합니다.
-        """,
+        description="특정 세션의 모든 대화 내역을 삭제하는 API입니다.\n"
+        "- 세션 자체는 유지되며, 메시지만 삭제됩니다.\n"
+        "- 본인의 세션만 삭제 기능이 작동합니다.",
         parameters=[
             OpenApiParameter(
                 name="session_id",
                 type=OpenApiTypes.INT,
                 location="path",
-                description="세션 PK ID",
+                description="세션 PK ID. 필수! INT",
                 required=True,
             )
         ],

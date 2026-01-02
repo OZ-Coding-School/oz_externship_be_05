@@ -35,11 +35,9 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
     @extend_schema(
         tags=["AI 챗봇"],
         summary="세션 생성 API",
-        description="""
-        Chatbot Session을 생성하는 API입니다.
-        Question.id, User.id가 필요하며, Question에 해당하는 채팅 세션을 만듭니다.
-        using_model은 gemini가 기본입니다.
-        """,
+        description="Chatbot Session을 생성하는 API입니다.\n"
+        "- Question.id, User.id가 필요하며, Question에 해당하는 채팅 세션을 만듭니다.\n"
+        "- using_model은 gemini가 기본입니다.",
         request=SessionCreateSerializer,
         responses={
             200: OpenApiResponse(SessionCreateSerializer, description="세션 생성 성공"),
@@ -92,11 +90,9 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
     @extend_schema(
         tags=["AI 챗봇"],
         summary="세션 리스트 확인 API",
-        description="""
-        사용자의 Chatbot Session 목록을 조회하는 API입니다.
-        커서 기반 페이지네이션을 지원하며, 본인의 세션만 조회 가능합니다.
-        최신 세션이 먼저 반환됩니다.
-        """,
+        description="사용자의 Chatbot Session 목록을 조회하는 API입니다.\n"
+        "- 커서 기반 페이지네이션을 지원하며, 본인의 세션만 조회 가능합니다.\n"
+        "- 최신 세션이 먼저 반환됩니다.",
         parameters=[
             OpenApiParameter(
                 name="cursor",
@@ -135,7 +131,7 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
                 name="세션 조회 성공(200)",
                 summary="페이지네이션된 세션 목록 반환",
                 value={
-                    "next": "http://",
+                    "next": "http://api.ozcodingschool.site/sessions/1/completions/?cursor=str",
                     "previous": None,
                     "results": [
                         {
@@ -193,11 +189,10 @@ class SessionDeleteView(APIView, ChatbotSessionMixin):
     @extend_schema(
         tags=["AI 챗봇"],
         summary="세션 삭제 API",
-        description="""
-        특정 Chatbot Session을 완전 삭제하는 API입니다.
-        세션 삭제 시 해당 세션의 모든 대화 내역(Completion)도 삭제됩니다.
-        본인의 세션만 삭제 가능합니다.
-        """,
+        description="특정 Chatbot Session을 완전 삭제하는 API입니다.\n"
+        "- 세션 삭제 시 해당 세션의 모든 대화 내역(Completion)도 삭제됩니다.\n"
+        "- 본인의 세션만 삭제 가능합니다.\n"
+        "- 주의! completions의 view와 달리 세션 자체가 삭제됩니다. 잘 구분해 주세요.",
         parameters=[
             OpenApiParameter(
                 name="session_id",
