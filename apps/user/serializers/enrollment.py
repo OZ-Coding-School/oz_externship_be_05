@@ -45,7 +45,6 @@ class EnrollStudentSerializer(serializers.Serializer[Any]):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         cohort_field = cast(serializers.PrimaryKeyRelatedField[Cohort], self.fields["cohort_id"])
-        cohort_field.queryset = Cohort.objects.filter(
-            status=CohortStatusChoices.PENDING,
-            start_date__gte=timezone.localdate(),
-        ).select_related("course")
+        cohort_field.queryset = Cohort.objects.select_related("course").exclude(
+            status=CohortStatusChoices.PENDING, start_date__gt=timezone.localdate()
+        )

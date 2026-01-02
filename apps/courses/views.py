@@ -70,8 +70,8 @@ class AvailableCoursesAPIView(APIView):
         responses={200: None},
     )
     def get(self, request: Request) -> Response:
-        cohorts = Cohort.objects.filter(
-            status=CohortStatusChoices.PENDING, start_date__gte=timezone.localdate()
-        ).select_related("course")
+        cohorts = Cohort.objects.select_related("course").exclude(
+            status=CohortStatusChoices.PENDING, start_date__gt=timezone.localdate()
+        )
         serializer = AvailableCourseSerializer(cohorts, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
