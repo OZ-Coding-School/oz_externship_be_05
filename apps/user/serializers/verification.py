@@ -9,24 +9,28 @@ from apps.user.models.user import UserStatus
 from apps.user.serializers.base import BaseMixin
 
 
-class EmailRequestPurpose(TextChoices):
+class RequestPurpose(TextChoices):
     SIGNUP = "signup"
+    FIND = "find"
     RESTORE = "restore"
 
-
 class EmailRequestSerializer(Serializer[Any], BaseMixin):
-    purpose = serializers.ChoiceField(choices=EmailRequestPurpose.choices, default=EmailRequestPurpose.SIGNUP)
+    purpose = serializers.ChoiceField(choices=RequestPurpose.choices, default=RequestPurpose.SIGNUP)
     email = BaseMixin.get_email_field()
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
         email = attrs["email"]
         purpose = attrs["purpose"]
 
-        if purpose == EmailRequestPurpose.SIGNUP:
+        if purpose == RequestPurpose.SIGNUP:
             if User.objects.filter(email=email).exists():
                 raise serializers.ValidationError({"email": "이미 가입된 이메일입니다."})
-
-        if purpose == EmailRequestPurpose.RESTORE:
+            
+        if purpose == RequestPurpose.FIND:
+            if not User.objects.filter(email=email).exists():
+                raise serializers.ValidationError({"email": "가입되지 않는 이메일입니다."})
+            
+        if purpose == RequestPurpose.RESTORE:
             try:
                 user = User.objects.prefetch_related("withdrawal_set").get(email=email)
                 if not user.status == UserStatus.WITHDREW:
@@ -41,6 +45,22 @@ class EmailRequestSerializer(Serializer[Any], BaseMixin):
 
 class SMSRequestSerializer(Serializer[Any], BaseMixin):
     phone_number = BaseMixin.get_phone_number_field()
+    purpose = serializers.ChoiceField(choices=RequestPurpose.choices, default=RequestPurpose.SIGNUP)
+    def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        phone_number = attrs["phone_number"]
+        purpose = attrs["purpose"]
+
+        if purpose == RequestPurpose.SIGNUP:
+            if User.objects.filter(phone_number=phone_number).exists():
+                raise serializers.ValidationError({"phone_number": "이미 가입된 전화번호입니다."})
+        
+        if purpose == RequestPurpose.FIND:
+            if not User.objects.filter(phone_number=phone_number).exists():
+                raise serializers.ValidationError({"phone_number": "가입되지 않는 전화번호입니다."})
+            
+        if purpose == RequestPurpose.RESTORE:
+            raise serializers.ValidationError("잘못된 요청입니다.")
+
 
 
 class EmailCodeSerializer(Serializer[Any], BaseMixin):
