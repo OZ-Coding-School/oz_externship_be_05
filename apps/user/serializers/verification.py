@@ -15,7 +15,7 @@ class EmailRequestPurpose(TextChoices):
 
 
 class EmailRequestSerializer(Serializer[Any], BaseMixin):
-    purpose = serializers.ChoiceField(choices=EmailRequestPurpose.choices)
+    purpose = serializers.ChoiceField(choices=EmailRequestPurpose.choices, default=EmailRequestPurpose.SIGNUP)
     email = BaseMixin.get_email_field()
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
