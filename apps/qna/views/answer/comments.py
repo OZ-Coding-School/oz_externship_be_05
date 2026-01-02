@@ -17,9 +17,11 @@ from apps.qna.serializers.answer.comments import (
 from apps.qna.services.answer.service import CommentService
 from apps.qna.views.answer.base import BaseAnswerAPIView
 
+
 class CommentCursorPagination(CursorPagination):
     page_size = 10
     ordering = "-created_at"
+
 
 @extend_schema_view(
     get=extend_schema(summary="댓글 목록 조회", tags=["질의응답"]),
