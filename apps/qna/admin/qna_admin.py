@@ -82,13 +82,15 @@ class QuestionAdmin(_QuestionBaseAdmin):
 
     fieldsets = (
         ("질문 상세 정보", {
-            "fields": ("title", "get_category_hierarchy", "content")
-        }),
-        ("작성자 및 상태", {
-            "fields": (
-                "get_questioner_details", "view_count",
-                "get_is_answered_text", "created_at", "updated_at"
-            )
+            "fields": ("get_questioner_details",
+                       "title",
+                       "get_category_hierarchy",
+                       "content",
+                       "view_count",
+                       "get_is_answered_text",
+                       "created_at",
+                       "updated_at"
+                       )
         }),
     )
 

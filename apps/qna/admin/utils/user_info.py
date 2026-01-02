@@ -33,16 +33,11 @@ def get_user_display_info(user: Any) -> str:
 
     # 3-1. 과정/기수 정보 추출 로직
     target_obj = None
+    role = getattr(user, "role", "U")
 
     try:
         if role == "ST":  # Student
             target_obj = getattr(user, "in_progress_cohortstudent", None)
-
-        elif role == "TA":  # Teaching Assistant
-            if hasattr(user, "trainingassistant_set"):
-                target_obj = user.trainingassistant_set.select_related("cohort__course").first()
-
-
     except Exception:
         target_obj = None
 
@@ -53,14 +48,13 @@ def get_user_display_info(user: Any) -> str:
     if target_obj and hasattr(target_obj, "cohort"):
         cohort = target_obj.cohort
         course_name = getattr(cohort.course, "name", "")
-        generation = f"{cohort.number}기"
+        generation = f"{cohort.number}기" if hasattr(cohort, "number") else ""
 
-    # 4. 역할별 최종 텍스트 포맷팅
+        # 4. 역할별 최종 텍스트 포맷팅 수정
     if role == "ST":
         info_text = f"{course_name} {generation}".strip()
     elif role == "TA":
-        # 조교는 "과정명 기수 조교" 형식
-        info_text = f"{course_name} {generation} 조교".strip()
+        info_text = "조교"
     elif role == "LC":
         info_text = "러닝 코치"
     elif role == "OM":
@@ -70,8 +64,8 @@ def get_user_display_info(user: Any) -> str:
     else:
         info_text = "일반 회원"
 
-    # 정보가 비어있으면 역할 이름이라도 표시
-    if not info_text:
+        # 최종 출력 시에도 정보가 아예 없다면 기본 역할명 표시
+    if not info_text.strip():
         info_text = user.get_role_display()
 
     # 5. HTML 조립
@@ -80,7 +74,7 @@ def get_user_display_info(user: Any) -> str:
         <div style="display: flex; align-items: center; padding: 5px 0;">
             {img}
             <div style="display: flex; flex-direction: column; justify-content: center;">
-                <span style="font-weight: bold; font-size: 14px; color: #333; line-height: 1.2;">{nick}</span>
+                <span style="font-weight: bold; font-size: 14px; color: inherit; line-height: 1.2;">{nick}</span>
                 <span style="font-size: 12px; color: #666; margin-top: 4px;">{info}</span>
             </div>
         </div>
