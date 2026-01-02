@@ -195,22 +195,23 @@ class AdminStudentEnrollAcceptView(APIView):
                 id__in=ids_set,
                 status__in=[EnrollmentStatus.PENDING],
             )
-
-            user_ids = list(set(enrollments.values_list("user_id", flat=True)))
-
+            user_cohort_pairs = list(set(enrollments.values_list("user_id", "cohort_id")))
+            CohortStudent.objects.bulk_create(
+                (CohortStudent(user_id=user_id, cohort_id=cohort_id) for user_id, cohort_id in user_cohort_pairs),
+                ignore_conflicts=True,
+            )
             enrollments.update(status=EnrollmentStatus.ACCEPTED)
 
+            user_ids = {user_id for user_id, _ in user_cohort_pairs}
             User.objects.filter(id__in=user_ids).update(
                 role=RoleChoices.ST,
                 is_staff=False,
                 is_superuser=False,
             )
 
-        res = AdminStudentEnrollApprovalStatusSerializer(
-            data={"detail": "수강생 등록 신청들에 대한 승인 요청이 처리되었습니다."}
+        return Response(
+            data={"detail": "수강생 등록 신청들에 대한 승인 요청이 처리되었습니다."}, status=drf_status.HTTP_200_OK
         )
-        res.is_valid(raise_exception=True)
-        return Response(res.data, status=drf_status.HTTP_200_OK)
 
 
 class AdminStudentEnrollRejectView(APIView):
