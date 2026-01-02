@@ -12,6 +12,7 @@ from apps.courses.models import Cohort, Course, Subject
 # 프로젝트 구조에 맞는 임포트 경로 확인 필요
 from apps.exams.models import DeploymentStatus, Exam, ExamDeployment, ExamSubmission
 from apps.user.models.role import CohortStudent
+from apps.user.models.user import RoleChoices
 
 
 class ExamListTestCase(APITestCase):
@@ -34,16 +35,22 @@ class ExamListTestCase(APITestCase):
         now = timezone.now()
 
         # 1. 유저 생성 (관리자 권한 포함)
-        cls.student_user = User.objects.create_superuser(
+        cls.student_user = User.objects.create(
             email="student@test.com",
+            nickname="user1",
             password="testpassword",
             name="한율",
             birthday=datetime.date(2000, 1, 1),
+            phone_number="010-1234-5678",
+            role=RoleChoices.ST,
         )
-        cls.other_user = User.objects.create_superuser(
+        cls.other_user = User.objects.create(
             email="other@test.com",
+            nickname="user2",
             password="testpassword",
             name="머용",
+            role=RoleChoices.ST,
+            phone_number="010-1234-5679",
             birthday=datetime.date(1990, 1, 1),
         )
 

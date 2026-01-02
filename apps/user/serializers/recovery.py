@@ -1,5 +1,6 @@
 from typing import Any
 
+from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 from rest_framework.serializers import Serializer
 
@@ -23,11 +24,13 @@ class RestoreAccountSerializer(SenderMixin, EmailTokenMixin, Serializer[Any]):
 
 
 class FindEmailSerializer(SenderMixin, SMSTokenMixin, Serializer[Any]):
+    name = serializers.CharField()
     sms_token = BaseMixin.get_verify_token_field()
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
+        name = attrs.get("name")
         phone_number = self.verify_sms_token(attrs["sms_token"])
-        user = User.objects.filter(phone_number=phone_number).first()
+        user = User.objects.filter(phone_number=phone_number, name=name).first()
         if user is None:
             raise NotFound("해당 휴대전화 번호로 가입된 계정이 없습니다.")
         attrs["masked_email"] = EmailSender.mask_email(user.email)
