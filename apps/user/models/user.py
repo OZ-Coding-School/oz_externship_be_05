@@ -58,6 +58,12 @@ class RoleChoices(models.TextChoices):
     USER = "U", "User"
 
 
+class UserStatus(models.TextChoices):
+    IN_ACTIVE = "inactive"
+    ACTIVE = "active"
+    WITHDREW = "withdrew"
+
+
 class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=30)
@@ -79,12 +85,11 @@ class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
     def status(self) -> str:
         from apps.user.models.withdraw import Withdrawal
 
-        is_withdrawing = getattr(self, "is_withdrawing", None)
-        if is_withdrawing is None:
-            is_withdrawing = Withdrawal.objects.filter(user_id=self.pk).exists()
-        if is_withdrawing:
-            return "withdrew"
-        return "active" if self.is_active else "inactive"
+        if self.is_active:
+            return UserStatus.ACTIVE
+        if Withdrawal.objects.filter(user_id=self.pk).exists():
+            return UserStatus.WITHDREW
+        return UserStatus.IN_ACTIVE
 
     @property
     def in_progress_cohortstudent(self) -> "CohortStudent | None":
