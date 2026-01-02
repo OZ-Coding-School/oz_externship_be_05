@@ -1,7 +1,7 @@
 from typing import Any
 
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe, SafeString
+from django.utils.safestring import SafeString, mark_safe
 
 
 def get_user_display_info(user: Any) -> SafeString:
@@ -9,7 +9,7 @@ def get_user_display_info(user: Any) -> SafeString:
     [답변 목록 표시용] 유저 Role에 따라 (썸네일 + 닉네임 + 과정/직함) 정보를 HTML로 반환
     """
     if not user:
-        return "-"
+        return mark_safe("-")
 
     nickname = getattr(user, "nickname", "")
     if not nickname:

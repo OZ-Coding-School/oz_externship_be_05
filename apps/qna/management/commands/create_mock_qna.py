@@ -1,5 +1,7 @@
-from django.core.management.base import BaseCommand
 from typing import Any
+
+from django.core.management.base import BaseCommand
+
 from apps.qna.models import Answer, AnswerComment, Question
 from apps.qna.models.question.question_category import QuestionCategory
 from apps.user.models import User
@@ -14,6 +16,7 @@ class Command(BaseCommand):
             questioner = User.objects.get(id=4)
             answerer_1 = User.objects.get(id=9)
             answerer_2 = User.objects.get(id=7)
+            answerer_3 = User.objects.get(id=8)
 
             # 카테고리 (첫 번째 카테고리 사용)
             category = QuestionCategory.objects.first()
@@ -38,6 +41,11 @@ class Command(BaseCommand):
             # 4. 두 번째 답변 생성 (작성자: 7번)
             a2 = Answer.objects.create(
                 question=q, author=answerer_2, content="7번 유저가 작성한 두 번째 테스트 답변입니다."
+            )
+
+            # 5. 두 번째 답변 생성 (작성자: 8번)
+            a2 = Answer.objects.create(
+                question=q, author=answerer_3, content="8번 유저가 작성한 두 번째 테스트 답변입니다."
             )
 
             # 5. 답변에 대한 댓글 생성
