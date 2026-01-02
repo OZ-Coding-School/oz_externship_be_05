@@ -32,7 +32,7 @@ class AnswerInline(_AnswerInlineBase):
 
     fieldsets = (
         (None, {
-            "fields": ("get_answerer_info", "content", "is_adopted", "created_at")
+            "fields": ("get_answerer_info", "content", "is_adopted", "created_at", "updated_at")
         }),
     )
 
