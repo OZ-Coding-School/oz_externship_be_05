@@ -98,7 +98,7 @@ class ExamQuestionViewTestCase(APITestCase):
             close_at=now + timedelta(hours=2),
             questions_snapshot=[
                 {
-                    "question_id": cls.question1.id,
+                    "id": cls.question1.id,
                     "type": "single_choice",
                     "question": "단일 선택 문제",
                     "point": 10,
@@ -107,7 +107,7 @@ class ExamQuestionViewTestCase(APITestCase):
                     "options": None,
                 },
                 {
-                    "question_id": cls.question2.id,
+                    "id": cls.question2.id,
                     "type": "fill_blank",
                     "question": "빈칸 채우기",
                     "point": 10,
@@ -137,14 +137,14 @@ class ExamQuestionViewTestCase(APITestCase):
 
         # 첫 번째 문제 (SINGLE_CHOICE)
         q1 = data["questions"][0]
-        self.assertEqual(q1["question_id"], self.question1.id)
+        self.assertEqual(q1["id"], self.question1.id)
         self.assertEqual(q1["number"], 1)
         self.assertEqual(q1["type"], "single_choice")
         self.assertIsNone(q1["answer_input"])
 
         # 두 번째 문제 (FILL_BLANK)
         q2 = data["questions"][1]
-        self.assertEqual(q2["question_id"], self.question2.id)
+        self.assertEqual(q2["id"], self.question2.id)
         self.assertEqual(q2["number"], 2)
         self.assertEqual(q2["type"], "fill_blank")
         self.assertEqual(q2["blank_count"], 2)
@@ -242,7 +242,7 @@ class ExamQuestionViewTestCase(APITestCase):
         # 스냅샷에 3번째 문제 추가
         self.deployment.questions_snapshot.append(
             {
-                "question_id": question3.id,
+                "id": question3.id,
                 "type": "ox",
                 "question": "세 번째 문제",
                 "point": 5,
