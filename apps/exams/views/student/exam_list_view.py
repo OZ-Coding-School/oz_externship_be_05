@@ -4,15 +4,14 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from apps.core.utils.paginations import Pagination
-from apps.exams.permissions.admin_permission import AdminUserPermissionView
+from apps.exams.permissions.student_permission import StudentUserPermissionView
 from apps.exams.serializers.student.exam_list_serializer import (
     ExamDeploymentListSerializer,
 )
 from apps.exams.services.student.exam_status_service import get_exam_deployment_queryset
 
 
-class ExamDeploymentListView(AdminUserPermissionView):
-
+class ExamDeploymentListView(StudentUserPermissionView):
     @extend_schema(
         tags=["쪽지시험"],
         summary="쪽지시험 목록 조회",
