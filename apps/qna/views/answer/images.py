@@ -1,7 +1,7 @@
 import uuid
 from typing import cast
 
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -11,13 +11,15 @@ from apps.qna.serializers.answer.images import AnswerImagePresignedURLSerializer
 from apps.qna.views.answer.base import BaseAnswerAPIView
 
 
-class AnswerImagePresignedURLView(BaseAnswerAPIView):
-
-    @extend_schema(
+@extend_schema_view(
+    post=extend_schema(
         summary="이미지 업로드용 Presigned URL 발급",
+        tags=["질의응답"],
         description="S3에 이미지를 직접 업로드하기 위한 임시 URL을 발급합니다.",
         request=AnswerImagePresignedURLSerializer,
     )
+)
+class AnswerImagePresignedURLView(BaseAnswerAPIView):
     def post(self, request: Request, question_id: int, answer_id: int) -> Response:
         serializer = AnswerImagePresignedURLSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

@@ -30,7 +30,7 @@ class AnswerSerializer(serializers.ModelSerializer[Answer]):
 
     def get_preview_comments(self, obj: Answer) -> List[Dict[str, Any]]:
         comments = obj.comments.all()[:3]
-        return cast(List[Dict[str, Any]], AnswerCommentSerializer(comments, many=True).data)
+        return cast(List[Dict[str, Any]], AnswerCommentSerializer(comments, many=True, context=self.context).data)
 
 
 class AnswerInputSerializer(serializers.ModelSerializer[Answer]):
