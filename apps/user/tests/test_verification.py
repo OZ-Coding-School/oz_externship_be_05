@@ -15,8 +15,8 @@ from apps.user.serializers.base import BaseMixin
 from apps.user.serializers.mixins import SenderMixin
 from apps.user.serializers.social_profile import KakaoProfileSerializer
 from apps.user.serializers.verification import (
-    EmailRequestPurpose,
     EmailRequestSerializer,
+    RequestPurpose,
 )
 from apps.user.utils.sender import EmailSender, SMSSender
 from apps.user.utils.verification import VerificationService
@@ -179,7 +179,7 @@ class VerificationSerializersTests(TestCase):
             phone_number="01000000000",
         )
         serializer = EmailRequestSerializer(
-            data={"purpose": EmailRequestPurpose.SIGNUP.value, "email": "exists@example.com"}
+            data={"purpose": RequestPurpose.SIGNUP.value, "email": "exists@example.com"}
         )
         self.assertFalse(serializer.is_valid())
         self.assertIn("email", serializer.errors)
@@ -193,7 +193,7 @@ class VerificationAPIViewTests(TestCase):
     def test_send_email_calls_sender(self, send_mock: Any) -> None:
         request = self.factory.post(
             "/api/v1/accounts/verification/send-email",
-            {"purpose": EmailRequestPurpose.SIGNUP.value, "email": "a@test.com"},
+            {"purpose": RequestPurpose.SIGNUP.value, "email": "a@test.com"},
             format="json",
         )
 
