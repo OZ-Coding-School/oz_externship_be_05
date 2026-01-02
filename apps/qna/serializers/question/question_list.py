@@ -1,5 +1,6 @@
 from typing import Any
 
+from django.utils.html import strip_tags
 from rest_framework import serializers
 
 from apps.qna.models import Question
@@ -15,7 +16,7 @@ class QuestionListSerializer(serializers.ModelSerializer[Question]):
 
     author = AuthorSerializer(read_only=True)
 
-    content_preview = serializers.CharField()
+    content_preview = serializers.SerializerMethodField()
     answer_count = serializers.IntegerField()
 
     thumbnail_img_url = serializers.URLField(
@@ -50,3 +51,8 @@ class QuestionListSerializer(serializers.ModelSerializer[Question]):
             self._category_cache[category_id] = build_category_info(obj.category)
 
         return self._category_cache[category_id]
+
+    # obj.content_preview가 존재하면 태그를 제거하고 반환, 없으면 빈 문자열
+    def get_content_preview(self, obj: Question) -> str:
+        content = getattr(obj, "content_preview", "")
+        return strip_tags(content)
