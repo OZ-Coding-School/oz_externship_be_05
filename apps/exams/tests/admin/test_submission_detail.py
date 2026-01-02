@@ -183,3 +183,37 @@ class ExamAdminSubmissionDetailViewTestCase(APITestCase):
         self.client.force_authenticate(user=unauth_user)
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_delete_submission_success(self) -> None:
+        """응시 내역 삭제 성공"""
+        self.client.force_authenticate(user=self.admin_user)
+
+        url = self._get_detail_url(self.submission.id)
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["submission_id"], self.submission.id)
+
+        self.assertFalse(ExamSubmission.objects.filter(id=self.submission.id).exists())
+
+    def test_delete_submission_not_found(self) -> None:
+        # 삭제할 응시 내역이 없을 때 404
+        self.client.force_authenticate(user=self.admin_user)
+
+        url = self._get_detail_url(99999)
+        response = self.client.delete(url)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_unauthorized_and_forbidden(self) -> None:
+        # DELETE 권한 체크
+        url = self._get_detail_url(self.submission.id)
+
+        # 401 Unauthorized
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # 403 Forbidden (일반 유저)
+        self.client.force_authenticate(user=self.unauthorized_user)
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
