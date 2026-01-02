@@ -102,5 +102,10 @@ class ErrorMessages:
     # --- 423 Locked ---
     E423_LOCKED: DynamicMessage = lambda action: {"error_detail": f"아직 {action}할 수 없습니다."}
 
+    # --- 500 Internal Server Error ---
+    E500_INTERNAL_ERROR: Final[ErrorDetail] = {
+        "error_detail": "서버 내부 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+    }
+
 
 EMS = ErrorMessages

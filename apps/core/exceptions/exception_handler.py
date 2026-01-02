@@ -1,10 +1,15 @@
+import logging
 from typing import Any, Optional
 
+from rest_framework import status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
+from apps.core.exceptions.exception_messages import EMS
 from apps.core.response.response_message import MagicException, resolve_message
+
+logger = logging.getLogger(__name__)
 
 
 def custom_exception_handler(
@@ -13,7 +18,8 @@ def custom_exception_handler(
 ) -> Optional[Response]:
     response = exception_handler(exc, context)
     if response is None:
-        return None
+        logger.error(f"[System Error] {exc}", exc_info=True)
+        return Response(EMS.E500_INTERNAL_ERROR, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     view = context.get("view")
     request = context.get("request")
