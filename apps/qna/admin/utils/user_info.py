@@ -1,9 +1,10 @@
 from typing import Any
+
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
+from django.utils.safestring import mark_safe, SafeString
 
 
-def get_user_display_info(user: Any) -> str:
+def get_user_display_info(user: Any) -> SafeString:
     """
     [답변 목록 표시용] 유저 Role에 따라 (썸네일 + 닉네임 + 과정/직함) 정보를 HTML로 반환
     """
@@ -51,7 +52,6 @@ def get_user_display_info(user: Any) -> str:
             if hasattr(cohort, "number"):
                 generation = f"{cohort.number}기"
 
-
         course_info = f"{course_name} {generation}".strip()
 
         if role == "ST":
@@ -75,7 +75,7 @@ def get_user_display_info(user: Any) -> str:
         info_text = user.get_role_display()
 
     return format_html(
-        '''
+        """
         <div style="display: flex; align-items: center; padding: 5px 0;">
             {img}
             <div style="display: flex; flex-direction: column; justify-content: center;">
@@ -83,8 +83,8 @@ def get_user_display_info(user: Any) -> str:
                 <span style="font-size: 12px; color: #666; margin-top: 4px;">{info}</span>
             </div>
         </div>
-        ''',
+        """,
         img=mark_safe(img_html),
         nick=nickname,
-        info=info_text
+        info=info_text,
     )

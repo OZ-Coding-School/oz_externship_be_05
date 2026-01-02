@@ -1,8 +1,10 @@
 from typing import TYPE_CHECKING, Any, Optional
+
 from django.contrib import admin
 from django.db.models import QuerySet
 from django.http import HttpRequest, HttpResponse
 from django.utils.html import format_html
+
 from apps.qna.models.question.question_category import QuestionCategory
 
 # 런타임 에러 방지를 위한 처리
@@ -14,7 +16,8 @@ else:
 
 @admin.register(QuestionCategory)
 class QuestionCategoryAdmin(_BaseAdmin):
-    """ 어드민 카테고리 관리 """
+    """어드민 카테고리 관리"""
+
     # 1. [목록 조회 시 보여줄 항목]
     list_display = (
         "id",

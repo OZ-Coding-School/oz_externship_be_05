@@ -1,21 +1,23 @@
-from django.template.defaultfilters import truncatechars
-from django.db.models import Count, QuerySet
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, List
+
 from django.contrib import admin
+from django.db.models import Count, QuerySet
 from django.http import HttpRequest
+from django.template.defaultfilters import truncatechars
 from django.utils.html import format_html
+from django.utils.safestring import SafeString
 
 from apps.qna.admin.utils.user_info import get_user_display_info
-from apps.qna.models import Question, Answer
-
+from apps.qna.models import Answer, Question, QuestionCategory
 
 # 런타임 에러 방지를 위한 처리
 if TYPE_CHECKING:
     _QuestionBaseAdmin = admin.ModelAdmin[Question]
-    _AnswerInlineBase = admin.StackedInline
+    _AnswerInlineBase = admin.StackedInline[Answer, Question]
 else:
     _QuestionBaseAdmin = admin.ModelAdmin
     _AnswerInlineBase = admin.StackedInline
+
 
 # 답변 처리
 class AnswerInline(_AnswerInlineBase):
@@ -24,20 +26,12 @@ class AnswerInline(_AnswerInlineBase):
     verbose_name = "등록된 답변"
     verbose_name_plural = "답변 목록"
 
-    readonly_fields = (
-        "get_answerer_info",
-        "created_at",
-        "updated_at"
-    )
+    readonly_fields = ("get_answerer_info", "created_at", "updated_at")
 
-    fieldsets = (
-        (None, {
-            "fields": ("get_answerer_info", "content", "is_adopted", "created_at", "updated_at")
-        }),
-    )
+    fieldsets = ((None, {"fields": ("get_answerer_info", "content", "is_adopted", "created_at", "updated_at")}),)
 
     @admin.display(description="답변 작성자")
-    def get_answerer_info(self, obj):
+    def get_answerer_info(self, obj: Answer) -> SafeString:
         return get_user_display_info(obj.author)
 
 
@@ -81,22 +75,30 @@ class QuestionAdmin(_QuestionBaseAdmin):
     inlines = [AnswerInline]
 
     fieldsets = (
-        ("질문 상세 정보", {
-            "fields": ("get_questioner_details",
-                       "title",
-                       "get_category_hierarchy",
-                       "content",
-                       "view_count",
-                       "get_is_answered_text",
-                       "created_at",
-                       "updated_at"
-                       )
-        }),
+        (
+            "질문 상세 정보",
+            {
+                "fields": (
+                    "get_questioner_details",
+                    "title",
+                    "get_category_hierarchy",
+                    "content",
+                    "view_count",
+                    "get_is_answered_text",
+                    "created_at",
+                    "updated_at",
+                )
+            },
+        ),
     )
 
     readonly_fields = (
-        "get_category_hierarchy", "get_questioner_details",
-        "get_is_answered_text", "created_at", "updated_at", "view_count"
+        "get_category_hierarchy",
+        "get_questioner_details",
+        "get_is_answered_text",
+        "created_at",
+        "updated_at",
+        "view_count",
     )
 
     # [성능 최적화 및 Annotation]
@@ -105,12 +107,7 @@ class QuestionAdmin(_QuestionBaseAdmin):
         답변 개수를 미리 계산(annotate)
         """
         queryset = super().get_queryset(request)
-        return queryset.select_related(
-            "author",
-            "category",
-            "category__parent",
-            "category__parent__parent"
-        ).annotate(
+        return queryset.select_related("author", "category", "category__parent", "category__parent__parent").annotate(
             answers_count=Count("answers")
         )
 
@@ -119,8 +116,8 @@ class QuestionAdmin(_QuestionBaseAdmin):
     @admin.display(description="카테고리 경로")
     def get_category_hierarchy(self, obj: Question) -> str:
         """대분류 > 중분류 > 소분류 형태로 표시"""
-        category = obj.category
-        path = []
+        category: Optional[QuestionCategory] = obj.category
+        path: List[str] = []
 
         # 현재 카테고리부터 부모를 타고 올라가며 경로 수집
         current = category
@@ -163,16 +160,10 @@ class QuestionAdmin(_QuestionBaseAdmin):
 
     # --- [ 질문 상세 조회 메서드 ] ---
     @admin.display(description="질문 작성자 정보")
-    def get_questioner_details(self, obj: Question) -> str:
+    def get_questioner_details(self, obj: Question) -> SafeString:
         return get_user_display_info(obj.author)
 
     @admin.display(description="답변 여부")
     def get_is_answered_text(self, obj: Question) -> str:
         cnt = getattr(obj, "answers_count", obj.answers.count())
         return f"Y (총 {cnt}건)" if cnt > 0 else "N"
-
-
-
-
-
-
