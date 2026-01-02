@@ -5,6 +5,7 @@ from rest_framework import serializers
 
 from apps.courses.models.cohorts_models import Cohort
 from apps.courses.models.courses_models import Course
+from apps.user.models import TrainingAssistant
 from apps.user.models.user import RoleChoices, User
 from apps.user.serializers.admin.common import (
     CohortMiniSerializer,
@@ -120,8 +121,8 @@ class AdminAccountRoleUpdateSerializer(serializers.Serializer[User]):
 
             case RoleChoices.TA | RoleChoices.ST:
                 cohort = validated_data["cohort"]
-                if role == RoleChoices.TA:
-                    instance.trainingassistant_set.set([cohort])
+                if role == RoleChoices.TA and cohort:
+                    TrainingAssistant.objects.update_or_create(user=instance, defaults={"cohort": cohort})
                 elif role == RoleChoices.ST:
                     instance.cohortstudent_set.set([cohort])
 

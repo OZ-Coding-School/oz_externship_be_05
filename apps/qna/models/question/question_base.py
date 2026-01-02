@@ -19,9 +19,11 @@ class Question(TimeStampedModel):
 
     class Meta:
         db_table = "questions"
+        verbose_name = "질의응답"
+        verbose_name_plural = "질의응답 목록"
 
     def __str__(self) -> str:
-        return self.title
+        return f"{self.title} (답변: {self.answers.count()}건)"
 
 
 class QuestionAnnotated(Protocol):
