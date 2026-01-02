@@ -11,12 +11,8 @@ from apps.qna.serializers.answer.images import AnswerImageSerializer
 class AnswerSerializer(serializers.ModelSerializer[Answer]):
     author = AnswerAuthorSerializer(read_only=True)
     images = AnswerImageSerializer(many=True, read_only=True)
-
     preview_comments = serializers.SerializerMethodField()
-    total_comments_count = serializers.IntegerField(
-        source="comments.count",
-        read_only=True,
-    )
+    total_comments_count = serializers.IntegerField(source="comments.count", read_only=True)
 
     class Meta:
         model = Answer
@@ -34,17 +30,11 @@ class AnswerSerializer(serializers.ModelSerializer[Answer]):
 
     def get_preview_comments(self, obj: Answer) -> List[Dict[str, Any]]:
         comments = obj.comments.all()[:3]
-        data = AnswerCommentSerializer(comments, many=True).data
-        return cast(List[Dict[str, Any]], data)
+        return cast(List[Dict[str, Any]], AnswerCommentSerializer(comments, many=True).data)
 
 
 class AnswerInputSerializer(serializers.ModelSerializer[Answer]):
-    image_urls = serializers.ListField(
-        child=serializers.CharField(),
-        required=False,
-        write_only=True,
-        help_text="본문에 포함된 이미지 URL 리스트",
-    )
+    image_urls = serializers.ListField(child=serializers.CharField(), required=False, write_only=True)
 
     class Meta:
         model = Answer
@@ -66,10 +56,7 @@ class AnswerCreateResponseSerializer(serializers.Serializer[Any]):
 
 class AnswerUpdateResponseSerializer(serializers.Serializer[Any]):
     answer_id = serializers.IntegerField(source="id")
-    updated_at = serializers.DateTimeField(
-        source="modified_at",
-        format="%Y-%m-%d %H:%M:%S",
-    )
+    updated_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
 
 
 class AnswerAdoptResponseSerializer(serializers.Serializer[Any]):

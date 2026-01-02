@@ -18,7 +18,7 @@ class AnswerImagePresignedURLView(BaseAnswerAPIView):
         description="S3에 이미지를 직접 업로드하기 위한 임시 URL을 발급합니다.",
         request=AnswerImagePresignedURLSerializer,
     )
-    def post(self, request: Request) -> Response:
+    def post(self, request: Request, question_id: int, answer_id: int) -> Response:
         serializer = AnswerImagePresignedURLSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 

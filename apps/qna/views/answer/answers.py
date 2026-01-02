@@ -23,6 +23,11 @@ from apps.qna.views.answer.base import BaseAnswerAPIView
 
 
 class AnswerListAPIView(BaseAnswerAPIView):
+    def get_object(self, question_id: int, pk: int) -> Answer:
+        queryset = Answer.objects.select_related("author").filter(question_id=question_id)
+        obj = get_object_or_404(queryset, pk=pk)
+        self.check_object_permissions(self.request, obj)
+        return obj
 
     @extend_schema(summary="특정 질문의 답변 목록 조회", responses=AnswerSerializer(many=True))
     def get(self, request: Request, question_id: int) -> Response:
@@ -61,15 +66,20 @@ class AnswerListAPIView(BaseAnswerAPIView):
 class AnswerDetailAPIView(BaseAnswerAPIView):
     permission_classes = BaseAnswerAPIView.permission_classes + [IsOwnerOrReadOnly]
 
-    def get_object(self, pk: int) -> Answer:
-        queryset = Answer.objects.select_related("author").prefetch_related("comments", "comments__author")
+    def get_object(self, question_id: int, pk: int) -> Answer:
+        queryset = (
+            Answer.objects.select_related("author")
+            .filter(question_id=question_id)
+            .prefetch_related("comments", "comments__author")
+        )
+
         obj = get_object_or_404(queryset, pk=pk)
         self.check_object_permissions(self.request, obj)
         return obj
 
     @extend_schema(summary="답변 상세 조회", responses=AnswerSerializer)
-    def get(self, request: Request, pk: int) -> Response:
-        answer = self.get_object(pk)
+    def get(self, request: Request, question_id: int, pk: int) -> Response:
+        answer = self.get_object(question_id, pk)
         return Response(AnswerSerializer(answer).data)
 
     @extend_schema(
@@ -77,23 +87,19 @@ class AnswerDetailAPIView(BaseAnswerAPIView):
         request=AnswerInputSerializer,
         responses=AnswerUpdateResponseSerializer,
     )
-    def put(self, request: Request, pk: int) -> Response:
-        answer = self.get_object(pk)
+    def put(self, request: Request, question_id: int, pk: int) -> Response:
+        answer = self.get_object(question_id, pk)
         serializer = AnswerInputSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
         content_data = cast(str, serializer.validated_data["content"])
 
-        updated_answer = AnswerService.update_answer(
-            user=request.user,
-            answer=answer,
-            content=content_data,
-        )
+        updated_answer = AnswerService.update_answer(user=request.user, answer=answer, content=content_data)
         return Response(AnswerUpdateResponseSerializer(updated_answer).data)
 
     @extend_schema(summary="답변 삭제")
-    def delete(self, request: Request, pk: int) -> Response:
-        answer = self.get_object(pk)
+    def delete(self, request: Request, question_id: int, pk: int) -> Response:
+        answer = self.get_object(question_id, pk)
         AnswerService.delete_answer(request.user, answer)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -102,12 +108,10 @@ class AnswerAdoptAPIView(BaseAnswerAPIView):
     permission_classes = BaseAnswerAPIView.permission_classes + [IsQuestionAuthor]
 
     @extend_schema(summary="답변 채택 토글", responses=AnswerAdoptResponseSerializer)
-    def post(self, request: Request, pk: int) -> Response:
-        answer = get_object_or_404(Answer, pk=pk)
-        self.check_object_permissions(request, answer)
-
+    def post(self, request: Request, question_id: int, pk: int) -> Response:
         answer = AnswerService.toggle_adoption(
             user=request.user,
+            question_id=question_id,
             answer_id=pk,
         )
         return Response(

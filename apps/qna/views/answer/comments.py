@@ -25,7 +25,7 @@ class CommentCursorPagination(CursorPagination):
 class CommentListAPIView(BaseAnswerAPIView):
 
     @extend_schema(summary="댓글 목록 조회")
-    def get(self, request: Request, answer_id: int) -> Response:
+    def get(self, request: Request, question_id: int, answer_id: int) -> Response:
         comments = AnswerComment.objects.filter(answer_id=answer_id).select_related("author")
 
         paginator = CommentCursorPagination()
@@ -43,7 +43,7 @@ class CommentListAPIView(BaseAnswerAPIView):
         request=AnswerCommentSerializer,
         responses=CommentCreateResponseSerializer,
     )
-    def post(self, request: Request, answer_id: int) -> Response:
+    def post(self, request: Request, question_id: int, answer_id: int) -> Response:
         serializer = AnswerCommentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -51,6 +51,7 @@ class CommentListAPIView(BaseAnswerAPIView):
 
         comment = CommentService.create_comment(
             user=request.user,
+            question_id=question_id,
             answer_id=answer_id,
             content=content_data,
         )
@@ -69,7 +70,7 @@ class CommentDetailAPIView(BaseAnswerAPIView):
         return obj
 
     @extend_schema(summary="댓글 수정", request=AnswerCommentSerializer)
-    def put(self, request: Request, pk: int) -> Response:
+    def put(self, request: Request, question_id: int, answer_id: int, pk: int) -> Response:
         comment = self.get_object(pk)
         serializer = AnswerCommentSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -84,7 +85,7 @@ class CommentDetailAPIView(BaseAnswerAPIView):
         return Response(AnswerCommentSerializer(updated_comment).data)
 
     @extend_schema(summary="댓글 삭제")
-    def delete(self, request: Request, pk: int) -> Response:
+    def delete(self, request: Request, question_id: int, answer_id: int, pk: int) -> Response:
         comment = self.get_object(pk)
 
         CommentService.delete_comment(request.user, comment)
