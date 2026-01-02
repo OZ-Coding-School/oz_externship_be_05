@@ -14,7 +14,10 @@ from apps.user.serializers.auth import SignupSerializer
 from apps.user.serializers.base import BaseMixin
 from apps.user.serializers.mixins import SenderMixin
 from apps.user.serializers.social_profile import KakaoProfileSerializer
-from apps.user.serializers.verification import SignupEmailRequestSerializer
+from apps.user.serializers.verification import (
+    EmailRequestPurpose,
+    EmailRequestSerializer,
+)
 from apps.user.utils.sender import EmailSender, SMSSender
 from apps.user.utils.verification import VerificationService
 from apps.user.validaters.validate_token import is_valid_token_format
@@ -175,7 +178,9 @@ class VerificationSerializersTests(TestCase):
             gender=GenderChoices.FEMALE,
             phone_number="01000000000",
         )
-        serializer = SignupEmailRequestSerializer(data={"email": "exists@example.com"})
+        serializer = EmailRequestSerializer(
+            data={"purpose": EmailRequestPurpose.SIGNUP.value, "email": "exists@example.com"}
+        )
         self.assertFalse(serializer.is_valid())
         self.assertIn("email", serializer.errors)
 
@@ -186,7 +191,11 @@ class VerificationAPIViewTests(TestCase):
 
     @patch("apps.user.views.verification.EmailSender.send")
     def test_send_email_calls_sender(self, send_mock: Any) -> None:
-        request = self.factory.post("/api/v1/accounts/verification/send-email", {"email": "a@test.com"}, format="json")
+        request = self.factory.post(
+            "/api/v1/accounts/verification/send-email",
+            {"purpose": EmailRequestPurpose.SIGNUP.value, "email": "a@test.com"},
+            format="json",
+        )
 
         response = SendEmailAPIView.as_view()(request)
 

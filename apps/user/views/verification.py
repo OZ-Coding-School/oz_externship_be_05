@@ -9,8 +9,8 @@ from rest_framework.views import APIView
 
 from apps.user.serializers.verification import (
     EmailCodeSerializer,
+    EmailRequestSerializer,
     PhoneCodeSerializer,
-    SignupEmailRequestSerializer,
     SMSRequestSerializer,
 )
 from apps.user.utils.limiter import build_sms_rate_limiter
@@ -23,11 +23,11 @@ class SendEmailAPIView(APIView):
     @extend_schema(
         tags=["회원관리"],
         summary="이메일 인증코드 전송 API",
-        request=SignupEmailRequestSerializer,
+        request=EmailRequestSerializer,
         responses={200: None},
     )
     def post(self, request: Request) -> Response:
-        serializer = SignupEmailRequestSerializer(data=request.data)
+        serializer = EmailRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         EmailSender().send(serializer.validated_data["email"])
         return Response({"detail": "이메일 인증 코드가 전송되었습니다."}, status=status.HTTP_200_OK)
