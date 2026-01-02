@@ -11,6 +11,9 @@ from apps.exams.views.admin.admin_question_view import (
     ExamAdminQuestionCreateAPIView,
     ExamAdminQuestionUpdateDestroyAPIView,
 )
+from apps.exams.views.admin.admin_submission_detail_view import (
+    ExamAdminSubmissionDetailView,
+)
 
 # from .admin_submission_view import
 
@@ -20,6 +23,7 @@ __all__ = [
     "DeploymentListCreateAPIView",
     "AdminDeploymentDetailUpdateDeleteView",
     "ExamDeploymentStatusAPIView",
+    "ExamAdminSubmissionDetailView",
     "ExamAdminQuestionCreateAPIView",
     "ExamAdminQuestionUpdateDestroyAPIView",
 ]
