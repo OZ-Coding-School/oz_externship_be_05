@@ -10,7 +10,7 @@ from rest_framework import status
 from rest_framework.test import APIRequestFactory
 
 from apps.user.models import Withdrawal
-from apps.user.models.user import GenderChoices
+from apps.user.models.user import GenderChoices, User
 from apps.user.utils.sender import EmailSender
 from apps.user.views.recovery import (
     FindEmailAPIView,
@@ -56,7 +56,7 @@ class RecoveryAPIViewTests(TestCase):
 
     @patch("apps.user.serializers.mixins.SMSSender.verify_token", return_value="01012345679")
     def test_find_email_returns_masked_email(self, _verify_mock: Any) -> None:
-        get_user_model().objects.create_user(
+        user = User.objects.create_user(
             email="bbibbi@example.com",
             password="Idiot123!",
             name="지이메일까먹는삣삐",
@@ -67,7 +67,7 @@ class RecoveryAPIViewTests(TestCase):
 
         request = self.factory.post(
             "/api/v1/accounts/find-email",
-            {"sms_token": make_token()},
+            {"name": user.name, "sms_token": make_token()},
             format="json",
         )
         response = FindEmailAPIView.as_view()(request)
