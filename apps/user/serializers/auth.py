@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from typing import Any, cast
 
-from django.contrib.auth import authenticate
 from django.db import IntegrityError
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from apps.user.models import User
+from apps.user.models.user import UserStatus
 from apps.user.serializers.base import BaseMixin
 from apps.user.serializers.mixins import EmailTokenMixin, SenderMixin, SMSTokenMixin
 
@@ -71,12 +72,20 @@ class LoginSerializer(serializers.Serializer[Any], BaseMixin):
     password = BaseMixin.get_password_field(write_only=True)
 
     def validate(self, attrs: dict[str, Any]) -> dict[str, Any]:
-        request = self.context.get("request")
-        user = authenticate(request=request, email=attrs["email"], password=attrs["password"])
-        if user is None:
+        try:
+            user = User.objects.prefetch_related("withdrawal_set").get(email=attrs["email"])
+            correct_pw = user.check_password(raw_password=attrs["password"])
+            if not correct_pw:
+                raise ValueError
+        except (User.DoesNotExist, ValueError):
             raise serializers.ValidationError("이메일 또는 비밀번호가 올바르지 않습니다.")
-        if not user.is_active:
+
+        if user.status == UserStatus.IN_ACTIVE:
             raise serializers.ValidationError("비활성화된 계정입니다.")
+
+        if user.status == UserStatus.WITHDREW:
+            raise PermissionDenied("회원탈퇴 진행중인 계정입니다.")
+
         attrs["user"] = user
         return attrs
 
