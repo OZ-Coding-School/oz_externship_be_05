@@ -46,24 +46,22 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
     @extend_schema(
         tags=["AI 챗봇"],
         summary="AI 챗봇 응답 생성 API (with Streaming)",
-        description=(
-            "- AI 챗봇과 사용자의 메세지를 생성/저장하는 API. \n"
-            " 처리 흐름: \n"
-            "- 사용자 메세지 DB 저장 \n"
-            "- 세션에 설정된 AI 모델로 응답 생성 (SSE 스트리밍) * 현재 GEMINI만 연동\n"
-            "- AI 응답 DB 저장\n"
-            "- 스트리밍 완료 시 [DONE] 전송\n"
-            " SSE 응답 형식: \n"
-            "- 정상 chunk: `data: {'context': '텍스트'}` \n"
-            "- 완료: `data: [DONE]` \n"
-            "- 에러: `data: [ERROR]` \n"
-            " 지원 모델: \n"
-            "- gemini-2.5-flash (기본) \n"
-            " 주의사항: \n"
-            "- 빈 문자열 메세지는 허용되지 않음 \n"
-            "- 본인의 세션에만 메세지 보낼 수 있음 \n"
-            "- 타인의 세션 접근 시 보안상 404를 반환\n"
-        ),
+        description="AI 챗봇과 사용자의 메세지를 생성/저장하는 API\n\n"
+        "처리 흐름: \n"
+        "- 사용자 메세지 DB 저장 \n"
+        "- 세션에 설정된 AI 모델로 응답 생성 (SSE 스트리밍) * 현재 GEMINI만 연동\n"
+        "- AI 응답 DB 저장\n"
+        "- 스트리밍 완료 시 [DONE] 전송\n\n"
+        "SSE 응답 형식: \n"
+        "- 정상 chunk: data: {'context': '텍스트'} \n"
+        "- 완료: data: [DONE] \n"
+        "- 에러: data: [ERROR] \n\n"
+        "지원 모델: \n"
+        "- gemini-2.5-flash (기본) \n\n"
+        " 주의사항: \n"
+        "- 빈 문자열 메세지는 허용되지 않음 \n"
+        "- 본인의 세션에만 메세지 보낼 수 있음 \n"
+        "- 타인의 세션 접근 시 보안상 404를 반환\n",
         request=CompletionCreateSerializer,
         parameters=[
             OpenApiParameter(
@@ -188,21 +186,22 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
     @extend_schema(
         tags=["AI 챗봇"],
         summary="챗봇 대화 내역 조회 API",
-        description=(
-            "특정 세션의 대화 내역을 조회하는 API입니다. \n"
-            " - 커서 기반 페이지네이션을 지원하며, 최신 메세지가 먼저 반환됩니다. \n"
-            " - 본인의 세션만 조회 가능합니다."
-        ),
+        description="특정 세션의 대화 내역을 조회하는 API입니다.\n"
+        "- 커서 기반 페이지네이션을 지원하며, 최신 메세지가 먼저 반환됩니다.\n"
+        "- 본인의 세션만 조회 가능합니다.",
         parameters=[
             OpenApiParameter(
                 name="cursor",
                 type=OpenApiTypes.STR,
-                description="커서 페이지 네이션 적용을 위한 커서 값",
+                description="커서 페이지 네이션 적용을 위한 커서 값. 문자열(STR)\n" "(required=False, default=None)",
                 required=False,
                 default=None,
             ),
             OpenApiParameter(
-                name="page_size", type=OpenApiTypes.INT, description="페이지 네이션 사이즈 지정을 위한 값", default=10
+                name="page_size",
+                type=OpenApiTypes.INT,
+                description="페이지 네이션 사이즈 지정을 위한 값. 문자열(INT)" "(default=10)",
+                default=10,
             ),
         ],
         responses={
@@ -270,17 +269,15 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
     @extend_schema(
         tags=["AI 챗봇"],
         summary="세션 내 메세지 기록 삭제 API",
-        description="""
-        특정 세션의 모든 대화 내역을 삭제하는 API입니다.
-        세션 자체는 유지되며, 메시지만 삭제됩니다.
-        본인의 세션만 삭제 가능합니다.
-        """,
+        description="특정 세션의 모든 대화 내역을 삭제하는 API입니다.\n"
+        "- 세션 자체는 유지되며, 메시지만 삭제됩니다.\n"
+        "- 본인의 세션만 삭제 기능이 작동합니다.",
         parameters=[
             OpenApiParameter(
                 name="session_id",
                 type=OpenApiTypes.INT,
                 location="path",
-                description="세션 PK ID",
+                description="세션 PK ID. 필수! INT",
                 required=True,
             )
         ],
