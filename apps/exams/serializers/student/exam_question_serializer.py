@@ -8,7 +8,7 @@ class ExamQuestionSerializer(serializers.Serializer[Any]):
     쪽지시험 문제 조회 응답 시리얼라이저
     """
 
-    question_id = serializers.IntegerField()  # 스냅샷에 저장된 question_id
+    id = serializers.IntegerField()  # 스냅샷에 저장된 question의 id
     number = serializers.IntegerField()  # 뷰에서 미리 계산된 번호 사용
     type = serializers.CharField()
     question = serializers.CharField()
