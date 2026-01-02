@@ -39,7 +39,7 @@ class EnrollmentAPIViewTests(TestCase):
             max_student=10,
             start_date=base_date + timedelta(days=3),
             end_date=base_date + timedelta(days=30),
-            status=CohortStatusChoices.PENDING,
+            status=CohortStatusChoices.IN_PROGRESS,
         )
 
     def test_enroll_student_creates_request(self) -> None:
@@ -70,13 +70,14 @@ class EnrollmentAPIViewTests(TestCase):
 
     def test_available_courses_returns_only_available(self) -> None:
         base_date = timezone.localdate()
+        # 대기중인 기수는 신청 불가
         Cohort.objects.create(
             course=self.course,
             number=2,
             max_student=10,
-            start_date=base_date - timedelta(days=10),
-            end_date=base_date - timedelta(days=1),
-            status=CohortStatusChoices.COMPLETED,
+            start_date=base_date + timedelta(days=1),
+            end_date=base_date + timedelta(days=10),
+            status=CohortStatusChoices.PENDING,
         )
         request = self.factory.get("/api/v1/courses/available")
         force_authenticate(request, user=self.user)
