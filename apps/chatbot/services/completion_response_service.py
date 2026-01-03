@@ -6,7 +6,6 @@ import os
 from collections.abc import Iterator
 from typing import Any, cast
 
-from django.http import StreamingHttpResponse
 from google import genai
 from google.genai import types
 

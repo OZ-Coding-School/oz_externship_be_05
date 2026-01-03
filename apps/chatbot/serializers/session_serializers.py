@@ -2,8 +2,7 @@ from typing import Any
 
 from rest_framework import serializers
 
-from apps.chatbot.models.chatbot_sessions import ChatbotSession, ChatModel
-from apps.qna.models import Question
+from apps.chatbot.models.chatbot_sessions import ChatbotSession
 
 
 # Session의 응답포멧
