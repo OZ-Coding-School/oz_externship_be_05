@@ -1,7 +1,6 @@
 # URL 연결 여부
 # 유효한 요청에서 올바른 응답 body 반환 여부
 # 잘못된 요청 시 적절한 status code 반환 여부
-from typing import Any
 
 from rest_framework import status
 
