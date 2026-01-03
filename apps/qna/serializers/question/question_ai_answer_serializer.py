@@ -10,5 +10,5 @@ class QuestionAIAnswerSerializer(serializers.ModelSerializer[QuestionAIAnswer]):
             "question": {"read_only": True},
             "output": {"read_only": True},
             "created_at": {"read_only": True},
-            "using_model": {"required": True},
+            "using_model": {"read_only": True},
         }
