@@ -5,8 +5,8 @@ from apps.core.models import TimeStampedModel
 
 # enum용 클래스 - 사용모델
 class ChatModel(models.TextChoices):
-    GEMINI = "gemini-2.5-flash", "gemini"
-    OPENAI = "openai-o4-mini", "openai"
+    GEMINI = "gemini-2.5-flash"
+    OPENAI = "openai-o4-mini"
 
 
 class ChatbotSession(TimeStampedModel):
@@ -17,6 +17,3 @@ class ChatbotSession(TimeStampedModel):
 
     class Meta:
         db_table = "chatbot_sessions"
-        constraints = [
-            models.UniqueConstraint(fields=("user", "question"), name="user_question_unique"),
-        ]

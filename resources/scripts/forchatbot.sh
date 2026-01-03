@@ -18,6 +18,7 @@ PHONE_NUMBER="01012345678"
 
 docker exec -i "$DJANGO_CONTAINER" python manage.py shell -c "
 from apps.user.models import User
+from apps.user.models.user import RoleChoices
 from apps.qna.models.question.question_category import QuestionCategory
 from apps.qna.models.question.question_base import Question
 from apps.chatbot.models.chatbot_sessions import ChatbotSession, ChatModel
@@ -39,6 +40,7 @@ else:
         email=email,
         password=pw,
         name=name,
+        role=RoleChoices.ST,
         birthday=birthday,
         gender=gender,
         phone_number=phone,

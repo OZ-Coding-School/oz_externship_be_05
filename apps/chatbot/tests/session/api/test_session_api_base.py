@@ -2,10 +2,8 @@ import datetime
 from typing import Any
 
 from django.urls import reverse
-from rest_framework import status
 from rest_framework.test import APITestCase
 
-from apps.chatbot.models.chatbot_sessions import ChatbotSession, ChatModel
 from apps.qna.models import QuestionCategory
 from apps.qna.models.question.question_base import Question
 from apps.user.models import User

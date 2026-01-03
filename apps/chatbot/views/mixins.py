@@ -1,8 +1,3 @@
-from typing import cast
-
-from django.contrib.auth import authenticate
-from django.contrib.auth.base_user import AbstractBaseUser
-from django.contrib.auth.models import AnonymousUser
 from django.db.models import QuerySet
 from rest_framework.exceptions import NotAuthenticated, NotFound
 from rest_framework.pagination import CursorPagination

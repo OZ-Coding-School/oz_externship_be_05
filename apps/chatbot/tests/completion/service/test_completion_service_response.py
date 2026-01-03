@@ -3,7 +3,6 @@ from __future__ import annotations
 from datetime import date
 from unittest.mock import MagicMock, patch
 
-from django.http import StreamingHttpResponse
 from google.genai import types
 from rest_framework.test import APITestCase
 
