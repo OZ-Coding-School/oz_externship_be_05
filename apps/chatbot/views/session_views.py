@@ -55,8 +55,17 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
         },
         examples=[
             OpenApiExample(
-                name="세션 생성 - 기본(GEMINI), 성공 응답",
-                summary="기본 모델(GEMINI)로 세션 생성 후 세션 반환",
+                name="세션 생성 - 기본(GEMINI), 입력 예시",
+                summary="기본 모델(GEMINI)로 세션 생성 요청 보내기.",
+                value={
+                    "question_id": 1,
+                    "title": "예시 세션 제목",
+                    "using_model": "GEMINI",
+                },
+            ),
+            OpenApiExample(
+                name="세션 생성 - 기본(GEMINI), 성공 응답 (입력 예시 X)",
+                summary="기본 모델(GEMINI)로 세션 생성 후 세션 반환. (입력 예시가 아닙니다!)",
                 value={
                     "id": 55,
                     "user": 10,
