@@ -34,6 +34,11 @@ class SessionCreateSerializer(serializers.ModelSerializer[ChatbotSession]):
         user = request.user
 
         question = validated_data["question"]
+
+        # 모델 unique constraint 제거 및 본인 생성 질문만 세션 생성 가능하게
+        if question.author != user:
+            raise serializers.ValidationError("본인이 작성한 질문에만 세션을 생성할 수 있습니다.")
+
         title = validated_data.get("title") or "New Chat"
         using_model = validated_data["using_model"]
 
