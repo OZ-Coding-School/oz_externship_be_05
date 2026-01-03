@@ -37,7 +37,7 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
         summary="세션 생성 API",
         description="Chatbot Session을 생성하는 API입니다.\n"
         "- Question.id, User.id가 필요하며, Question에 해당하는 채팅 세션을 만듭니다.\n"
-        "- using_model은 gemini가 기본입니다.",
+        "- using_model은 gemini-2.5-flash가 기본입니다.",
         request=SessionCreateSerializer,
         responses={
             200: OpenApiResponse(SessionCreateSerializer, description="세션 생성 성공"),
@@ -58,9 +58,9 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
                 name="세션 생성 - 기본(GEMINI), 입력 예시",
                 summary="기본 모델(GEMINI)로 세션 생성 요청 보내기.",
                 value={
-                    "question_id": 1,
+                    "question": 1,
                     "title": "예시 세션 제목",
-                    "using_model": "GEMINI",
+                    "using_model": "gemini-2.5-flash",
                 },
             ),
             OpenApiExample(
@@ -69,9 +69,9 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
                 value={
                     "id": 55,
                     "user": 10,
-                    "question_id": 101,
+                    "question": 101,
                     "title": "python try-exception 질문",
-                    "using_model": "GEMINI",
+                    "using_model": "gemini-2.5-flash",
                     "created_at": "2025-01-01T01:01:01+09:00",
                 },
                 request_only=True,
@@ -80,7 +80,7 @@ class SessionCreateListAPIView(APIView, ChatbotSessionMixin):
             OpenApiExample(
                 name="잘못된 모델 선택으로 400",
                 summary="허용되지 않은 모델 값",
-                value={"using_model": ["'GROK' is not a valid choice."]},
+                value={"using_model": ["'gemini' is not a valid choice."]},
                 request_only=True,
                 status_codes=["400"],
             ),
@@ -212,7 +212,11 @@ class SessionDeleteView(APIView, ChatbotSessionMixin):
             )
         ],
         responses={
-            204: OpenApiResponse(description="세션 삭제 성공 - No Content"),
+            204: OpenApiResponse(description="세션 삭제 성공 - No Content",
+                                 examples=[OpenApiExample(
+                                     name="삭제 성공",
+                                     description="No Content",
+                                 )]),
             401: OpenApiResponse(
                 EMS.E401_USER_ONLY_ACTION("삭제"),
                 description="Unauthorized - 인증되지 않음",
