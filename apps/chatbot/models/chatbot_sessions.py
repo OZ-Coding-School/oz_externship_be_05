@@ -5,8 +5,8 @@ from apps.core.models import TimeStampedModel
 
 # enum용 클래스 - 사용모델
 class ChatModel(models.TextChoices):
-    GEMINI = "gemini-2.5-flash", "GEMINI"
-    OPENAI = "openai-o4-mini", "OPENAI"
+    GEMINI = "gemini-2.5-flash"
+    OPENAI = "openai-o4-mini"
 
 
 class ChatbotSession(TimeStampedModel):
