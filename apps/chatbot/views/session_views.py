@@ -212,11 +212,15 @@ class SessionDeleteView(APIView, ChatbotSessionMixin):
             )
         ],
         responses={
-            204: OpenApiResponse(description="세션 삭제 성공 - No Content",
-                                 examples=[OpenApiExample(
-                                     name="삭제 성공",
-                                     description="No Content",
-                                 )]),
+            204: OpenApiResponse(
+                description="세션 삭제 성공 - No Content",
+                examples=[
+                    OpenApiExample(
+                        name="삭제 성공",
+                        description="No Content",
+                    )
+                ],
+            ),
             401: OpenApiResponse(
                 EMS.E401_USER_ONLY_ACTION("삭제"),
                 description="Unauthorized - 인증되지 않음",
