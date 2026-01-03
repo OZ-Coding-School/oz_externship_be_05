@@ -5,7 +5,7 @@ from apps.user.models.role import (
     OperationManager,
     TrainingAssistant,
 )
-from apps.user.models.user import RoleChoices, User
+from apps.user.models.user import User
 from apps.user.models.withdraw import Withdrawal, WithdrawalReason
 
 __all__ = [
@@ -18,5 +18,4 @@ __all__ = [
     "TrainingAssistant",
     "Withdrawal",
     "WithdrawalReason",
-    "RoleChoices",
 ]
