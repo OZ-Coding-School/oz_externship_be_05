@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
+from typing import Any
+
 from django.http import StreamingHttpResponse
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -10,6 +13,7 @@ from drf_spectacular.utils import (
 )
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.renderers import BaseRenderer, JSONRenderer
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -24,6 +28,24 @@ from apps.chatbot.services.completion_response_service import (
 )
 from apps.chatbot.views.mixins import ChatbotCompletionMixin, ChatbotCursorPagination
 from apps.core.exceptions.exception_messages import EMS
+
+
+class ServerSentEventRenderer(BaseRenderer):
+    media_type = "text/event-stream"
+    format = "txt"
+    charset = "utf-8"
+
+    def render(
+        self, data: Any, accepted_media_type: str | None = None, renderer_context: Mapping[str, Any] | None = None
+    ) -> bytes:
+        if data is None:
+            return b""
+        if isinstance(data, bytes):
+            return data
+        if isinstance(data, str):
+            return data.encode(self.charset)
+        return str(data).encode(self.charset)
+
 
 """
 Completion API Views
@@ -41,6 +63,7 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
     permission_classes = [IsAuthenticated]
     pagination_class = ChatbotCursorPagination
     serializer_class = CompletionSerializer
+    renderer_classes = [ServerSentEventRenderer, JSONRenderer]
 
     # POST (메세지 작성, AI 응답 생성)
     @extend_schema(
