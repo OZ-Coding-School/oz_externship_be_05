@@ -17,3 +17,6 @@ class ChatbotSession(TimeStampedModel):
 
     class Meta:
         db_table = "chatbot_sessions"
+        constraints = [
+            models.UniqueConstraint(fields=("user", "question"), name="user_question_unique"),
+        ]
