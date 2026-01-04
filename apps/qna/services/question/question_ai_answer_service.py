@@ -22,6 +22,8 @@ Usage:
     service = QuestionAIAnswerService(question)
     ai_answer = service.generate()
 """
+
+
 class QuestionAIAnswerService:
     SYSTEM_PROMPT = """
     당신은 AI 튜터입니다.
@@ -62,11 +64,12 @@ class QuestionAIAnswerService:
                 parts=[
                     types.Part.from_text(text=self.SYSTEM_PROMPT),
                     types.Part.from_text(text=user_message),
-                ]
+                ],
             )
         ]
+
     def _generate_response(self) -> str:
-        client=self._get_client()
+        client = self._get_client()
         contents = self._build_contents()
         api_contents = cast(Any, contents)
         try:
@@ -78,11 +81,8 @@ class QuestionAIAnswerService:
             if response.text:
                 return response.text
 
-            logger.warning("Empty response from Gemini API | question.id: %s, model: %s",
-                           self.question.id, self.model)
-            raise ValueError(
-                f"AI 응답이 비어있음.\nquestion.id: {self.question.id}, model: {self.model}"
-            )
+            logger.warning("Empty response from Gemini API | question.id: %s, model: %s", self.question.id, self.model)
+            raise ValueError(f"AI 응답이 비어있음.\nquestion.id: {self.question.id}, model: {self.model}")
 
         except ValueError:
             # 위에서 발생한 ValueError를 그대로 전달
@@ -113,6 +113,7 @@ class QuestionAIAnswerService:
         )
         return ai_answer
 
+
 # 질문에 대한 AI 답변 생성 + 저장
 def generate_ai_answer(
     question: Question,
@@ -120,6 +121,7 @@ def generate_ai_answer(
 ) -> QuestionAIAnswer:
     service = QuestionAIAnswerService(question, using_model)
     return service.generate()
+
 
 # 질문의 AI 답변 조회 (없으면 None)
 def get_ai_answer(question: Question) -> QuestionAIAnswer | None:

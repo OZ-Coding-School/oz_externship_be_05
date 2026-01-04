@@ -11,6 +11,7 @@ class QnaConfig(AppConfig):
     Signal: import 되는 순간 등록
     celery worker: task import 해야 task registry 등록됨
     """
+
     def ready(self) -> None:
         import apps.qna.utils.ai_answer_signals
         import apps.qna.utils.ai_answer_tasks

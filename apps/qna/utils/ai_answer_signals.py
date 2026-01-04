@@ -15,18 +15,22 @@ Signals:
     on_question_created: Question 생성 시 AI 답변 자동 생성
 """
 
+
 @receiver(post_save, sender=Question)
 def on_question_created(
-        sender: type[Question],
-        instance: Question,
-        created: bool,
-        **kwargs,
+    sender: type[Question],
+    instance: Question,
+    created: bool,
+    **kwargs,
 ) -> None:
     if not created:
         return
 
     # 지연 import (순환 참조 방지)
-    from apps.qna.utils.ai_answer_tasks import generate_ai_answer_task, resolve_using_model
+    from apps.qna.utils.ai_answer_tasks import (
+        generate_ai_answer_task,
+        resolve_using_model,
+    )
 
     raw_model = getattr(instance, "using_model", None)
     resolved_model = resolve_using_model(raw_model)

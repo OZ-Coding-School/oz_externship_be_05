@@ -1,5 +1,7 @@
 from rest_framework import serializers
+
 from apps.qna.models.question.question_ai_answer import QuestionAIAnswer
+
 
 class QuestionAIAnswerSerializer(serializers.ModelSerializer[QuestionAIAnswer]):
     class Meta:

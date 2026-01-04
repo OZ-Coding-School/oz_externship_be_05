@@ -1,7 +1,8 @@
 from django.db import models
 
-from apps.core.models import TimeStampedModel
 from apps.chatbot.models.chatbot_sessions import ChatModel
+from apps.core.models import TimeStampedModel
+
 
 class QuestionAIAnswer(TimeStampedModel):
     question = models.ForeignKey("qna.Question", on_delete=models.CASCADE, related_name="ai_answers")

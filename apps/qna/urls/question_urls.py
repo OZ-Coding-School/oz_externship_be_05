@@ -2,8 +2,10 @@ from django.urls import path
 
 from apps.qna.views.question.presigned_url_view import PresignedUploadAPIView
 from apps.qna.views.question.question_api import QuestionAPIView
-from apps.qna.views.question.question_detail import QuestionDetailAPIView
-from apps.qna.views.question.question_detail import QuestionAIAnswerAPIView
+from apps.qna.views.question.question_detail import (
+    QuestionAIAnswerAPIView,
+    QuestionDetailAPIView,
+)
 
 urlpatterns = [
     path("questions", QuestionAPIView.as_view(), name="questions"),
