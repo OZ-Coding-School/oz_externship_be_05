@@ -152,11 +152,32 @@ class QuestionAIAnswerAPIView(APIView):
                                  ],
                                  ),
             401: OpenApiResponse(EMS.E401_NO_AUTH_DATA,
-                                 description="인증 필요",),
+                                 description="인증 필요",
+                                 examples=[OpenApiExample(
+                                     name="인증 실패",
+                                     summary="로그인 이슈로 인하여 header에 올바르지 않은 토큰값이 들어간 경우",
+                                     value={
+                                         "error_detail": "자격 인증 데이터가 제공되지 않았습니다."
+                                     }
+                                 )]),
             403: OpenApiResponse(EMS.E403_PERMISSION_DENIED("AI 답변 생성"),
-                                 description="권한 없음"),
+                                 description="권한 없음",
+                                 examples=[OpenApiExample(
+                                     name="권한 없음",
+                                     summary="해당 유저가 작성한 질문이 아니면 AI답변이 생성되지 않음.",
+                                     value={
+                                         "error_detail": "AI 답변 생성 권한이 없습니다."
+                                     },
+                                 )]),
             404: OpenApiResponse(EMS.E404_NOT_EXIST("질문"),
-                                 description="질문을 찾을 수 없음"),
+                                 description="질문을 찾을 수 없음",
+                                 examples=[OpenApiExample(
+                                     name="질문을 찾을 수 없음",
+                                     summary="AI답변을 생성하기 위한 질문Question이 존재하지 않음.",
+                                     value={
+                                         "error_detail": "등록된 질문이(가) 없습니다."
+                                     },
+                                 )]),
             409: OpenApiResponse(EMS.E409_AI_ALREADY_RESPONDED,
                                  description="동일 질문/모델로 생성 충돌(중복 생성) 또는 생성 중 충돌",
                                  examples=[OpenApiExample(
