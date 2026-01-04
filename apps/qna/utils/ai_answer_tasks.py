@@ -1,7 +1,6 @@
 import logging
 
 from celery import shared_task
-from apps.chatbot.models.chatbot_sessions import ChatModel
 
 """
 Question AI Answer Celery Tasks
@@ -21,11 +20,13 @@ Returns:
     생성된 QuestionAIAnswer의 ID 또는 None (실패 시)
 """
 
+
 def resolve_using_model(using_model: str) -> str:
     if using_model:
         return using_model
     else:
         return "gemini-2.5-flash"
+
 
 @shared_task(
     bind=True,
