@@ -59,151 +59,9 @@ generate_streaming_response: SSE 스트리밍 제너레이터 (chunk yield + DB 
 
 
 class CompletionAPIView(APIView, ChatbotCompletionMixin):
-
     permission_classes = [IsAuthenticated]
     pagination_class = ChatbotCursorPagination
     serializer_class = CompletionSerializer
-    renderer_classes = [ServerSentEventRenderer, JSONRenderer]
-
-    # POST (메세지 작성, AI 응답 생성)
-    @extend_schema(
-        tags=["AI 챗봇"],
-        summary="AI 챗봇 응답 생성 API (with Streaming)",
-        description="AI 챗봇과 사용자의 메세지를 생성/저장하는 API\n\n"
-        "처리 흐름: \n"
-        "- 사용자 메세지 DB 저장 \n"
-        "- 세션에 설정된 AI 모델로 응답 생성 (SSE 스트리밍) * 현재 GEMINI만 연동\n"
-        "- AI 응답 DB 저장\n"
-        "- 스트리밍 완료 시 [DONE] 전송\n\n"
-        "SSE 응답 형식: \n"
-        "- 정상 chunk: data: {'context': '텍스트'} \n"
-        "- 완료: data: [DONE] \n"
-        "- 에러: data: [ERROR] \n\n"
-        "지원 모델: \n"
-        "- gemini-2.5-flash (기본) \n\n"
-        " 주의사항: \n"
-        "- 빈 문자열 메세지는 허용되지 않음 \n"
-        "- 본인의 세션에만 메세지 보낼 수 있음 \n"
-        "- 타인의 세션 접근 시 보안상 404를 반환\n",
-        request=CompletionCreateSerializer,
-        parameters=[
-            OpenApiParameter(
-                name="session_id",
-                type=OpenApiTypes.INT,
-                location="path",
-                description="세션 PK ID",
-            ),
-        ],
-        responses={
-            200: OpenApiResponse(
-                CompletionCreateSerializer,
-                description="SSE 스트리밍 응답 성공",
-                examples=[
-                    OpenApiExample(
-                        name="스트리밍 응답 - 정상",
-                        summary="AI가 정상적으로 응답을 생성하는 경우",
-                        value=(
-                            'data: {"content": "안녕하세요}\n\n'
-                            'data: {"content": "! Django ORM"}\n\n'
-                            'data: {"content": " 최적화 방법을 알려드릴게요."}\n\n'
-                            "data: [DONE]\n\n"
-                        ),
-                    ),
-                    OpenApiExample(
-                        name="스트리밍 응답 - 에러 발생",
-                        summary="AI 응답 생성 중 에러가 발생한 경우",
-                        value=('data: {"content": "응답 시작..."}\n\n' "data: [ERROR]\n\n" "data: [DONE]\n\n"),
-                    ),
-                ],
-            ),
-            400: OpenApiResponse(
-                description="Bad Request - 메시지 필드 누락 또는 빈 문자열",
-                examples=[
-                    OpenApiExample(
-                        name="메시지 필드 누락",
-                        summary="request body에 message 필드가 없는 경우",
-                        value={"message": ["이 필드는 필수 항목입니다."]},
-                    ),
-                    OpenApiExample(
-                        name="빈 문자열 메시지",
-                        summary="message가 빈 문자열인 경우",
-                        value={"message": ["이 필드는 blank일 수 없습니다."]},
-                    ),
-                ],
-            ),
-            401: OpenApiResponse(
-                description="Unauthorized - 인증되지 않음",
-                examples=[
-                    OpenApiExample(
-                        name="인증 실패",
-                        summary="로그인하지 않은 사용자가 요청한 경우",
-                        value=EMS.E401_USER_ONLY_ACTION("채팅"),
-                    ),
-                ],
-            ),
-            404: OpenApiResponse(
-                description="Not Found - 세션을 찾을 수 없음",
-                examples=[
-                    OpenApiExample(
-                        name="존재하지 않는 세션",
-                        summary="session_id에 해당하는 세션이 DB에 없는 경우",
-                        value=EMS.E404_CHATBOT_SESSION_NOT_FOUND,
-                    ),
-                    OpenApiExample(
-                        name="타인의 세션 접근",
-                        summary="본인 소유가 아닌 세션에 접근한 경우 (보안상 404 반환)",
-                        value=EMS.E404_CHATBOT_SESSION_NOT_FOUND,
-                    ),
-                ],
-            ),
-        },
-        examples=[
-            OpenApiExample(
-                name="메시지 전송 요청",
-                summary="기본 메시지 전송 요청",
-                value={"message": "Django에서 select_related와 prefetch_related 차이점 알려줘"},
-                request_only=True,
-            ),
-            OpenApiExample(
-                name="간단한 질문",
-                summary="짧은 질문 예시",
-                value={"message": "안녕하세요"},
-                request_only=True,
-            ),
-            OpenApiExample(
-                name="코드 관련 질문",
-                summary="코드 분석 요청 예시",
-                value={
-                    "message": "이 코드에서 N+1 문제가 발생하는 부분을 찾아줘:\n\nfor user in User.objects.all():\n    print(user.profile.bio)"
-                },
-                request_only=True,
-            ),
-        ],
-    )
-
-    # SSE 스트리밍 응답 생성.
-    def post(self, request: Request, session_id: int) -> StreamingHttpResponse:
-        session = self.get_session(session_id)  # 세션 조회(권한 검증 포함)
-
-        # 요청 데이터 검증
-        serializer = CompletionCreateSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user_message = serializer.validated_data["message"]
-
-        # 사용자 메세지 저장 (service에서 호출해서)
-        user_message_save(
-            session=session,
-            message=user_message,
-        )
-
-        service = GeminiStreamingService(session)
-        response = StreamingHttpResponse(
-            streaming_content=service.generate_streaming_response(user_message),
-            content_type="text/event-stream; charset=utf-8",
-        )
-        response["Cache-Control"] = "no-cache"
-        response["X-Accel-Buffering"] = "no"
-        return response
 
     # 메세지 목록 조회
     @extend_schema(
@@ -330,3 +188,148 @@ class CompletionAPIView(APIView, ChatbotCompletionMixin):
         session = self.get_session(session_id)
         session.messages.all().delete()  # 세션 모든 메세지 삭제
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CompletionCreateAPIView(APIView, ChatbotCompletionMixin):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CompletionCreateSerializer
+    renderer_classes = [ServerSentEventRenderer, JSONRenderer]
+
+    # POST (메세지 작성, AI 응답 생성)
+    @extend_schema(
+        tags=["AI 챗봇"],
+        summary="AI 챗봇 응답 생성 API (with Streaming)",
+        description="AI 챗봇과 사용자의 메세지를 생성/저장하는 API\n\n"
+        "처리 흐름: \n"
+        "- 사용자 메세지 DB 저장 \n"
+        "- 세션에 설정된 AI 모델로 응답 생성 (SSE 스트리밍) * 현재 GEMINI만 연동\n"
+        "- AI 응답 DB 저장\n"
+        "- 스트리밍 완료 시 [DONE] 전송\n\n"
+        "SSE 응답 형식: \n"
+        "- 정상 chunk: data: {'context': '텍스트'} \n"
+        "- 완료: data: [DONE] \n"
+        "- 에러: data: [ERROR] \n\n"
+        "지원 모델: \n"
+        "- gemini-2.5-flash (기본) \n\n"
+        " 주의사항: \n"
+        "- 빈 문자열 메세지는 허용되지 않음 \n"
+        "- 본인의 세션에만 메세지 보낼 수 있음 \n"
+        "- 타인의 세션 접근 시 보안상 404를 반환\n",
+        request=CompletionCreateSerializer,
+        parameters=[
+            OpenApiParameter(
+                name="session_id",
+                type=OpenApiTypes.INT,
+                location="path",
+                description="세션 PK ID",
+            ),
+        ],
+        responses={
+            200: OpenApiResponse(
+                CompletionCreateSerializer,
+                description="SSE 스트리밍 응답 성공",
+                examples=[
+                    OpenApiExample(
+                        name="스트리밍 응답 - 정상",
+                        summary="AI가 정상적으로 응답을 생성하는 경우",
+                        value=(
+                            'data: {"content": "안녕하세요}\n\n'
+                            'data: {"content": "! Django ORM"}\n\n'
+                            'data: {"content": " 최적화 방법을 알려드릴게요."}\n\n'
+                            "data: [DONE]\n\n"
+                        ),
+                    ),
+                    OpenApiExample(
+                        name="스트리밍 응답 - 에러 발생",
+                        summary="AI 응답 생성 중 에러가 발생한 경우",
+                        value=('data: {"content": "응답 시작..."}\n\n' "data: [ERROR]\n\n" "data: [DONE]\n\n"),
+                    ),
+                ],
+            ),
+            400: OpenApiResponse(
+                description="Bad Request - 메시지 필드 누락 또는 빈 문자열",
+                examples=[
+                    OpenApiExample(
+                        name="메시지 필드 누락",
+                        summary="request body에 message 필드가 없는 경우",
+                        value={"message": ["이 필드는 필수 항목입니다."]},
+                    ),
+                    OpenApiExample(
+                        name="빈 문자열 메시지",
+                        summary="message가 빈 문자열인 경우",
+                        value={"message": ["이 필드는 blank일 수 없습니다."]},
+                    ),
+                ],
+            ),
+            401: OpenApiResponse(
+                description="Unauthorized - 인증되지 않음",
+                examples=[
+                    OpenApiExample(
+                        name="인증 실패",
+                        summary="로그인하지 않은 사용자가 요청한 경우",
+                        value=EMS.E401_USER_ONLY_ACTION("채팅"),
+                    ),
+                ],
+            ),
+            404: OpenApiResponse(
+                description="Not Found - 세션을 찾을 수 없음",
+                examples=[
+                    OpenApiExample(
+                        name="존재하지 않는 세션",
+                        summary="session_id에 해당하는 세션이 DB에 없는 경우",
+                        value=EMS.E404_CHATBOT_SESSION_NOT_FOUND,
+                    ),
+                    OpenApiExample(
+                        name="타인의 세션 접근",
+                        summary="본인 소유가 아닌 세션에 접근한 경우 (보안상 404 반환)",
+                        value=EMS.E404_CHATBOT_SESSION_NOT_FOUND,
+                    ),
+                ],
+            ),
+        },
+        examples=[
+            OpenApiExample(
+                name="메시지 전송 요청",
+                summary="기본 메시지 전송 요청",
+                value={"message": "Django에서 select_related와 prefetch_related 차이점 알려줘"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                name="간단한 질문",
+                summary="짧은 질문 예시",
+                value={"message": "안녕하세요"},
+                request_only=True,
+            ),
+            OpenApiExample(
+                name="코드 관련 질문",
+                summary="코드 분석 요청 예시",
+                value={
+                    "message": "이 코드에서 N+1 문제가 발생하는 부분을 찾아줘:\n\nfor user in User.objects.all():\n    print(user.profile.bio)"
+                },
+                request_only=True,
+            ),
+        ],
+    )
+    # SSE 스트리밍 응답 생성.
+    def post(self, request: Request, session_id: int) -> StreamingHttpResponse:
+        session = self.get_session(session_id)  # 세션 조회(권한 검증 포함)
+
+        # 요청 데이터 검증
+        serializer = CompletionCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user_message = serializer.validated_data["message"]
+
+        # 사용자 메세지 저장 (service에서 호출해서)
+        user_message_save(
+            session=session,
+            message=user_message,
+        )
+
+        service = GeminiStreamingService(session)
+        response = StreamingHttpResponse(
+            streaming_content=service.generate_streaming_response(user_message),
+            content_type="text/event-stream; charset=utf-8",
+        )
+        response["Cache-Control"] = "no-cache"
+        response["X-Accel-Buffering"] = "no"
+        return response
