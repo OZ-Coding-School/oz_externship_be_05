@@ -290,7 +290,7 @@
 
 <div align=center> 
 
-| <a href=https://github.com/ji-min0><img src="https://github.com/user-attachments/assets/898d2b29-5ced-40f8-9a76-07e8d360424f" width=100px/><br/><sub><b>@ji-min0</b></sub></a><br/> |  <a href=https://github.com/minju-kim-1901717/><img src="https://github.com/user-attachments/assets/a1e55caa-ca56-4edd-9cde-ee236cd56b72" width=100px/><br/><sub><b>@minju-kim-1901717</b></sub></a><br/> | <a href=https://github.com/JaMiLy-max><img src="https://github.com/user-attachments/assets/4b85db83-d9f0-40c5-ab30-efe9f08eb9b7" width=100px/><br/><sub><b>@JaMiLy-max</b></sub></a><br/> |  <a href=https://github.com/tjdgusf><img src="https://github.com/user-attachments/assets/01109264-96ba-4a9f-841e-df9dc51aaffc" width=100px/><br/><sub><b>@tjdgusf</b></sub></a><br/> |
+| <a href=https://github.com/ji-min0><img src="https://github.com/user-attachments/assets/898d2b29-5ced-40f8-9a76-07e8d360424f" width=100px/><br/><sub><b>@ji-min0</b></sub></a><br/> |  <a href=https://github.com/minju-kim-1901717/><img src="https://github.com/user-attachments/assets/a1e55caa-ca56-4edd-9cde-ee236cd56b72" width=100px/><br/><sub><b>@minju-kim-1901717</b></sub></a><br/> | <a href=https://github.com/JaMiLy-max><img src="https://avatars.githubusercontent.com/u/223883617?v=4" width=100px/><br/><sub><b>@JaMiLy-max</b></sub></a><br/> |  <a href=https://github.com/tjdgusf><img src="https://github.com/user-attachments/assets/01109264-96ba-4a9f-841e-df9dc51aaffc" width=100px/><br/><sub><b>@tjdgusf</b></sub></a><br/> |
 |:-------:|:-------:|:-------:|:-------:|
 | 강지민(팀장) | 김민주 | 이아진 | 이성현 |
 
@@ -729,3 +729,4 @@ oz_externship_be_05/
 >
 > [ 🔦 테이블 명세서 ](https://docs.google.com/spreadsheets/d/17r_O8EUqZDt9MoFmFTKgpXHLAKRh2Bsvx4cvIXjWmpM/edit?gid=684962824#gid=684962824)
 >
+
