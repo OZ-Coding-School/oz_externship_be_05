@@ -245,10 +245,14 @@ VERIFICATION_CODE_LENGTH = int(os.getenv("VERIFICATION_CODE_LENGTH", "6"))
 VERIFICATION_TOKEN_BYTES = int(os.getenv("VERIFICATION_TOKEN_BYTES", "32"))
 VERIFICATION_CODE_CHARS = os.getenv("VERIFICATION_CODE_CHARS", default="1234567890")
 
-# social-login redirect_url
-FRONTEND_SOCIAL_REDIRECT_URL = os.getenv("FRONTEND_SOCIAL_REDIRECT_URL")
-# withdrawal / account deletion settings
-WITHDRAWAL_GRACE_DAYS = int(os.getenv("WITHDRAWAL_GRACE_DAYS", "14"))
 
 # frontend domain
-FRONTEND_DOMAIN = "https://my.ozcodingschool.site"
+FRONTEND_DOMAIN = os.getenv("FRONTEND_DOMAIN", "http://localhost:5173")
+# cookie domain
+COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN", "http://localhost:8000")
+
+# social-login redirect_url
+FRONTEND_SOCIAL_REDIRECT_URL = os.getenv("FRONTEND_SOCIAL_REDIRECT_URL", "https://my.ozcodingschool.site")
+
+# withdrawal / account deletion settings
+WITHDRAWAL_GRACE_DAYS = int(os.getenv("WITHDRAWAL_GRACE_DAYS", "14"))

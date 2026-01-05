@@ -41,6 +41,7 @@ def auth_cookies(resp: HttpResponseRedirect, *, access: str, refresh: str) -> No
     resp.set_cookie(
         "access_token",
         access,
+        domain=settings.COOKIE_DOMAIN,
         httponly=False,
         secure=secure,
         samesite=samesite,
@@ -50,6 +51,7 @@ def auth_cookies(resp: HttpResponseRedirect, *, access: str, refresh: str) -> No
     resp.set_cookie(
         "refresh_token",
         refresh,
+        domain=settings.COOKIE_DOMAIN,
         httponly=True,
         secure=secure,
         samesite=samesite,

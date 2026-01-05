@@ -16,6 +16,7 @@ def issue_token_pair(refresh: RefreshToken) -> Response:
     response.set_cookie(
         "refresh_token",
         str(refresh),
+        domain=settings.COOKIE_DOMAIN,
         httponly=True,
         secure=secure,
         samesite=samesite,
