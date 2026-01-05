@@ -81,13 +81,16 @@ class CompletionAPITestBase(APITestCase):
         self.client.force_authenticate(self.user)
 
     def get_url(self, session_id: int) -> str:
-        return reverse("chatbot:completion-stream", kwargs={"session_id": session_id})
+        return reverse("chatbot:completions", kwargs={"session_id": session_id})
+
+    def get_create_url(self, session_id: int) -> str:
+        return reverse("chatbot:completions-create", kwargs={"session_id": session_id})
 
     def post_response(self, session_id: int, message: str | None = None, **kwargs: Any) -> Any:
         payload: dict[str, Any] = {}
         if message is not None:
             payload["message"] = message
-        return self.client.post(self.get_url(session_id), payload, format="json", **kwargs)
+        return self.client.post(self.get_create_url(session_id), payload, format="json", **kwargs)
 
     def get_response(self, session_id: int, **kwargs: Any) -> Any:
         return self.client.get(self.get_url(session_id), **kwargs)
