@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib import admin
 from django.urls import URLPattern, URLResolver, include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -7,10 +8,23 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
-urlpatterns: list[URLPattern | URLResolver] = []
+urlpatterns: list[URLPattern | URLResolver] = [
+    path("api/v1/accounts/", include("apps.user.urls")),
+    path("api/v1/admin/", include("apps.user.admin_urls")),
+    path("api/v1/admin/", include("apps.exams.urls.admin_urls")),
+    path("api/v1/qna/", include("apps.qna.urls.question_urls")),
+    path("api/v1/", include("apps.community.urls")),
+    path("api/v1/exams/", include("apps.exams.urls.student_urls")),
+    path("admin/", admin.site.urls),
+    path("api/v1/qna/", include("apps.qna.urls.answer_urls")),
+    path("api/v1/chatbot/", include("apps.chatbot.urls")),
+    path("api/v1/", include("apps.courses.urls")),
+]
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
     if "debug_toolbar" in settings.INSTALLED_APPS:
         urlpatterns += [path("__debug__/", include("debug_toolbar.urls"))]
     if "drf_spectacular" in settings.INSTALLED_APPS:

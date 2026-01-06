@@ -3,7 +3,13 @@ USER_PROFILE_IMAGE_UPLOAD_PATH = "uploads/images/user_profiles/"
 RECRUITMENT_IMAGE_UPLOAD_PATH = "uploads/images/recruitments/"
 STUDY_GROUP_IMAGE_UPLOAD_PATH = "uploads/images/study_groups/"
 STUDY_NOTE_IMAGE_UPLOAD_PATH = "uploads/images/study_notes/"
+QUESTION_IMAGE_UPLOAD_PATH = "uploads/images/questions/"
+THUMBNAIL_IMAGE_UPLOAD_PATH = "uploads/images/thumbnail/"
+
 
 # file upload paths
 RECRUITMENT_FILE_UPLOAD_PATH = "uploads/files/recruitments/"
 STUDY_NOTE_FILE_UPLOAD_PATH = "uploads/files/study_notes/"
+
+# default sort fields
+VALID_SORT_FIELDS = ["title", "created_at", "updated_at"]

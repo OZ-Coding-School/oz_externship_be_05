@@ -1,0 +1,30 @@
+from django.conf import settings
+from django.db import models
+
+from apps.core.models import TimeStampedModel
+
+
+class Answer(TimeStampedModel):
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,  # 작성자가 삭제되면 답변도 삭제
+        related_name="answers",
+        help_text="답변 작성자 ID",
+    )
+
+    question = models.ForeignKey(
+        "qna.Question",
+        on_delete=models.CASCADE,  # 답변이 속한 질문이 삭제되면 답변도 삭제
+        related_name="answers",
+        help_text="답변이 속한 질문 ID",
+    )
+
+    content = models.TextField(help_text="답변 내용 본문")
+    is_adopted = models.BooleanField(default=False, help_text="채택 여부")
+
+    class Meta:
+        app_label = "qna"
+        db_table = "answers"
+
+    def __str__(self) -> str:
+        return f"{self.pk}번 답변 (by {self.author_id})"

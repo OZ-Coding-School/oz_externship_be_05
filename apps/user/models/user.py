@@ -1,0 +1,127 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
+
+from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
+from django.db import models
+
+from apps.core.models import TimeStampedModel
+from apps.user.utils.nickname import generate_nickname
+
+if TYPE_CHECKING:
+    from apps.user.models import CohortStudent
+
+
+class UserManager(BaseUserManager["User"]):
+    def create_user(self, email: str, password: str, name: str, **extra_fields: Any) -> "User":
+        if not email:
+            raise ValueError("이메일은 필수입니다.")
+        if not password:
+            raise ValueError("비밀번호는 필수입니다.")
+        if not name:
+            raise ValueError("사용자명은 필수입니다.")
+        if not extra_fields.get("nickname"):
+            nickname: str = generate_nickname()
+            ma: int = 5  # max attempts
+            a: int = 0  # attempts
+            while User.objects.filter(nickname=nickname).exists():
+                nickname = generate_nickname()
+                a += 1
+                if a >= ma:
+                    raise ValueError("자동 닉네임 생성에 실패했습니다. 직접 닉네임을 입력해주세요.")
+            extra_fields["nickname"] = nickname
+        email = self.normalize_email(email)
+        user: "User" = self.model(email=email, name=name, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email: str, password: str, name: str, **extra_fields: Any) -> "User":
+        extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("role", RoleChoices.AD)
+        return self.create_user(email, password, name, **extra_fields)
+
+
+class GenderChoices(models.TextChoices):
+    MALE = "M", "MALE"
+    FEMALE = "F", "FEMALE"
+
+
+class RoleChoices(models.TextChoices):
+    TA = "TA", "Teaching Assistant"
+    LC = "LC", "Learning Coach"
+    OM = "OM", "Office Manager"
+    ST = "ST", "Student"
+    AD = "AD", "Administrator"
+    USER = "U", "User"
+
+
+class UserStatus(models.TextChoices):
+    IN_ACTIVE = "inactive"
+    ACTIVE = "active"
+    WITHDREW = "withdrew"
+
+
+class User(AbstractBaseUser, PermissionsMixin, TimeStampedModel):
+    email = models.EmailField(unique=True)
+    name = models.CharField(max_length=30)
+    nickname = models.CharField(max_length=15, unique=True)
+    phone_number = models.CharField(max_length=20)
+    gender = models.CharField(choices=GenderChoices.choices, max_length=1)
+    birthday = models.DateField()
+    profile_image_url = models.URLField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    is_staff = models.BooleanField(default=False)
+    role = models.CharField(choices=RoleChoices.choices, max_length=2, default=RoleChoices.USER)
+
+    objects = UserManager()
+
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = ["name", "birthday"]
+
+    @property
+    def status(self) -> str:
+        from apps.user.models.withdraw import Withdrawal
+
+        if self.is_active:
+            return UserStatus.ACTIVE
+        if Withdrawal.objects.filter(user_id=self.pk).exists():
+            return UserStatus.WITHDREW
+        return UserStatus.IN_ACTIVE
+
+    @property
+    def in_progress_cohortstudent(self) -> "CohortStudent | None":
+        return self.cohortstudent_set.select_related("cohort__course").first()
+
+    STAFF_ROLES = {RoleChoices.TA, RoleChoices.LC, RoleChoices.OM, RoleChoices.AD}
+
+    def sync_flags_by_role(self) -> None:
+        self.is_staff = self.role in self.STAFF_ROLES
+
+        self.is_superuser = self.role == RoleChoices.AD
+
+        if self.is_superuser:
+            self.is_staff = True
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.sync_flags_by_role()
+        super().save(*args, **kwargs)
+
+    class Meta:
+        db_table = "users"
+
+
+class SocialProvider(models.TextChoices):
+    NAVER = "N", "naver"
+    KAKAO = "K", "kakao"
+
+
+class SocialUser(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    provider = models.CharField(choices=SocialProvider.choices, max_length=5)
+    provider_id = models.CharField(max_length=255, unique=True)
+
+    class Meta:
+        db_table = "social_users"

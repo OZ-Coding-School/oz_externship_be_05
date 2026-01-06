@@ -13,9 +13,12 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("DJANGO_SECRET_KEY environment variable not set")
 
+# Custom User model
+AUTH_USER_MODEL = "user.User"
 
 # Application definition
 DJANGO_APPS = [
+    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -32,7 +35,15 @@ THIRD_PARTY_APPS = [
 ]
 
 # 추가한 도메인별 앱을 줄바꿈, 쉼표를 사용하여 나열.
-CUSTOM_APPS: list[str] = []
+CUSTOM_APPS: list[str] = [
+    "apps.user",
+    "apps.courses",
+    "apps.exams",
+    "apps.qna",
+    "apps.community",
+    "apps.chatbot",
+    "apps.core",
+]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + CUSTOM_APPS
 
@@ -167,6 +178,8 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 10,
+    # exceptions
+    "EXCEPTION_HANDLER": "apps.core.exceptions.exception_handler.custom_exception_handler",
 }
 
 # drf-spectacular 관련 설정
@@ -224,3 +237,22 @@ AWS_S3_REGION = os.getenv("AWS_S3_REGION", "")
 AWS_S3_ACCESS_KEY_ID = os.getenv("AWS_S3_ACCESS_KEY_ID", "")
 AWS_S3_SECRET_ACCESS_KEY = os.getenv("AWS_S3_SECRET_ACCESS_KEY", "")
 AWS_S3_BUCKET_NAME = os.getenv("AWS_S3_BUCKET_NAME", "")
+
+# verificaiton settings
+VERIFICATION_DEFAULT_TTL_SECONDS = int(os.getenv("VERIFICATION_DEFAULT_TTL_SECONDS", "300"))
+VERIFICATION_TOKEN_GENERATE_MAX_ATTEMPTS = int(os.getenv("VERIFICATION_TOKEN_GENERATE_MAX_ATTEMPTS", "5"))
+VERIFICATION_CODE_LENGTH = int(os.getenv("VERIFICATION_CODE_LENGTH", "6"))
+VERIFICATION_TOKEN_BYTES = int(os.getenv("VERIFICATION_TOKEN_BYTES", "32"))
+VERIFICATION_CODE_CHARS = os.getenv("VERIFICATION_CODE_CHARS", default="1234567890")
+
+
+# frontend domain
+FRONTEND_DOMAIN = os.getenv("FRONTEND_DOMAIN", "http://localhost:5173")
+# cookie domain
+COOKIE_DOMAIN = os.getenv("COOKIE_DOMAIN", "http://localhost:8000")
+
+# social-login redirect_url
+FRONTEND_SOCIAL_REDIRECT_URL = os.getenv("FRONTEND_SOCIAL_REDIRECT_URL", "https://my.ozcodingschool.site")
+
+# withdrawal / account deletion settings
+WITHDRAWAL_GRACE_DAYS = int(os.getenv("WITHDRAWAL_GRACE_DAYS", "14"))
